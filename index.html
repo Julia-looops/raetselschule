@@ -399,7 +399,8 @@ if (!window.storage) {
 <script>
 const {
   useState,
-  useEffect
+  useEffect,
+  useRef
 } = React;
 
 /* ============================================================
@@ -923,6 +924,405 @@ function TonSchalter({
     className: `rounded-lg border px-2 py-1 text-sm ${musik ? "border-yellow-400 bg-yellow-400/20 text-yellow-200" : "border-indigo-600 text-indigo-400"}`
   }, "\uD83C\uDFB5"));
 }
+
+/* ============================================================
+   DAS QUIDDITCH-FINALE
+   Rechnen laedt den Schuss, Geschick fuehrt ihn aus.
+   Die im Spiel erarbeiteten Volt werden zu Pikachus Blitz-Boosts —
+   damit zahlt sich jedes geloeste Raetsel hier sichtbar aus.
+   ============================================================ */
+
+const GRYFFINDOR_START = 70; // Halbzeitstand: Gryffindor liegt zurueck
+const SLYTHERIN_START = 80;
+const TOR_PUNKTE = 10;
+const SCHNATZ_PUNKTE = 15;
+const VOLT_PRO_BOOST = 20; // 60 Volt = 3 Blitze
+const MAX_BOOSTS = 3; // Deckel: Geschick soll bedeutsam bleiben
+
+/* Rechenaufgabe im Zahlenraum bis 100, gemischt plus und minus */
+function neueRechnung() {
+  if (Math.random() < 0.5) {
+    const a = 12 + Math.floor(Math.random() * 59); // 12..70
+    const b = 8 + Math.floor(Math.random() * (100 - a - 7)); // Summe bleibt <= 100
+    return {
+      text: a + " + " + b,
+      loesung: a + b
+    };
+  }
+  const gross = 45 + Math.floor(Math.random() * 51); // 45..95
+  const klein = 8 + Math.floor(Math.random() * 40); // 8..47
+  return {
+    text: gross + " − " + klein,
+    loesung: gross - klein
+  };
+}
+
+/* Anzeigetafel */
+function Tafel({
+  gryffindor,
+  slytherin
+}) {
+  const fuehrt = gryffindor > slytherin;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 flex items-stretch gap-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: `flex-1 rounded-2xl border-2 p-3 text-center ${fuehrt ? "border-yellow-400 bg-yellow-400/15" : "border-yellow-600/30 bg-indigo-900/50"}`
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold uppercase tracking-widest text-amber-200"
+  }, "\uD83E\uDD81 Gryffindor"), /*#__PURE__*/React.createElement("p", {
+    className: "font-serif text-4xl font-black text-yellow-300"
+  }, gryffindor)), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center font-serif text-2xl font-black text-amber-200/60"
+  }, ":"), /*#__PURE__*/React.createElement("div", {
+    className: `flex-1 rounded-2xl border-2 p-3 text-center ${!fuehrt ? "border-emerald-400/60 bg-emerald-900/25" : "border-indigo-700/50 bg-indigo-950/60"}`
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold uppercase tracking-widest text-emerald-200"
+  }, "\uD83D\uDC0D Slytherin"), /*#__PURE__*/React.createElement("p", {
+    className: "font-serif text-4xl font-black text-emerald-200"
+  }, slytherin)));
+}
+
+/* ---------------------------------------------- Zielleiste */
+function Zielleiste({
+  label,
+  zone,
+  markerRef
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "mt-5"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-center text-sm font-bold text-amber-200"
+  }, label), /*#__PURE__*/React.createElement("div", {
+    className: "relative mt-2 h-14 overflow-hidden rounded-2xl border-2 border-yellow-600/40 bg-indigo-950"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "absolute inset-y-0 bg-yellow-400/30 border-x-2 border-yellow-400",
+    style: {
+      left: (0.5 - zone) * 100 + "%",
+      width: zone * 200 + "%"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "absolute inset-y-0 left-1/2 flex w-0 items-center justify-center"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-2xl"
+  }, "\uD83E\uDD45")), /*#__PURE__*/React.createElement("div", {
+    ref: markerRef,
+    className: "absolute inset-y-0 w-1 -translate-x-1/2 bg-yellow-200",
+    style: {
+      left: "0%"
+    }
+  })));
+}
+function QuidditchFinale({
+  voltGesamt,
+  tonAn,
+  onGewonnen,
+  onZurueck
+}) {
+  const [phase, setPhase] = useState("intro");
+  const [gryffindor, setGryffindor] = useState(GRYFFINDOR_START);
+  const [slytherin, setSlytherin] = useState(SLYTHERIN_START);
+  const [rechnung, setRechnung] = useState(neueRechnung);
+  const [eingabe, setEingabe] = useState("");
+  const [versuche, setVersuche] = useState(0);
+  const [ladung, setLadung] = useState(0);
+  const [boosts, setBoosts] = useState(Math.min(MAX_BOOSTS, Math.floor(voltGesamt / VOLT_PRO_BOOST)));
+  const [boostAktiv, setBoostAktiv] = useState(false);
+  const [meldung, setMeldung] = useState(null);
+  const [treffer, setTreffer] = useState(false);
+  const [schnatzVersuche, setSchnatzVersuche] = useState(4);
+  const [fehlserie, setFehlserie] = useState(0);
+  const posRef = useRef(0);
+  const markerRef = useRef(null);
+  const zielphase = phase === "werfen" || phase === "schnatz";
+  const dauer = phase === "schnatz" ? 1450 : 1750; // ein Hin-und-Her in ms
+
+  /* Der Marker laeuft ueber die Leiste. Bewusst per Ref direkt im DOM,
+     damit React nicht 60 Mal pro Sekunde neu rendern muss. */
+  useEffect(() => {
+    if (!zielphase) return;
+    let aktiv = true;
+    let id = 0;
+    const t0 = performance.now();
+    const schritt = t => {
+      if (!aktiv) return;
+      const p = (t - t0) % dauer / dauer;
+      const pos = p < 0.5 ? p * 2 : 2 - p * 2; // 0 -> 1 -> 0
+      posRef.current = pos;
+      if (markerRef.current) markerRef.current.style.left = pos * 100 + "%";
+      id = requestAnimationFrame(schritt);
+    };
+    id = requestAnimationFrame(schritt);
+    return () => {
+      aktiv = false;
+      cancelAnimationFrame(id);
+    };
+  }, [zielphase, dauer]);
+  const zoneBasis = phase === "schnatz" ? 0.11 : [0, 0.12, 0.155, 0.19][ladung] || 0.12;
+  const zone = boostAktiv ? Math.min(0.4, zoneBasis * 2.2) : zoneBasis;
+  function pruefeRechnung() {
+    const n = parseInt(eingabe, 10);
+    if (Number.isNaN(n)) return;
+    if (n === rechnung.loesung) {
+      setLadung(versuche === 0 ? 3 : versuche === 1 ? 2 : 1);
+      setVersuche(0);
+      setEingabe("");
+      setMeldung(null);
+      setPhase("werfen");
+      if (tonAn) {
+        Ton.richtig();
+        Ton.pika();
+      }
+    } else {
+      setVersuche(v => v + 1);
+      setEingabe("");
+      setMeldung("Nicht ganz. Rechne nochmal — der Wurf wartet auf dich.");
+      if (tonAn) Ton.nochmal();
+    }
+  }
+  function wirf() {
+    const genau = Math.abs(posRef.current - 0.5) <= zone;
+    setBoostAktiv(false);
+    if (genau) {
+      const neu = gryffindor + TOR_PUNKTE;
+      setGryffindor(neu);
+      setFehlserie(0);
+      setTreffer(true);
+      setMeldung(neu > slytherin ? "TOR! Gryffindor geht in Führung — und über dir blitzt etwas Goldenes auf." : "TOR! Der Quaffel ist durch den Ring.");
+      if (tonAn) Ton.karte();
+    } else {
+      const serie = fehlserie + 1;
+      setTreffer(false);
+      if (serie >= 2) {
+        setSlytherin(s => s + TOR_PUNKTE);
+        setFehlserie(0);
+        setMeldung("Slytherins Hüterin hält — und kontert sofort. Kopf hoch, weiter!");
+      } else {
+        setFehlserie(serie);
+        setMeldung("Knapp daneben, die Hüterin hält. Nochmal Anlauf nehmen!");
+      }
+      if (tonAn) Ton.nochmal();
+    }
+    setPhase("wurfErgebnis");
+  }
+  function fangeSchnatz() {
+    const genau = Math.abs(posRef.current - 0.5) <= zone;
+    setBoostAktiv(false);
+    if (genau) {
+      setGryffindor(g => g + SCHNATZ_PUNKTE);
+      setPhase("gewonnen");
+      if (tonAn) {
+        Ton.karte();
+        Ton.pika();
+      }
+      onGewonnen();
+    } else {
+      const uebrig = schnatzVersuche - 1;
+      setSchnatzVersuche(uebrig);
+      if (tonAn) Ton.nochmal();
+      if (uebrig <= 0) {
+        setPhase("verloren");
+      } else {
+        setMeldung("Die Finger schließen sich um Luft. Der Schnatz ist noch da!");
+        setPhase("schnatzErgebnis");
+      }
+    }
+  }
+  function naechsterAngriff() {
+    setRechnung(neueRechnung());
+    setLadung(0);
+    setMeldung(null);
+    setPhase("rechnen");
+  }
+  function nochmalVonVorn() {
+    setGryffindor(GRYFFINDOR_START);
+    setSlytherin(SLYTHERIN_START);
+    setSchnatzVersuche(4);
+    setFehlserie(0);
+    setBoosts(Math.min(MAX_BOOSTS, Math.floor(voltGesamt / VOLT_PRO_BOOST)));
+    setBoostAktiv(false);
+    naechsterAngriff();
+  }
+  const rahmen = "min-h-screen bg-gradient-to-b from-indigo-950 to-purple-950 p-4";
+
+  /* ---------------------------------------------- INTRO */
+  if (phase === "intro") {
+    return /*#__PURE__*/React.createElement("div", {
+      className: rahmen
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "mx-auto max-w-xl"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: onZurueck,
+      className: "text-sm text-yellow-300 hover:underline"
+    }, "\u2190 R\xE4tselkarte"), /*#__PURE__*/React.createElement("div", {
+      className: "mt-3 rounded-2xl border-2 border-yellow-500/40 bg-indigo-900/60 p-5 text-center"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-5xl"
+    }, "\uD83C\uDFC6"), /*#__PURE__*/React.createElement("h2", {
+      className: "mt-2 font-serif text-3xl font-black text-yellow-300"
+    }, "Das Quidditch-Finale"), /*#__PURE__*/React.createElement("p", {
+      className: "mt-3 text-amber-100"
+    }, "Es ist Halbzeit und Gryffindor liegt zur\xFCck. Du fliegst als J\xE4gerin. Pikachu sitzt auf deinem Besenstiel \u2014 aufgeladen mit", " ", /*#__PURE__*/React.createElement("b", {
+      className: "text-yellow-300"
+    }, voltGesamt, " Volt"), " aus allen R\xE4tseln, die du gel\xF6st hast."), /*#__PURE__*/React.createElement("div", {
+      className: "mt-4 space-y-2 rounded-2xl border border-yellow-500/30 bg-indigo-950/60 p-4 text-left text-sm text-amber-100"
+    }, /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", {
+      className: "text-yellow-300"
+    }, "1. Aufladen:"), " L\xF6se eine Rechnung. Je schneller du sie triffst, desto kr\xE4ftiger der Wurf."), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", {
+      className: "text-yellow-300"
+    }, "2. Werfen:"), " Der Quaffel fliegt hin und her. Tippe, wenn er im goldenen Feld ist."), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", {
+      className: "text-yellow-300"
+    }, "3. Der Schnatz:"), " Sobald Gryffindor f\xFChrt, blitzt der Goldene Schnatz auf. Fang ihn \u2014 dann ist das Spiel gewonnen."), /*#__PURE__*/React.createElement("p", {
+      className: "border-t border-yellow-500/20 pt-2"
+    }, /*#__PURE__*/React.createElement("b", {
+      className: "text-yellow-300"
+    }, "\u26A1 Pikachus Blitz:"), " Du hast", " ", /*#__PURE__*/React.createElement("b", null, boosts), " ", boosts === 1 ? "Blitz" : "Blitze", " \u2014 jeder macht das goldene Feld f\xFCr einen Wurf viel breiter. Die hast du dir erarbeitet.")), /*#__PURE__*/React.createElement(Tafel, {
+      gryffindor: gryffindor,
+      slytherin: slytherin
+    }), /*#__PURE__*/React.createElement("button", {
+      onClick: naechsterAngriff,
+      className: "mt-5 w-full rounded-2xl bg-red-700 px-6 py-4 text-xl font-black text-yellow-300 shadow-xl transition active:translate-y-0.5"
+    }, "Aufs Spielfeld \u26A1"))));
+  }
+
+  /* ---------------------------------------------- GEWONNEN */
+  if (phase === "gewonnen") {
+    return /*#__PURE__*/React.createElement("div", {
+      className: rahmen
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "mx-auto mt-4 max-w-lg rounded-2xl border-8 border-double border-yellow-500 bg-amber-50 p-8 text-center shadow-2xl"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-6xl"
+    }, "\u2728\uD83C\uDFC6\u2728"), /*#__PURE__*/React.createElement("h2", {
+      className: "mt-3 font-serif text-3xl font-black text-stone-900"
+    }, "Gryffindor gewinnt!"), /*#__PURE__*/React.createElement("p", {
+      className: "mt-4 font-serif text-lg text-stone-700"
+    }, "Du hast den Goldenen Schnatz gefangen. Endstand", " ", /*#__PURE__*/React.createElement("b", null, gryffindor, " : ", slytherin), ". Das ganze Stadion ruft deinen Namen \u2014 und Pikachu macht Funken."), /*#__PURE__*/React.createElement("p", {
+      className: "mt-4 text-3xl"
+    }, "\uD83E\uDD81 \u26A1 \uD83E\uDD47"), /*#__PURE__*/React.createElement("p", {
+      className: "mt-2 font-serif italic text-stone-600"
+    }, "Der Quidditch-Pokal geht in dein Kartenalbum."), /*#__PURE__*/React.createElement("button", {
+      onClick: onZurueck,
+      className: "mt-6 w-full rounded-xl bg-red-700 py-3 font-bold text-yellow-200"
+    }, "Zur\xFCck nach Hogwarts")));
+  }
+
+  /* ---------------------------------------------- VERLOREN */
+  if (phase === "verloren") {
+    return /*#__PURE__*/React.createElement("div", {
+      className: rahmen
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "mx-auto max-w-xl"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "mt-4 rounded-2xl border-2 border-yellow-500/40 bg-indigo-900/60 p-6 text-center"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-5xl"
+    }, "\uD83D\uDC0D"), /*#__PURE__*/React.createElement("h2", {
+      className: "mt-2 font-serif text-2xl font-black text-yellow-300"
+    }, "Slytherin hat den Schnatz"), /*#__PURE__*/React.createElement("p", {
+      className: "mt-3 text-amber-100"
+    }, "Diesmal war er schneller. Das passiert auch den besten J\xE4gerinnen \u2014 und das Spiel l\xE4sst sich wiederholen, so oft du willst."), /*#__PURE__*/React.createElement(Tafel, {
+      gryffindor: gryffindor,
+      slytherin: slytherin
+    }), /*#__PURE__*/React.createElement("button", {
+      onClick: nochmalVonVorn,
+      className: "mt-5 w-full rounded-2xl bg-red-700 px-6 py-4 text-xl font-black text-yellow-300"
+    }, "Nochmal aufs Feld \u26A1"), /*#__PURE__*/React.createElement("button", {
+      onClick: onZurueck,
+      className: "mt-2 w-full rounded-xl border border-yellow-500/40 py-2 text-sm text-yellow-200/80"
+    }, "Zur\xFCck zur R\xE4tselkarte"))));
+  }
+
+  /* ---------------------------------------------- LAUFENDES SPIEL */
+  const fuehrt = gryffindor > slytherin;
+  return /*#__PURE__*/React.createElement("div", {
+    className: rahmen
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mx-auto max-w-xl"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-sm"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onZurueck,
+    className: "text-yellow-300 hover:underline"
+  }, "\u2190 R\xE4tselkarte"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-amber-200"
+  }, "\u26A1 ", boosts, " ", boosts === 1 ? "Blitz" : "Blitze", phase === "schnatz" || phase === "schnatzErgebnis" ? " · 🟡 " + schnatzVersuche + " Versuche" : "")), /*#__PURE__*/React.createElement(Tafel, {
+    gryffindor: gryffindor,
+    slytherin: slytherin
+  }), phase === "rechnen" && /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 rounded-2xl border-2 border-yellow-500/40 bg-indigo-900/60 p-5"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-center text-sm font-bold uppercase tracking-widest text-amber-200"
+  }, "Pikachu aufladen"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 text-center font-serif text-5xl font-black text-yellow-300"
+  }, rechnung.text), /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 flex gap-2"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    inputMode: "numeric",
+    value: eingabe,
+    onChange: e => setEingabe(e.target.value),
+    onKeyDown: e => {
+      if (e.key === "Enter") pruefeRechnung();
+    },
+    placeholder: "?",
+    className: "w-full rounded-xl border-2 border-yellow-600/40 bg-indigo-950 px-4 py-4 text-center text-2xl font-black text-yellow-200 outline-none focus:border-yellow-400"
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: pruefeRechnung,
+    className: "rounded-xl bg-yellow-500 px-6 py-4 text-lg font-black text-stone-900 active:translate-y-0.5"
+  }, "Laden \u26A1")), meldung && /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 text-center text-sm font-bold text-amber-200"
+  }, meldung)), zielphase && /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 rounded-2xl border-2 border-yellow-500/40 bg-indigo-900/60 p-5"
+  }, phase === "werfen" ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
+    className: "text-center text-sm font-bold uppercase tracking-widest text-amber-200"
+  }, "Wurf mit Ladung ", ladung, " von 3"), /*#__PURE__*/React.createElement(Zielleiste, {
+    label: "Tippe, wenn der Quaffel im goldenen Feld ist",
+    zone: zone,
+    markerRef: markerRef
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: wirf,
+    className: "mt-4 w-full rounded-2xl bg-red-700 px-6 py-5 text-2xl font-black text-yellow-300 shadow-xl active:translate-y-0.5"
+  }, "Wurf! \uD83E\uDD3E")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
+    className: "text-center text-sm font-bold uppercase tracking-widest text-amber-200"
+  }, "Der Goldene Schnatz \u2014 ", schnatzVersuche, " ", schnatzVersuche === 1 ? "Versuch" : "Versuche"), /*#__PURE__*/React.createElement(Zielleiste, {
+    label: "Er ist schnell und klein. Tippe genau!",
+    zone: zone,
+    markerRef: markerRef
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: fangeSchnatz,
+    className: "mt-4 w-full rounded-2xl bg-yellow-500 px-6 py-5 text-2xl font-black text-stone-900 shadow-xl active:translate-y-0.5"
+  }, "Fangen! \u2728")), boosts > 0 && !boostAktiv && /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setBoosts(b => b - 1);
+      setBoostAktiv(true);
+      if (tonAn) Ton.pika();
+    },
+    className: "mt-2 w-full rounded-xl border-2 border-yellow-400/60 py-3 text-base font-bold text-yellow-200"
+  }, "\u26A1 Pikachus Blitz einsetzen (", boosts, " \xFCbrig) \u2014 macht das Feld breiter"), boostAktiv && /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-center text-sm font-black text-yellow-300"
+  }, "\u26A1 Pikachus Blitz ist aktiv \u2014 das Feld ist jetzt viel breiter!")), (phase === "wurfErgebnis" || phase === "schnatzErgebnis") && /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 rounded-2xl border-2 border-yellow-500/40 bg-indigo-900/60 p-5 text-center"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-5xl"
+  }, treffer ? "🎉" : "🧤"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 text-lg font-bold text-amber-100"
+  }, meldung), phase === "wurfErgebnis" && fuehrt ? /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setMeldung(null);
+      setPhase("schnatz");
+    },
+    className: "mt-5 w-full rounded-2xl bg-yellow-500 px-6 py-4 text-xl font-black text-stone-900"
+  }, "Dem Schnatz nachjagen \uD83D\uDFE1") : phase === "wurfErgebnis" ? /*#__PURE__*/React.createElement("button", {
+    onClick: naechsterAngriff,
+    className: "mt-5 w-full rounded-2xl bg-red-700 px-6 py-4 text-xl font-black text-yellow-300"
+  }, "N\xE4chster Angriff \u26A1") : /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setMeldung(null);
+      setPhase("schnatz");
+    },
+    className: "mt-5 w-full rounded-2xl bg-yellow-500 px-6 py-4 text-xl font-black text-stone-900"
+  }, "Nochmal nach dem Schnatz greifen \u2728"))));
+}
 function Raetselschule() {
   const [tonAn, setTonAn] = useState(true);
   const [musik, setMusik] = useState(false);
@@ -943,6 +1343,8 @@ function Raetselschule() {
   const [feedback, setFeedback] = useState(null);
   const [zeigLoesung, setZeigLoesung] = useState(false);
   const [geladen, setGeladen] = useState(false);
+  const [pokal, setPokal] = useState(false); // Quidditch-Finale gewonnen
+
   const a = AUFGABEN[idx];
   const voltGesamt = Object.values(ergebnisse).reduce((s2, e) => s2 + e.volt, 0);
   const voltMoeglich = AUFGABEN.length * VOLT_MAX_PRO_RAETSEL;
@@ -959,6 +1361,7 @@ function Raetselschule() {
           setGeloest(d.geloest || []);
           setErgebnisse(d.ergebnisse || {});
           setMut(d.mut || 0);
+          setPokal(d.pokal || false);
         }
       } catch (e) {
         /* erster Start – nichts gespeichert */
@@ -975,18 +1378,20 @@ function Raetselschule() {
         await window.storage.set("florentina-fortschritt", JSON.stringify({
           geloest,
           ergebnisse,
-          mut
+          mut,
+          pokal
         }));
       } catch (e) {
         /* nicht speicherbar – Spiel läuft trotzdem */
       }
     })();
-  }, [geloest, ergebnisse, mut, geladen]);
+  }, [geloest, ergebnisse, mut, pokal, geladen]);
   async function allesZuruecksetzen() {
     setGeloest([]);
     setErgebnisse({});
     setRunde(null);
     setMut(0);
+    setPokal(false);
     setIdx(0);
     setEingabe("");
     setHilfen({
@@ -1002,7 +1407,8 @@ function Raetselschule() {
       await window.storage.set("florentina-fortschritt", JSON.stringify({
         geloest: [],
         ergebnisse: {},
-        mut: 0
+        mut: 0,
+        pokal: false
       }));
     } catch (e) {
       /* kein Speicher – Zustand ist trotzdem zurückgesetzt */
@@ -1164,7 +1570,10 @@ function Raetselschule() {
           className: "text-xs font-bold"
         }, e ? e.volt : 0, " V"));
       })));
-    }), /*#__PURE__*/React.createElement("div", {
+    }), finaleOffen && /*#__PURE__*/React.createElement("button", {
+      onClick: () => setView("finale"),
+      className: "mt-5 w-full rounded-2xl border-2 border-yellow-400 bg-red-700 px-6 py-4 text-xl font-black text-yellow-300 shadow-xl active:translate-y-0.5"
+    }, "\uD83C\uDFC6 ", pokal ? "Quidditch-Finale nochmal spielen" : "Zum Quidditch-Finale!"), /*#__PURE__*/React.createElement("div", {
       className: "mt-5 flex gap-2"
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => setView("album"),
@@ -1205,7 +1614,19 @@ function Raetselschule() {
       }, "\u26A1 ", ergebnisse[x.id] ? ergebnisse[x.id].volt : 0, " Volt"), /*#__PURE__*/React.createElement(SpruchZeile, {
         e: ergebnisse[x.id]
       }))));
-    })), /*#__PURE__*/React.createElement("button", {
+    }), pokal && /*#__PURE__*/React.createElement("div", {
+      className: "rounded-xl border-2 border-yellow-400 bg-amber-50 p-3 text-center"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-4xl"
+    }, "\uD83C\uDFC6"), /*#__PURE__*/React.createElement("p", {
+      className: "mt-1 text-sm font-bold text-stone-800"
+    }, "Quidditch-Pokal"), /*#__PURE__*/React.createElement("p", {
+      className: "text-xs text-stone-500"
+    }, "Finalkarte \u2726 selten"), /*#__PURE__*/React.createElement("div", {
+      className: "mt-2 border-t border-stone-300 pt-1.5"
+    }, /*#__PURE__*/React.createElement("p", {
+      className: "text-sm font-black text-yellow-700"
+    }, "Schnatz gefangen \u2726")))), /*#__PURE__*/React.createElement("button", {
       onClick: () => setView("map"),
       className: "mt-5 w-full rounded-xl bg-yellow-500 py-3 font-bold text-stone-900"
     }, "Zur\xFCck zu den R\xE4tseln"), /*#__PURE__*/React.createElement("button", {
@@ -1275,6 +1696,14 @@ function Raetselschule() {
   }
 
   /* ============================ URKUNDE ============================ */
+  if (view === "finale") {
+    return /*#__PURE__*/React.createElement(QuidditchFinale, {
+      voltGesamt: voltGesamt,
+      tonAn: tonAn,
+      onGewonnen: () => setPokal(true),
+      onZurueck: () => setView("map")
+    });
+  }
   if (view === "urkunde") {
     return /*#__PURE__*/React.createElement("div", {
       className: "min-h-screen bg-gradient-to-b from-indigo-950 to-purple-950 p-5"
@@ -1290,13 +1719,18 @@ function Raetselschule() {
       className: "mt-4 font-serif text-4xl font-black text-red-800"
     }, "Florentina"), /*#__PURE__*/React.createElement("p", {
       className: "mt-4 font-serif text-lg text-stone-700"
-    }, "hat alle ", AUFGABEN.length, " R\xE4tsel von Hogwarts gel\xF6st, ", mut, " Mal tapfer einen Zauberspruch benutzt und dabei bewiesen: Sie liest genau, denkt in Schritten und gibt nicht auf."), /*#__PURE__*/React.createElement("p", {
+    }, "hat alle ", AUFGABEN.length, " R\xE4tsel von Hogwarts gel\xF6st, ", mut, " Mal tapfer einen Zauberspruch benutzt und dabei bewiesen: Sie liest genau, denkt in Schritten und gibt nicht auf."), pokal && /*#__PURE__*/React.createElement("p", {
+      className: "mt-4 font-serif text-lg font-bold text-red-800"
+    }, "Und im Quidditch-Finale hat sie den Goldenen Schnatz gefangen. \uD83C\uDFC6"), /*#__PURE__*/React.createElement("p", {
       className: "mt-4 text-3xl"
     }, "\uD83E\uDD81 \u26A1 \uD83E\uDE84"), /*#__PURE__*/React.createElement("p", {
       className: "mt-2 font-serif italic text-stone-600"
-    }, "Prof. McGonagall \xA0\xB7\xA0 Pikachu"), /*#__PURE__*/React.createElement("button", {
+    }, "Prof. McGonagall \xA0\xB7\xA0 Pikachu"), finaleOffen && !pokal && /*#__PURE__*/React.createElement("button", {
+      onClick: () => setView("finale"),
+      className: "mt-6 w-full rounded-xl border-2 border-yellow-500 bg-red-700 py-3 text-lg font-black text-yellow-200"
+    }, "\uD83C\uDFC6 Das Quidditch-Finale wartet noch!"), /*#__PURE__*/React.createElement("button", {
       onClick: () => setView("album"),
-      className: "mt-6 w-full rounded-xl bg-red-700 py-3 font-bold text-yellow-200"
+      className: "mt-3 w-full rounded-xl bg-red-700 py-3 font-bold text-yellow-200"
     }, "Kartenalbum ansehen")));
   }
 
