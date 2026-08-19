@@ -497,7 +497,10 @@ function neueRechnung() {
     return { text: a + " + " + b, loesung: a + b };
   }
   const gross = 45 + Math.floor(Math.random() * 51);           // 45..95
-  const klein = 8 + Math.floor(Math.random() * 40);            // 8..47
+  /* Der kleinere Wert wird so begrenzt, dass das Ergebnis nie unter 10 faellt —
+     ohne diese Grenze konnte 45 − 47 herauskommen. */
+  const maxKlein = Math.min(47, gross - 10);
+  const klein = 8 + Math.floor(Math.random() * (maxKlein - 7));
   return { text: gross + " − " + klein, loesung: gross - klein };
 }
 
