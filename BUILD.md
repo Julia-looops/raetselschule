@@ -1,10 +1,20 @@
-# Rätselschule — wie man das Spiel ändert
+# Rätselschule — wie man die Spiele ändert
 
-Die ausgelieferte `index.html` ist **erzeugt**, nicht handgeschrieben. Sie enthält
-React, Tailwind und den vorkompilierten Spielcode eingebettet, damit die Seite
-ohne fremde Server und offline läuft. Deshalb gilt:
+Es gibt zwei Spiele:
 
-> **Niemals `index.html` direkt bearbeiten.** Änderungen gehen in `src/game.jsx`.
+| Seite | Spiel | Quelle |
+|---|---|---|
+| `index.html` | **Rätselschule** — Textaufgaben, Hogwarts, Quidditch-Finale | `src/game.jsx` |
+| `arena.html` | **Zahlodex** — 1×1 und Plus/Minus bis 20 als Sammelspiel | `src/arena.jsx` |
+
+Die Idee hinter dem Zahlodex steht in `ZAHLODEX.md`.
+
+Beide ausgelieferten HTML-Dateien sind **erzeugt**, nicht handgeschrieben. Sie
+enthalten React, Tailwind und den vorkompilierten Spielcode eingebettet, damit
+die Seiten ohne fremde Server und offline laufen. Deshalb gilt:
+
+> **Niemals `index.html` oder `arena.html` direkt bearbeiten.** Änderungen gehen
+> in `src/game.jsx` bzw. `src/arena.jsx`.
 
 ## Einmalig einrichten
 
@@ -14,15 +24,15 @@ npm install
 
 ## Ändern und neu bauen
 
-1. `src/game.jsx` bearbeiten — das ist der lesbare Quellcode des Spiels
-   (Rätsel, Kapitel, Volt-Regeln, Quidditch-Finale).
-2. Bauen:
+1. `src/game.jsx` oder `src/arena.jsx` bearbeiten — das ist der lesbare
+   Quellcode der Spiele.
+2. Bauen (baut immer beide Seiten):
 
 ```bash
 npm run build
 ```
 
-Das schreibt `index.html` neu.
+Das schreibt `index.html` und `arena.html` neu.
 
 3. Vor dem Hochladen lokal ansehen:
 
@@ -47,12 +57,14 @@ GitHub Pages baut danach automatisch, das dauert rund eine Minute.
 
 | Datei | Inhalt |
 |---|---|
-| `src/game.jsx` | Der Spielcode. Hier wird gearbeitet. |
+| `src/game.jsx` | Rätselschule. Hier wird gearbeitet. |
+| `src/arena.jsx` | Zahlodex. Hier wird gearbeitet. |
 | `src/vorlage.html` | Das HTML-Gerüst (Kopf, Styles, Speicher-Shim). Ändert man selten. |
-| `tools/build.mjs` | Der Bauvorgang: Bibliotheken holen, JSX kompilieren, zusammensetzen. |
-| `index.html` | **Erzeugt.** Nicht bearbeiten. |
-| `sw.js` | Service Worker für den Offline-Betrieb. |
+| `tools/build.mjs` | Der Bauvorgang: Bibliotheken holen, JSX kompilieren, zusammensetzen. Welche Seiten gebaut werden, steht in `SEITEN`. |
+| `index.html`, `arena.html` | **Erzeugt.** Nicht bearbeiten. |
+| `sw.js` | Service Worker für den Offline-Betrieb. Neue Seiten dort eintragen und `CACHE` hochzählen. |
 | `robots.txt` | Hält Suchmaschinen fern. |
+| `ZAHLODEX.md` | Die Idee hinter dem zweiten Spiel. |
 
 Die Bibliotheken landen beim ersten Bauen in `tools/.cache/` und werden danach
 von dort genommen — ab dann baut es auch ohne Internet.
@@ -70,6 +82,21 @@ von dort genommen — ab dann baut es auch ohne Internet.
 - **Ein neues Rätsel** hinzufügen: einen Eintrag im Array `AUFGABEN` ergänzen
   (fortlaufende `id`, `kap` für das Kapitel). Album, Karte und Urkunde zählen
   automatisch mit.
+
+## Wichtige Details im Zahlodex (`src/arena.jsx`)
+
+- **Spielstand**: eigener Schlüssel `florentina-zahlodex`, völlig getrennt vom
+  Fortschritt der Rätselschule. Format: `{ aktiv, trainer: { Name: {...} } }` —
+  jedes Kind hat eine eigene Trainerkarte.
+- **Die Wesen** stehen in `WESEN_LISTE` (Nummer, Name, Bild). Nummer = Ergebnis.
+  Namen und Bilder darf man frei ändern; Typ, Seltenheit und Entwicklung werden
+  daraus **gerechnet** und passen sich von selbst an.
+- **Karteikasten**: `FANG_TREFFER` (dreimal richtig = gefangen) und `ABSTAND`
+  (Wiedersehen nach 10 Min, 1 Tag, 3 Tagen, 1 Woche, 3 Wochen, in Minuten).
+- **Lernreihenfolge**: `ORDNUNG` — was zuerst drankommt. `REVIER` legt fest, wie
+  viele wilde Wesen gleichzeitig gejagt werden (Vorgabe 3).
+- **Tempo**: `BLITZ_MS` (unter 4 Sekunden = Blitz), `KAMPF_ZEIT` und
+  `KAMPF_FRAGEN` für die Arenen.
 
 ## Zurück zur Ursprungsfassung
 

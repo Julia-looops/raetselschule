@@ -1189,6 +1189,23 @@ function Raetselschule() {
               Alle Kapitel ansehen
             </button>
           )}
+
+          {/* Der zweite Teil: Kopfrechnen statt Textraetsel */}
+          <a
+            href="./arena.html"
+            className="mt-6 block rounded-2xl border-2 border-emerald-400/50 bg-emerald-900/50 p-4 text-left"
+          >
+            <p className="text-center text-xs font-bold uppercase tracking-widest text-emerald-300">
+              Neu · zweites Spiel
+            </p>
+            <p className="mt-1 text-center text-lg font-black text-emerald-200">
+              🐉 Zahlodex — die Rechen-Arena
+            </p>
+            <p className="mt-1 text-center text-sm text-emerald-100/80">
+              Einmaleins und Plus/Minus bis 20. Jedes Ergebnis ist ein Wesen —
+              wer rechnet, fängt es.
+            </p>
+          </a>
         </div>
       </div>
     );

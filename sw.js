@@ -1,12 +1,12 @@
 // Raetselschule – Offline-Unterstuetzung.
 // Strategie: Netz zuerst, Cache als Rueckfall. Online gibt es damit immer die
 // aktuelle Fassung, offline die zuletzt geladene.
-const CACHE = "raetselschule-v1";
+const CACHE = "raetselschule-v2";
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
     caches.open(CACHE)
-      .then((c) => c.addAll(["./", "./index.html"]))
+      .then((c) => c.addAll(["./", "./index.html", "./arena.html"]))
       .then(() => self.skipWaiting())
   );
 });

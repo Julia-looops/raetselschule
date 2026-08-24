@@ -1,15 +1,19 @@
 /* ============================================================
-   Baut aus src/game.jsx die fertige, eigenstaendige index.html.
+   Baut aus den Quelldateien in src/ die fertigen, eigenstaendigen
+   HTML-Seiten.
 
    Aufruf im Projektordner:   node tools/build.mjs
 
    Was passiert:
    1. React, ReactDOM und Tailwind werden geladen (einmalig in
       tools/.cache zwischengespeichert, danach offline nutzbar).
-   2. src/game.jsx wird mit Babel zu normalem JavaScript kompiliert,
-      damit im Browser kein Babel mehr nötig ist.
-   3. Alles wird in die Vorlage src/vorlage.html eingesetzt und als
-      index.html geschrieben.
+   2. Jede Quelldatei wird mit Babel zu normalem JavaScript
+      kompiliert, damit im Browser kein Babel mehr noetig ist.
+   3. Alles wird in die Vorlage src/vorlage.html eingesetzt.
+
+   Gebaut werden:
+     src/game.jsx  -> index.html   (Raetselschule, Textraetsel)
+     src/arena.jsx -> arena.html   (Zahlodex, 1x1 und Plus/Minus)
 
    Einmalig vorher:   npm install
    ============================================================ */
@@ -42,8 +46,13 @@ async function holeLibs() {
   }
 }
 
-function kompiliere() {
-  const src = readFileSync(join(wurzel, "src", "game.jsx"), "utf8");
+const SEITEN = [
+  { quelle: "game.jsx", ziel: "index.html", titel: "Florentinas Raetselschule", kurz: "Raetselschule" },
+  { quelle: "arena.jsx", ziel: "arena.html", titel: "Zahlodex - Die Rechen-Arena", kurz: "Zahlodex" },
+];
+
+function kompiliere(datei) {
+  const src = readFileSync(join(wurzel, "src", datei), "utf8");
   const out = transformSync(src, {
     presets: [["@babel/preset-react", { runtime: "classic" }]],
     compact: false,
@@ -54,7 +63,7 @@ function kompiliere() {
   return out.code;
 }
 
-function setzeZusammen(spielCode) {
+function setzeZusammen(spielCode, seite) {
   const vorlage = readFileSync(join(wurzel, "src", "vorlage.html"), "utf8").split("\n");
 
   /* Die Vorlage ist die urspruengliche CDN-Fassung. Wir pruefen ihre
@@ -71,9 +80,13 @@ function setzeZusammen(spielCode) {
   const lib = (n) => readFileSync(join(cache, n), "utf8");
   const skript = (code) => "<script>\n" + code.trimEnd() + "\n</script>";
 
+  const kopf = teil(1, 9)
+    .replace(/<title>[^<]*<\/title>/, `<title>${seite.titel}</title>`)
+    .replace(/(name="apple-mobile-web-app-title" content=")[^"]*/, `$1${seite.kurz}`);
+
   return (
     [
-      teil(1, 9), // DOCTYPE bis <title>
+      kopf, // DOCTYPE bis <title>
       '<meta name="robots" content="noindex, nofollow">',
       skript(lib("react.js")),
       skript(lib("react-dom.js")),
@@ -94,9 +107,10 @@ function setzeZusammen(spielCode) {
 
 console.log("Bibliotheken:");
 await holeLibs();
-console.log("Kompiliere src/game.jsx ...");
-const code = kompiliere();
-console.log("Setze index.html zusammen ...");
-const html = setzeZusammen(code);
-writeFileSync(join(wurzel, "index.html"), html, "utf8");
-console.log(`\nFertig: index.html, ${html.length} Bytes`);
+for (const seite of SEITEN) {
+  console.log(`Kompiliere src/${seite.quelle} ...`);
+  const code = kompiliere(seite.quelle);
+  const html = setzeZusammen(code, seite);
+  writeFileSync(join(wurzel, seite.ziel), html, "utf8");
+  console.log(`  fertig: ${seite.ziel}, ${html.length} Bytes`);
+}
