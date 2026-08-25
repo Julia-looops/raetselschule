@@ -227,14 +227,15 @@ const NR_WIESE = ALLE_NR.filter((n) => n <= 20);
 const ORDNUNG = {
   wiese: [10, 5, 2, 4, 6, 8, 3, 7, 9, 1, 20, 11, 12, 15, 13, 14, 16, 17, 18, 19],
   malfeld: [
-    /* 1 — die tragenden Reihen */
-    10, 20, 30, 40, 50, 60, 70, 80, 90, 100,
-    2, 4, 6, 8, 12, 14, 16, 18,
-    5, 15, 25, 35, 45,
-    /* 2 — Spiegelwesen und kleine Reihen */
-    1, 9, 36, 3, 7, 21, 24, 27, 28, 32,
+    /* 1 — die tragenden Reihen (2er, 5er, 10er), bewusst durchmischt:
+       laegen sie hintereinander, koennte man die Antwort raten, ohne
+       die Aufgabe zu lesen. */
+    10, 4, 20, 5, 2, 50, 30, 8, 15, 40,
+    6, 25, 60, 12, 35, 70, 14, 45, 80, 16, 90, 18, 100,
+    /* 2 — Spiegelwesen, 3er und 4er */
+    1, 9, 3, 24, 36, 7, 21, 32, 27, 28,
     /* 3 — die schweren Kerne */
-    49, 64, 81, 42, 48, 54, 56, 63, 72,
+    49, 64, 42, 81, 56, 48, 63, 54, 72,
   ],
 };
 
@@ -266,7 +267,7 @@ const ABSTAND = [0, 10, 60 * 24, 60 * 24 * 3, 60 * 24 * 7, 60 * 24 * 21]; // Min
 const FANG_TREFFER = 3;   // so oft richtig, dann ist es gefangen
 const BLITZ_MS = 4000;    // schneller als das = blitzschnell
 const RUNDE_LAENGE = 10;
-const REVIER = 3;         // so viele wilde Wesen gleichzeitig
+const REVIER = 4;         // so viele wilde Wesen gleichzeitig
 
 function faelligIn(stufe) {
   return Date.now() + ABSTAND[Math.min(stufe, ABSTAND.length - 1)] * 60000;
@@ -514,11 +515,11 @@ function beeren(fakt) {
    Florentina und ihre Freunde dasselbe Gerät benutzen können.
    ============================================================ */
 const SPEICHER = "florentina-zahlodex";
-const TRAINER_BILDER = ["🧢", "🎒", "🪄", "🛼", "🦄", "🚀", "🐾", "🍀"];
+const TRAINER_BILDER = ["🐾", "🧢", "🎒", "🪄", "🛼", "🦄", "🚀", "🍀"];
 
 function leererTrainer(bild) {
   return {
-    bild: bild || "🧢",
+    bild: bild || "🐾",
     wesen: {},
     orden: [],
     welt: "wiese",
@@ -583,26 +584,79 @@ function baueRunde(t, welt, laenge) {
     return f && f.s >= 1;
   });
 
-  const liste = [];
-  let iF = 0;
-  let iR = 0;
-  for (let i = 0; i < laenge; i++) {
-    const nochFaellig = iF < faellig.length;
-    /* abwechselnd wiedersehen und fangen, damit beides vorkommt */
-    if (nochFaellig && (i % 2 === 0 || revier.length === 0)) {
-      liste.push(faellig[iF++]);
-    } else if (revier.length) {
-      liste.push(revier[iR++ % revier.length]);
-    } else if (nochFaellig) {
-      liste.push(faellig[iF++]);
-    } else if (gefangen.length) {
-      /* alles gefangen und nichts fällig: freies Üben */
-      liste.push(gefangen[Math.floor(Math.random() * gefangen.length)]);
-    } else {
-      liste.push(WELT[welt].nrs[0]);
-    }
+  const roh = [];
+
+  /* Wiedersehen: höchstens die Hälfte der Runde */
+  const wieviel = Math.min(faellig.length, Math.ceil(laenge / 2));
+  for (let i = 0; i < wieviel; i++) roh.push(faellig[i]);
+
+  /* Fangen: die wilden Wesen reihum auffüllen, aber nur bis drei
+     Viertel der Runde — der Rest wird aufgefrischt. */
+  const platzFuerWild = Math.max(0, Math.floor(laenge * 0.75) - roh.length);
+  for (let i = 0; i < platzFuerWild && revier.length; i++) {
+    roh.push(revier[i % revier.length]);
   }
-  return liste;
+
+  /* Auffrischen: schon gefangene Wesen, die noch nicht dran wären.
+     Sie erweitern den Antwortraum — sonst kommen in einer Runde nur
+     drei verschiedene Ergebnisse vor und man kann sie erraten. */
+  const auffrischbar = gefangen.filter((nr) => !faellig.includes(nr));
+  while (roh.length < laenge && auffrischbar.length) {
+    const i = Math.floor(Math.random() * auffrischbar.length);
+    roh.push(auffrischbar.splice(i, 1)[0]);
+  }
+
+  /* Notfalls mit dem auffüllen, was da ist */
+  while (roh.length < laenge) {
+    const topf = revier.length ? revier : gefangen.length ? gefangen : WELT[welt].nrs;
+    roh.push(topf[Math.floor(Math.random() * topf.length)]);
+  }
+
+  return mischen(roh.slice(0, laenge));
+}
+
+/* Mischen, ohne dasselbe Wesen zweimal hintereinander — sonst tippt
+   man die vorige Antwort einfach nochmal ein.
+
+   Dafür reicht kein einfaches Schütteln: wer oft vorkommt, muss früh
+   drankommen, sonst bleiben am Ende nur noch seine Kopien übrig. Also
+   immer aus den häufigsten wählen, die gerade nicht verboten sind —
+   und unter denen zufällig, damit keine feste Abfolge entsteht. */
+function mischen(liste) {
+  const zaehler = new Map();
+  liste.forEach((x) => zaehler.set(x, (zaehler.get(x) || 0) + 1));
+  const raus = [];
+  while (raus.length < liste.length) {
+    const vorige = raus.length ? raus[raus.length - 1] : null;
+    let kandidaten = [...zaehler.keys()].filter((x) => zaehler.get(x) > 0 && x !== vorige);
+    if (kandidaten.length === 0) {
+      /* nur noch Kopien des vorigen übrig — dann muss es eben sein */
+      kandidaten = [...zaehler.keys()].filter((x) => zaehler.get(x) > 0);
+    }
+    /* streng die häufigsten nehmen — mit Nachsicht ginge die Rechnung
+       am Ende nicht mehr auf und es käme doch zu Dopplungen */
+    const hoechste = Math.max(...kandidaten.map((x) => zaehler.get(x)));
+    const beste = kandidaten.filter((x) => zaehler.get(x) === hoechste);
+    const gewaehlt = beste[Math.floor(Math.random() * beste.length)];
+    zaehler.set(gewaehlt, zaehler.get(gewaehlt) - 1);
+    raus.push(gewaehlt);
+  }
+  return raus;
+}
+
+/* Welche Rechnung ruft dieses Wesen als nächstes? Nicht reihum,
+   sondern zufällig — nur nie zweimal dieselbe hintereinander.
+
+   Rechnungen mit 1 (10 · 1, 4 · 1) werden übersprungen, solange es
+   genug andere gibt: sie sind zu leicht, um etwas zu üben. */
+function waehleFakt(t, welt, nr) {
+  const alle = fakten(welt, nr);
+  const ohneEins = alle.filter((x) => x.a !== 1 && x.b !== 1);
+  const grund = ohneEins.length >= 2 ? ohneEins : alle;
+  const f = holF(t, welt, nr);
+  const ohneLetzte = f && f.l ? grund.filter((x) => x.id !== f.l) : grund;
+  const topf = ohneLetzte.length ? ohneLetzte : grund;
+  return topf[Math.floor(Math.random() * topf.length)];
 }
 
 
@@ -811,16 +865,19 @@ function Streifzug({ start, welt, speichern, onEnde }) {
   }, [t]);
 
   const nr = liste[Math.min(pos, liste.length - 1)];
-  const f = holF(t, welt, nr) || { h: 0, s: 0, f: 0, i: 0, x: 0 };
-  const alleFakten = fakten(welt, nr);
-  const fakt = alleFakten[(f.i || 0) % alleFakten.length];
+  const f = holF(t, welt, nr) || { h: 0, s: 0, f: 0, x: 0 };
   const wild = f.s === 0;
+  /* Die Rechnung wird einmal je Frage gezogen und festgehalten —
+     sonst würde sie sich bei jedem Neuzeichnen ändern. */
+  const [fakt, setFakt] = useState(() => waehleFakt(start, welt, liste[0]));
   const tipps = beeren(fakt);
 
   useEffect(() => {
     beginn.current = Date.now();
     setEingabe("");
     setHilfe(-1);
+    /* nach einem Fehler dieselbe Rechnung nochmal, sonst eine neue */
+    if (!wiederholung) setFakt(waehleFakt(t, welt, liste[Math.min(pos, liste.length - 1)]));
   }, [pos, wiederholung]);
 
   /* Tastatur mitbenutzen, falls eine da ist */
@@ -869,7 +926,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
     if (!richtig) {
       Ton.nochmal();
       setBilanz((b) => ({ ...b, falsch: b.falsch + 1 }));
-      const n = { ...f, x: (f.x || 0) + 1 };
+      const n = { ...f, x: (f.x || 0) + 1, l: fakt.id };
       if (n.s === 0) n.h = Math.max(0, (n.h || 0) - 1);
       else { n.s = Math.max(1, n.s - 1); n.f = faelligIn(1); }
       const neu = mitF(t, welt, nr, n);
@@ -883,7 +940,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
     if (blitz) Ton.blitz(); else Ton.richtig();
 
     let wurdeGefangen = false;
-    const n = { ...f, i: (f.i || 0) + 1 };
+    const n = { ...f, l: fakt.id };
     if (blitz) n.blitz = true;
     if (wiederholung) {
       /* Verbesserung nach einem Fehler: zählt nicht als Treffer */
@@ -894,10 +951,14 @@ function Streifzug({ start, welt, speichern, onEnde }) {
         n.f = faelligIn(1);
         wurdeGefangen = true;
       }
-    } else {
+    } else if (n.f <= Date.now()) {
+      /* echtes Wiedersehen: die Freundschaft wächst */
       if (!mitHilfe) n.s = Math.min(5, n.s + 1);
       n.f = faelligIn(n.s);
     }
+    /* Auffrischung vor der Zeit lässt den Abstand unverändert —
+       sonst würde häufiges Üben die Wiedersehen immer weiter
+       hinausschieben. */
     const neu = mitF(t, welt, nr, n);
     setT({
       ...neu,
@@ -1680,6 +1741,7 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
   const [eingabe, setEingabe] = useState("");
   const [phase, setPhase] = useState("frage");
   const [letzte, setLetzte] = useState(null);
+  const [wurf] = useState(() => Math.floor(Math.random() * 97));
   const beginn = useRef(Date.now());
   const dran = zug % 2;
   const runde = Math.floor(zug / 2);
@@ -1734,7 +1796,9 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
 
   const nr = spieler.liste[runde % spieler.liste.length];
   const fk = fakten(spieler.welt, nr);
-  const fakt = fk[(runde + dran) % fk.length];
+  /* wurf verschiebt die Auswahl je Duell, damit nicht immer dieselben
+     Rechnungen kommen — pro Zug bleibt sie aber stabil */
+  const fakt = fk[(runde * 3 + dran * 2 + wurf) % fk.length];
 
   function pruefen() {
     if (eingabe === "" || phase !== "frage") return;
@@ -1798,12 +1862,18 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
 /* ============================================================
    TRAINERKARTE UND HAUPTMENÜ
    ============================================================ */
-function Trainerkarte({ name, t }) {
+function Trainerkarte({ name, t, onBild }) {
   const gefangen = anzahlGefangen(t);
   return (
     <div className="rounded-3xl border-2 border-amber-400/60 bg-gradient-to-br from-emerald-800 to-emerald-900 p-4">
       <div className="flex items-center gap-3">
-        <div className="text-5xl">{t.bild}</div>
+        <button
+          onClick={onBild}
+          title="Bild ändern"
+          className="kein-blau rounded-2xl px-1 text-5xl transition active:scale-95"
+        >
+          {t.bild}
+        </button>
         <div className="min-w-0 flex-1">
           <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
             Trainerkarte
@@ -1959,6 +2029,7 @@ function App() {
   const [welt, setWelt] = useState("wiese");
   const [arena, setArena] = useState(null);
   const [tonAn, setTonAn] = useState(true);
+  const [bildWaehlen, setBildWaehlen] = useState(false);
   const [geladen, setGeladen] = useState(false);
 
   useEffect(() => {
@@ -1971,9 +2042,14 @@ function App() {
         /* erster Start */
       }
       if (!s.trainer || Object.keys(s.trainer).length === 0) {
-        s = { version: 1, aktiv: "Florentina", trainer: { Florentina: leererTrainer("🧢") } };
+        s = { version: 1, aktiv: "Florentina", trainer: { Florentina: leererTrainer("🐾") } };
       }
       if (!s.aktiv || !s.trainer[s.aktiv]) s.aktiv = Object.keys(s.trainer)[0];
+      /* Florentina hatte die Kappe nur, weil das die alte Vorgabe war.
+         Wer sich selbst ein Bild ausgesucht hat, behält es. */
+      if (s.trainer.Florentina && s.trainer.Florentina.bild === "🧢") {
+        s.trainer.Florentina = { ...s.trainer.Florentina, bild: "🐾" };
+      }
       setStand(s);
       setWelt(s.trainer[s.aktiv].welt || "wiese");
       setGeladen(true);
@@ -2030,7 +2106,7 @@ function App() {
               const rest = { ...s.trainer };
               delete rest[n];
               const namen = Object.keys(rest);
-              if (namen.length === 0) return { ...s, aktiv: "Florentina", trainer: { Florentina: leererTrainer("🧢") } };
+              if (namen.length === 0) return { ...s, aktiv: "Florentina", trainer: { Florentina: leererTrainer("🐾") } };
               return { ...s, trainer: rest, aktiv: s.aktiv === n ? namen[0] : s.aktiv };
             })
           }
@@ -2141,8 +2217,30 @@ function App() {
         </p>
 
         <div className="mt-4">
-          <Trainerkarte name={stand.aktiv} t={t} />
+          <Trainerkarte name={stand.aktiv} t={t} onBild={() => setBildWaehlen(!bildWaehlen)} />
         </div>
+
+        {bildWaehlen && (
+          <div className="a-rutschen mt-2 rounded-2xl bg-emerald-900/60 p-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+              Bild für {stand.aktiv}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {TRAINER_BILDER.map((b) => (
+                <button
+                  key={b}
+                  onClick={() => { speichereTrainer({ ...t, bild: b }); setBildWaehlen(false); }}
+                  className={
+                    "kein-blau rounded-xl px-2 py-1 text-3xl " +
+                    (t.bild === b ? "bg-amber-400/30 ring-2 ring-amber-400" : "bg-emerald-800")
+                  }
+                >
+                  {b}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {dranGesamt > 0 && (
           <p className="mt-3 rounded-2xl bg-amber-400/15 p-3 text-center text-sm font-bold text-amber-200 a-funkeln">
