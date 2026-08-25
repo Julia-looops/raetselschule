@@ -96,8 +96,12 @@ von dort genommen — ab dann baut es auch ohne Internet.
 - **Lernreihenfolge**: `ORDNUNG` — was zuerst drankommt. `REVIER` legt fest, wie
   viele wilde Wesen gleichzeitig gejagt werden (Vorgabe 3).
 - **Tempo**: `BLITZ_MS` (unter 4 Sekunden = Blitz), `KAMPF_ZEIT` und
-  `KAMPF_FRAGEN` für die Arenen, `BLITZ_ZEIT` / `BLITZ_FRAGEN` /
-  `BLITZ_AB_WESEN` für die Blitzrunde.
+  `KAMPF_FRAGEN` für die Arenen, `BLITZ_FRAGEN` / `BLITZ_AB_WESEN` /
+  `LUFT_HOLEN` für die Blitzrunde. Wie viel Zeit eine einzelne Rechnung dort
+  bekommt, rechnet `blitzZeit` aus (4, 6 oder 8 Sekunden je nach Schwierigkeit).
+- **Tricks**: `TRICK_KOSTEN` (⚡ je Trick), `MAX_TRICKS` pro Wesen, Namen und
+  Bilder in `TRICK_REIHE`. In der Arena schlägt ein Wesen mit Trick doppelt so
+  hart; `LEITER_LEBEN` sagt, wie viel der Arenaleiter aushält.
 - **Umkehraufgaben** ("6 · ? = 42"): `UMKEHR_ANTEIL` legt fest, wie oft sie
   vorkommen, `UMKEHR_AB_STUFE`, ab wann. Gefragt ist immer die zweite Zahl.
 - **Abwechslung**: Die Runde wird über `mischen` so gemischt, dass kein Wesen

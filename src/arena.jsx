@@ -289,9 +289,103 @@ const FANG_TREFFER = 3;   // so oft richtig, dann ist es gefangen
 const BLITZ_MS = 4000;    // schneller als das = blitzschnell
 const RUNDE_LAENGE = 10;
 const BLITZ_FRAGEN = 10;      // Länge einer Blitzrunde
-const BLITZ_ZEIT = 6;         // Sekunden pro Rechnung — davon geht
-                              // rund eine fürs Tippen drauf
 const BLITZ_AB_WESEN = 6;     // so viele gefangene Wesen braucht es dafür
+const LUFT_HOLEN = 2;         // so oft darf die Uhr pro Runde anhalten
+const TRICK_KOSTEN = 5;       // ⚡ für einen Trick
+const MAX_TRICKS = 3;         // so viele kann ein Wesen lernen
+
+/* ============================================================
+   ZEIT IN DER BLITZRUNDE
+   Eine feste Zeit für alle wäre ungerecht: 3 · 2 und 7 · 8 sind
+   nicht gleich schwer. Das Spiel weiß aber, welche Zahlen schwer
+   sind — daher kommt auch die Seltenheit der Wesen. Also bekommt
+   jede Rechnung die Zeit, die sie verdient. Rund eine Sekunde davon
+   geht immer fürs Tippen drauf.
+   ============================================================ */
+function schwereZahl(x) {
+  return x >= 6 && x <= 9; // die 10er sind leicht, die 6er bis 9er nicht
+}
+
+function blitzZeit(fakt) {
+  if (fakt.op === "·") {
+    if (schwereZahl(fakt.a) && schwereZahl(fakt.b)) return 8;
+    if (schwereZahl(fakt.a) || schwereZahl(fakt.b)) return 6;
+    return 4;
+  }
+  /* Plus und Minus: der Zehnerübergang ist das Schwere daran */
+  const uebergang =
+    fakt.op === "+" ? fakt.a < 10 && fakt.a + fakt.b > 10 : fakt.a > 10 && fakt.a - fakt.b < 10;
+  return uebergang ? 6 : 4;
+}
+
+/* ============================================================
+   TRICKS
+   Florentinas Idee: wer blitzschnell rechnet, kann seinen Wesen
+   etwas beibringen. Jede blitzschnelle Antwort gibt einen ⚡, fünf
+   davon sind ein Trick — und welches Wesen ihn lernt, entscheidet
+   sie selbst. Das ist der Unterschied zwischen "freigeschaltet"
+   und "beigebracht".
+
+   Welcher Trick, sagt der Typ des Wesens: ein 8er-Wesen lernt den
+   Achtsturm. Wesen ohne Reihe (11, 13, 17, 19) lernen Wiesentricks.
+   Gebraucht werden die Tricks in der Arena.
+   ============================================================ */
+const TRICK_REIHE = {
+  2: { name: "Doppelschlag", bild: "⚡" },
+  3: { name: "Dreizack", bild: "🔱" },
+  4: { name: "Vierwirbel", bild: "🌀" },
+  5: { name: "Handstreich", bild: "✋" },
+  6: { name: "Sechserwelle", bild: "🌊" },
+  7: { name: "Glücksklaue", bild: "🍀" },
+  8: { name: "Achtsturm", bild: "🌪️" },
+  9: { name: "Neunfeuer", bild: "🔥" },
+  10: { name: "Zehnerdonner", bild: "🌩️" },
+};
+
+/* für Wesen ohne Reihe (11, 13, 17, 19) */
+const TRICK_WIESE = [
+  { name: "Brückenschlag", bild: "🌉" },
+  { name: "Zehnerblick", bild: "👁️" },
+  { name: "Zwanzigersprung", bild: "🦘" },
+];
+
+/* zum Auffüllen, wenn ein Wesen weniger als drei Reihen hat */
+const TRICK_ALLGEMEIN = [
+  { name: "Doppelknall", bild: "💥" },
+  { name: "Sternenhieb", bild: "💫" },
+  { name: "Schutzschild", bild: "🛡️" },
+];
+
+/* Welche Tricks kann dieses Wesen lernen, in welcher Reihenfolge?
+   Die größte Reihe zuerst — die ist die stolzeste. */
+function trickListe(nr) {
+  const reihen = typen(nr).slice().sort((a, b) => b - a);
+  const aus = reihen.map((r) => ({ ...TRICK_REIHE[r], reihe: r }));
+  const rest = reihen.length === 0 ? TRICK_WIESE : TRICK_ALLGEMEIN;
+  rest.forEach((tr) => aus.push({ ...tr, reihe: 0 }));
+  return aus.slice(0, MAX_TRICKS);
+}
+
+function trickZahl(t, nr) {
+  const e = t.wesen[nr];
+  return (e && e.tr) || 0;
+}
+
+function gelernteTricks(t, nr) {
+  return trickListe(nr).slice(0, trickZahl(t, nr));
+}
+
+function kannNochLernen(t, nr) {
+  return trickZahl(t, nr) < trickListe(nr).length;
+}
+
+function trickPunkte(t) {
+  return t.punkte || 0;
+}
+
+function tricksGesamt(t) {
+  return Object.values(t.wesen).reduce((s2, e) => s2 + ((e && e.tr) || 0), 0);
+}
 const REVIER = 4;         // so viele wilde Wesen gleichzeitig
 
 function faelligIn(stufe) {
@@ -598,6 +692,7 @@ function leererTrainer(bild) {
     wesen: {},
     orden: [],
     welt: "wiese",
+    punkte: 0,
     stat: { richtig: 0, falsch: 0, blitze: 0, runden: 0, duelle: 0 },
   };
 }
@@ -852,10 +947,32 @@ function Rechnungen({ liste, mehr }) {
 }
 
 /* Ein Wesen als Sammelkarte */
-function WesenKarte({ nr, gross }) {
+function TrickReihe({ t, nr }) {
+  const kann = gelernteTricks(t, nr);
+  const alle = trickListe(nr);
+  return (
+    <div className="mt-2 flex flex-wrap justify-center gap-1">
+      {alle.map((tr, k) => (
+        <span
+          key={k}
+          className={
+            "rounded-full px-2 py-0.5 text-xs font-bold " +
+            (k < kann.length
+              ? "bg-amber-300 text-emerald-950"
+              : "bg-emerald-200/60 text-emerald-500")
+          }
+        >
+          {k < kann.length ? tr.bild + " " + tr.name : "?"}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function WesenKarte({ nr, gross, t }) {
   const w = WESEN[nr];
   const s = seltenheit(nr);
-  const t = typen(nr);
+  const typenListe = typen(nr);
   return (
     <div
       className={
@@ -877,12 +994,12 @@ function WesenKarte({ nr, gross }) {
         {istSpiegel(nr) && " · Spiegel-Wesen"}
       </p>
       <div className="mt-2 flex flex-wrap justify-center gap-1">
-        {t.length === 0 && (
+        {typenListe.length === 0 && (
           <span className="rounded-full bg-lime-200 px-2 py-0.5 text-xs font-bold text-lime-900">
             Typ Wiese
           </span>
         )}
-        {t.map((r) => (
+        {typenListe.map((r) => (
           <span
             key={r}
             className="rounded-full bg-emerald-200 px-2 py-0.5 text-xs font-bold text-emerald-900"
@@ -891,6 +1008,7 @@ function WesenKarte({ nr, gross }) {
           </span>
         ))}
       </div>
+      {t && <TrickReihe t={t} nr={nr} />}
     </div>
   );
 }
@@ -1158,7 +1276,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
               Gefangen!
             </p>
             <div className="mt-3">
-              <WesenKarte nr={neuGefangen} gross />
+              <WesenKarte nr={neuGefangen} gross t={t} />
             </div>
             <div className="mt-4 rounded-2xl bg-emerald-900/70 p-3 text-left">
               <p className="text-xs font-bold uppercase tracking-widest text-emerald-300">
@@ -1361,28 +1479,41 @@ function Blitzrunde({ start, welt, speichern, onEnde }) {
   });
   const [i, setI] = useState(0);
   const [eingabe, setEingabe] = useState("");
-  const [zeit, setZeit] = useState(BLITZ_ZEIT);
-  const [phase, setPhase] = useState("frage"); // frage | kurz | ende
-  const [letzte, setLetzte] = useState(null);  // "blitz" | "langsam" | "falsch"
-  const [bilanz, setBilanz] = useState({ blitz: 0, langsam: [], falsch: [] });
+  const [zeit, setZeit] = useState(() => blitzZeit(fragen[0].fakt));
+  const [luft, setLuft] = useState(LUFT_HOLEN);
+  const [pause, setPause] = useState(false);
+  const [geschnauft, setGeschnauft] = useState(false);
+  const [phase, setPhase] = useState("frage"); // frage | kurz | ende | lehren
+  const [letzte, setLetzte] = useState(null);  // blitz | gerechnet | langsam | falsch
+  const [bilanz, setBilanz] = useState({ blitz: 0, schnell: [], langsam: [], falsch: [] });
+  const [gelehrt, setGelehrt] = useState([]);
+
+  const dran = fragen[Math.min(i, fragen.length - 1)];
+  const dauer = blitzZeit(dran.fakt);
 
   useEffect(() => {
     speichern(t);
   }, [t]);
 
+  /* neue Frage: Uhr neu stellen */
   useEffect(() => {
-    if (phase !== "frage") return;
-    setZeit(BLITZ_ZEIT);
+    setZeit(dauer);
+    setGeschnauft(false);
+    setPause(false);
+  }, [i]);
+
+  useEffect(() => {
+    if (phase !== "frage" || pause) return;
     const u = setInterval(
       () => setZeit((z) => Math.max(0, Math.round((z - 0.1) * 10) / 10)),
       100
     );
     return () => clearInterval(u);
-  }, [i, phase]);
+  }, [i, phase, pause]);
 
   useEffect(() => {
-    if (phase === "frage" && zeit <= 0) bewerten("langsam");
-  }, [zeit, phase]);
+    if (phase === "frage" && !pause && zeit <= 0) bewerten("langsam");
+  }, [zeit, phase, pause]);
 
   useEffect(() => {
     function taste(e) {
@@ -1398,13 +1529,17 @@ function Blitzrunde({ start, welt, speichern, onEnde }) {
   function bewerten(art) {
     const { nr, fakt } = fragen[i];
     setLetzte(art);
+    setPause(false);
     const f = holF(t, welt, nr) || { h: 0, s: 1, f: 0, x: 0 };
     const n = { ...f, l: fakt.id };
     if (art === "blitz") {
       n.blitz = true;
       Ton.blitz();
+    } else if (art === "gerechnet") {
+      /* mit Luft holen geschafft: richtig, aber kein Blitz */
+      Ton.richtig();
     } else {
-      /* gezögert oder daneben: das Wesen meldet sich gleich wieder */
+      /* gezoegert oder daneben: das Wesen meldet sich gleich wieder */
       n.f = Date.now();
       if (art === "falsch") { n.s = Math.max(1, n.s - 1); n.x = (n.x || 0) + 1; }
       Ton.nochmal();
@@ -1412,6 +1547,7 @@ function Blitzrunde({ start, welt, speichern, onEnde }) {
     const neu = mitF(t, welt, nr, n);
     setT({
       ...neu,
+      punkte: trickPunkte(neu) + (art === "blitz" ? 1 : 0),
       stat: {
         ...neu.stat,
         richtig: neu.stat.richtig + (art === "falsch" ? 0 : 1),
@@ -1421,6 +1557,8 @@ function Blitzrunde({ start, welt, speichern, onEnde }) {
     });
     setBilanz((b) => ({
       blitz: b.blitz + (art === "blitz" ? 1 : 0),
+      /* nur wer hier blitzschnell war, darf nachher etwas lernen */
+      schnell: art === "blitz" ? [...new Set([...b.schnell, nr])] : b.schnell,
       langsam: art === "langsam" ? [...b.langsam, nr] : b.langsam,
       falsch: art === "falsch" ? [...b.falsch, nr] : b.falsch,
     }));
@@ -1438,11 +1576,112 @@ function Blitzrunde({ start, welt, speichern, onEnde }) {
 
   function pruefen() {
     if (eingabe === "" || phase !== "frage") return;
-    bewerten(Number(eingabe) === fragen[i].fakt.antwort ? "blitz" : "falsch");
+    const richtig = Number(eingabe) === fragen[i].fakt.antwort;
+    bewerten(richtig ? (geschnauft ? "gerechnet" : "blitz") : "falsch");
   }
 
+  function luftHolen() {
+    if (luft <= 0 || pause || phase !== "frage") return;
+    setLuft(luft - 1);
+    setGeschnauft(true);
+    setPause(true);
+    Ton.tippen();
+  }
+
+  function lehren(nr) {
+    if (trickPunkte(t) < TRICK_KOSTEN || !kannNochLernen(t, nr)) return;
+    const e = t.wesen[nr] || {};
+    const anzahl = trickZahl(t, nr) + 1;
+    const trick = trickListe(nr)[anzahl - 1];
+    Ton.orden();
+    setT({
+      ...t,
+      punkte: trickPunkte(t) - TRICK_KOSTEN,
+      wesen: { ...t.wesen, [nr]: { ...e, tr: anzahl } },
+    });
+    setGelehrt((g) => [...g, { nr, trick }]);
+  }
+
+  /* -------------------- Tricks beibringen -------------------- */
+  if (phase === "lehren") {
+    const punkte = trickPunkte(t);
+    /* Beibringen darf sie nur den Wesen, die in dieser Runde
+       blitzschnell waren. Sonst könnte man ⚡ auf der 2er-Reihe
+       sammeln und damit die 7er-Arena aufrüsten. */
+    const lernbereit = bilanz.schnell.filter((nr) => kannNochLernen(t, nr));
+    return (
+      <div className="mx-auto max-w-md p-4">
+        <Kopf
+          titel="Tricks beibringen"
+          unter={punkte + " ⚡ übrig · ein Trick kostet " + TRICK_KOSTEN}
+          onZurueck={onEnde}
+        />
+        {gelehrt.length > 0 && (
+          <div className="a-auftauchen mb-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3">
+            {gelehrt.map((g, k) => (
+              <p key={k} className="text-center font-black text-amber-200">
+                {WESEN[g.nr].bild} {WESEN[g.nr].name} kann jetzt {g.trick.bild}{" "}
+                {g.trick.name}!
+              </p>
+            ))}
+          </div>
+        )}
+        {punkte < TRICK_KOSTEN ? (
+          <p className="rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200">
+            {punkte === 0
+              ? "Keine ⚡ übrig. Die nächste Blitzrunde bringt neue."
+              : "Noch " + (TRICK_KOSTEN - punkte) +
+                " ⚡ bis zum nächsten Trick. Sie bleiben dir erhalten."}
+          </p>
+        ) : lernbereit.length === 0 ? (
+          <p className="rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200">
+            {bilanz.schnell.length === 0
+              ? "Beibringen kannst du nur den Wesen, die gerade blitzschnell waren. Diese Runde war keines dabei — deine ⚡ bleiben dir."
+              : "Die Wesen aus dieser Runde können schon alles, was sie lernen können. Deine ⚡ bleiben dir."}
+          </p>
+        ) : (
+          <>
+            <p className="mb-2 text-sm text-emerald-200">
+              Wem bringst du etwas bei? Nur Wesen, die gerade blitzschnell waren,
+              können lernen. Welcher Trick es wird, sagt ihre Reihe.
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {lernbereit.map((nr) => {
+                const naechster = trickListe(nr)[trickZahl(t, nr)];
+                return (
+                  <button
+                    key={nr}
+                    onClick={() => lehren(nr)}
+                    className="kein-blau rounded-2xl bg-emerald-800/70 p-2 text-center transition hover:bg-emerald-700 active:translate-y-px"
+                  >
+                    <div className="text-3xl">{WESEN[nr].bild}</div>
+                    <p className="truncate text-xs font-bold text-emerald-50">
+                      {WESEN[nr].name}
+                    </p>
+                    <p className="mt-1 text-[10px] leading-tight text-amber-300">
+                      lernt {naechster.bild}
+                      <br />
+                      {naechster.name}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+        <div className="mt-5">
+          <Knopf onClick={onEnde}>Fertig</Knopf>
+        </div>
+      </div>
+    );
+  }
+
+  /* -------------------- Bericht -------------------- */
   if (phase === "ende") {
     const wackelig = [...new Set([...bilanz.langsam, ...bilanz.falsch])];
+    const reicht =
+      trickPunkte(t) >= TRICK_KOSTEN &&
+      bilanz.schnell.some((nr) => kannNochLernen(t, nr));
     return (
       <div className="mx-auto max-w-md p-5 text-center">
         <div className="a-auftauchen rounded-3xl bg-emerald-900/70 p-6">
@@ -1452,7 +1691,7 @@ function Blitzrunde({ start, welt, speichern, onEnde }) {
           </h2>
           <p className="mt-2 text-sm text-emerald-200">
             {bilanz.blitz === fragen.length
-              ? "Alle in unter fünf Sekunden. Das sitzt wirklich."
+              ? "Alles in der Zeit. Das sitzt wirklich."
               : bilanz.blitz >= fragen.length - 2
               ? "Fast alles sitzt. Die paar wackeligen holst du dir gleich."
               : "Gut gemacht. Die hier brauchen noch ein Wiedersehen:"}
@@ -1475,15 +1714,30 @@ function Blitzrunde({ start, welt, speichern, onEnde }) {
               </p>
             </div>
           )}
-          <div className="mt-5">
-            <Knopf onClick={onEnde}>Zurück</Knopf>
+
+          <div className="mt-4 rounded-2xl bg-emerald-950/60 p-3">
+            <p className="text-2xl font-black text-amber-300">+{bilanz.blitz} ⚡</p>
+            <p className="text-xs text-emerald-300">
+              macht {trickPunkte(t)} ⚡ · ein Trick kostet {TRICK_KOSTEN}
+            </p>
+          </div>
+
+          <div className="mt-5 space-y-2">
+            {reicht && (
+              <Knopf onClick={() => setPhase("lehren")}>Trick beibringen ✨</Knopf>
+            )}
+            <Knopf art={reicht ? "ruhig" : "haupt"} onClick={onEnde}>
+              Zurück
+            </Knopf>
           </div>
         </div>
       </div>
     );
   }
 
-  const { nr, fakt } = fragen[i];
+  /* -------------------- Frage -------------------- */
+  const { nr, fakt } = dran;
+  const offen = phase === "kurz" && letzte !== "blitz" && letzte !== "gerechnet";
   return (
     <div className="mx-auto max-w-md p-4">
       <div className="flex items-center gap-3">
@@ -1503,21 +1757,38 @@ function Blitzrunde({ start, welt, speichern, onEnde }) {
 
       <div className="mt-2 h-3 overflow-hidden rounded-full bg-emerald-900">
         <div
-          className={"h-full transition-all " + (zeit < 2 ? "bg-rose-400" : "bg-amber-400")}
-          style={{ width: (zeit / BLITZ_ZEIT) * 100 + "%" }}
+          className={
+            "h-full transition-all " +
+            (pause ? "bg-sky-300" : zeit < 2 ? "bg-rose-400" : "bg-amber-400")
+          }
+          style={{ width: (zeit / dauer) * 100 + "%" }}
         />
       </div>
 
       <div className="mt-3 rounded-3xl bg-gradient-to-b from-emerald-50 to-white p-6 text-center shadow-2xl">
         <p className="text-4xl font-black text-emerald-950 sm:text-5xl">
-          {fakt.text} = {phase === "kurz" && letzte !== "blitz" ? fakt.antwort : eingabe === "" ? "?" : eingabe}
+          {fakt.text} = {offen ? fakt.antwort : eingabe === "" ? "?" : eingabe}
         </p>
+        {pause && phase === "frage" && (
+          <p className="a-rutschen mt-2 text-sm font-black text-sky-700">
+            Uhr angehalten — lass dir Zeit.
+          </p>
+        )}
         {phase === "kurz" && (
           <div className="a-rutschen mt-3 flex items-center justify-center gap-2">
             <span className="text-3xl">{WESEN[nr].bild}</span>
-            <span className={"font-black " + (letzte === "blitz" ? "text-emerald-700" : "text-rose-700")}>
+            <span
+              className={
+                "font-black " +
+                (letzte === "blitz" || letzte === "gerechnet"
+                  ? "text-emerald-700"
+                  : "text-rose-700")
+              }
+            >
               {letzte === "blitz"
                 ? WESEN[nr].name + " — blitzschnell!"
+                : letzte === "gerechnet"
+                ? WESEN[nr].name + " — richtig gerechnet"
                 : letzte === "langsam"
                 ? WESEN[nr].name + " war zu schnell weg"
                 : "Das war " + WESEN[nr].name + " (" + fakt.antwort + ")"}
@@ -1529,9 +1800,22 @@ function Blitzrunde({ start, welt, speichern, onEnde }) {
       <div className="mt-4">
         <Ziffernblock wert={eingabe} setWert={setEingabe} onOk={pruefen} gesperrt={phase !== "frage"} />
       </div>
+
+      <button
+        onClick={luftHolen}
+        disabled={luft <= 0 || pause || phase !== "frage"}
+        className={
+          "kein-blau mt-3 w-full rounded-2xl border-2 py-3 text-sm font-black transition " +
+          (luft > 0 && !pause && phase === "frage"
+            ? "border-sky-400/60 text-sky-200 active:translate-y-px"
+            : "border-emerald-800 text-emerald-700")
+        }
+      >
+        😮‍💨 Luft holen {"●".repeat(luft)}{"○".repeat(LUFT_HOLEN - luft)}
+      </button>
       <p className="mt-2 text-center text-xs text-emerald-400">
-        Keine Beeren, {BLITZ_ZEIT} Sekunden. Wer zögert, sieht das Wesen bald
-        wieder — mehr passiert nicht.
+        Luft holen hält die Uhr an. Die Rechnung zählt dann als richtig — aber
+        nicht als blitzschnell.
       </p>
     </div>
   );
@@ -1641,7 +1925,7 @@ function WesenDetail({ t, nr, onZurueck }) {
     <div className="mx-auto max-w-md p-4">
       <Kopf titel={hab ? WESEN[nr].name : "Unbekanntes Wesen"} unter={"Nr. " + nr} onZurueck={onZurueck} />
       {hab ? (
-        <WesenKarte nr={nr} gross />
+        <WesenKarte nr={nr} gross t={t} />
       ) : (
         <div className="rounded-3xl border-4 border-emerald-700 bg-emerald-900/60 p-8 text-center">
           <Schatten nr={nr} gross />
@@ -1747,6 +2031,21 @@ function arenaReif(t, a) {
   return { hab, noetig: 10, dazu: NR_WIESE.length };
 }
 
+/* Wie viele Tricks kennen die Wesen, die in dieser Arena antreten?
+   Das sind genau die, die als Ergebnis vorkommen können. */
+function arenaTeam(a) {
+  if (a.art === "reihe") {
+    const aus = [];
+    for (let b = 1; b <= 10; b++) aus.push(a.reihe * b);
+    return aus;
+  }
+  return NR_WIESE;
+}
+
+function teamTricks(t, a) {
+  return arenaTeam(a).reduce((n, nr) => n + (WESEN[nr] ? trickZahl(t, nr) : 0), 0);
+}
+
 /* Die Aufgaben eines Arenakampfs */
 function arenaAufgaben(a, anzahl) {
   const pool = [];
@@ -1807,6 +2106,14 @@ function ArenaListe({ t, onKampf, onZurueck }) {
                       (a.art === "reihe" ? " (" + a.reihe + " · " + a.reihe + ")" : "")
                     : "Fang erst " + reif.noetig + " Wesen (" + reif.hab + "/" + reif.noetig + ")"}
                 </p>
+                {offen && (
+                  <p className="text-xs text-amber-300">
+                    {teamTricks(t, a) > 0
+                      ? "Dein Team kennt " + teamTricks(t, a) +
+                        (teamTricks(t, a) === 1 ? " Trick" : " Tricks")
+                      : "Dein Team kennt noch keine Tricks"}
+                  </p>
+                )}
               </div>
               {hat && <div className="text-2xl">🏅</div>}
             </button>
@@ -1823,15 +2130,22 @@ function ArenaListe({ t, onKampf, onZurueck }) {
 
 const KAMPF_FRAGEN = 10;
 const KAMPF_ZEIT = 8;
+/* Der Arenaleiter hält neun Treffer aus. Ohne Tricks braucht es also
+   neun von zehn richtigen Antworten — genau wie bisher. Wer seinen
+   Wesen Tricks beigebracht hat, schlägt härter und darf sich
+   dadurch mehr Fehler leisten. Das ist der Lohn der Blitzrunden. */
+const LEITER_LEBEN = 9;
 
 function ArenaKampf({ t, arena, speichern, onEnde }) {
   const [fragen] = useState(() => arenaAufgaben(arena, KAMPF_FRAGEN));
   const [i, setI] = useState(0);
   const [eingabe, setEingabe] = useState("");
   const [treffer, setTreffer] = useState(0);
+  const [schaden, setSchaden] = useState(0);
   const [zeit, setZeit] = useState(KAMPF_ZEIT);
   const [phase, setPhase] = useState("kampf"); // kampf | kurz | ende
   const [letzte, setLetzte] = useState(null);
+  const [angriff, setAngriff] = useState(null); // welches Wesen hat zugeschlagen
   const leiter = arenaLeiter(arena);
 
   useEffect(() => {
@@ -1864,9 +2178,16 @@ function ArenaKampf({ t, arena, speichern, onEnde }) {
   function bewerten(richtig) {
     setLetzte(richtig);
     if (richtig) {
+      /* Das Wesen, das angreift, ist die Antwort selbst. */
+      const wer = fragen[i].antwort;
+      const tricks = WESEN[wer] ? gelernteTricks(t, wer) : [];
+      const wucht = 1 + (tricks.length > 0 ? 1 : 0);
+      setAngriff({ nr: wer, trick: tricks[0] || null, wucht });
       setTreffer((x) => x + 1);
+      setSchaden((x) => x + wucht);
       Ton.richtig();
     } else {
+      setAngriff(null);
       Ton.nochmal();
     }
     setPhase("kurz");
@@ -1888,7 +2209,7 @@ function ArenaKampf({ t, arena, speichern, onEnde }) {
 
   useEffect(() => {
     if (phase !== "ende") return;
-    const gewonnen = treffer >= KAMPF_FRAGEN - 1;
+    const gewonnen = schaden >= LEITER_LEBEN;
     if (gewonnen && !t.orden.includes(arena.id)) {
       Ton.orden();
       speichern({ ...t, orden: [...t.orden, arena.id] });
@@ -1896,7 +2217,7 @@ function ArenaKampf({ t, arena, speichern, onEnde }) {
   }, [phase]);
 
   if (phase === "ende") {
-    const gewonnen = treffer >= KAMPF_FRAGEN - 1;
+    const gewonnen = schaden >= LEITER_LEBEN;
     return (
       <div className="mx-auto max-w-md p-5 text-center">
         <div className="a-auftauchen rounded-3xl bg-emerald-900/70 p-6">
@@ -1905,12 +2226,13 @@ function ArenaKampf({ t, arena, speichern, onEnde }) {
             {gewonnen ? "Orden gewonnen!" : "Knapp daneben"}
           </h2>
           <p className="mt-2 text-emerald-200">
-            {treffer} von {KAMPF_FRAGEN} Rechnungen getroffen.
+            {treffer} von {KAMPF_FRAGEN} Rechnungen getroffen · {schaden} Schaden
           </p>
           <p className="mt-2 text-sm text-emerald-300">
             {gewonnen
               ? WESEN[leiter].name + " verbeugt sich. Die " + arena.name + " gehört dir."
-              : "Neun müssen sitzen. Geh nochmal auf Streifzug und komm wieder — der Leiter läuft nicht weg."}
+              : schaden + " von " + LEITER_LEBEN +
+                " Schaden. Bring deinen Wesen in der Blitzrunde Tricks bei — dann schlagen sie härter."}
           </p>
           <div className="mt-5">
             <Knopf onClick={onEnde}>Zurück</Knopf>
@@ -1921,7 +2243,7 @@ function ArenaKampf({ t, arena, speichern, onEnde }) {
   }
 
   const frage = fragen[i];
-  const leben = Math.max(0, KAMPF_FRAGEN - treffer);
+  const leben = Math.max(0, LEITER_LEBEN - schaden);
   return (
     <div className="mx-auto max-w-md p-4">
       <div className="flex items-center gap-3 rounded-2xl bg-emerald-900/60 p-3">
@@ -1933,7 +2255,7 @@ function ArenaKampf({ t, arena, speichern, onEnde }) {
           <div className="mt-1 h-3 overflow-hidden rounded-full bg-emerald-950">
             <div
               className="h-full bg-rose-400 transition-all"
-              style={{ width: (leben / KAMPF_FRAGEN) * 100 + "%" }}
+              style={{ width: (leben / LEITER_LEBEN) * 100 + "%" }}
             />
           </div>
         </div>
@@ -1955,9 +2277,22 @@ function ArenaKampf({ t, arena, speichern, onEnde }) {
           {frage.text} = {phase === "kurz" && letzte === false ? frage.antwort : eingabe === "" ? "?" : eingabe}
         </p>
         {phase === "kurz" && (
-          <p className={"mt-2 font-black " + (letzte ? "text-emerald-700" : "text-rose-700")}>
-            {letzte ? "Treffer!" : "Daneben — " + frage.text + " = " + frage.antwort}
-          </p>
+          <div className="a-rutschen mt-2">
+            {letzte && angriff ? (
+              <p className="font-black text-emerald-700">
+                <span className="text-2xl">{WESEN[angriff.nr] ? WESEN[angriff.nr].bild : "✨"}</span>{" "}
+                {WESEN[angriff.nr] ? WESEN[angriff.nr].name : "Treffer"}
+                {angriff.trick
+                  ? " setzt " + angriff.trick.bild + " " + angriff.trick.name + " ein!"
+                  : " greift an!"}{" "}
+                <span className="text-rose-600">−{angriff.wucht}</span>
+              </p>
+            ) : (
+              <p className="font-black text-rose-700">
+                Daneben — {frage.text} = {frage.antwort}
+              </p>
+            )}
+          </div>
         )}
       </div>
 
@@ -2187,14 +2522,18 @@ function Trainerkarte({ name, t, onBild }) {
           <p className="text-[10px] text-emerald-300">von {ALLE_NR.length}</p>
         </div>
       </div>
-      <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+      <div className="mt-3 grid grid-cols-4 gap-1.5 text-center text-[11px]">
         <div className="rounded-xl bg-emerald-950/50 p-2">
           <p className="text-lg font-black text-emerald-100">{t.orden.length}</p>
           <p className="text-emerald-400">Orden 🏅</p>
         </div>
         <div className="rounded-xl bg-emerald-950/50 p-2">
-          <p className="text-lg font-black text-emerald-100">{t.stat.blitze}</p>
-          <p className="text-emerald-400">Blitze ⚡</p>
+          <p className="text-lg font-black text-amber-300">{trickPunkte(t)}</p>
+          <p className="text-emerald-400">⚡ übrig</p>
+        </div>
+        <div className="rounded-xl bg-emerald-950/50 p-2">
+          <p className="text-lg font-black text-emerald-100">{tricksGesamt(t)}</p>
+          <p className="text-emerald-400">Tricks ✨</p>
         </div>
         <div className="rounded-xl bg-emerald-950/50 p-2">
           <p className="text-lg font-black text-emerald-100">{t.stat.richtig}</p>
@@ -2327,8 +2666,8 @@ function Weltwahl({ t, waehle, blitz, zurueck }) {
           ⚡ Blitzrunde
         </p>
         <p className="mt-1 text-center text-sm text-emerald-200">
-          Nur Wesen, die du schon hast. {BLITZ_ZEIT} Sekunden pro Rechnung, keine
-          Beeren.
+          Nur Wesen, die du schon hast. Wenig Zeit, keine Beeren — schwere
+          Rechnungen bekommen mehr Sekunden als leichte.
         </p>
         {blitzbereit.length === 0 ? (
           <p className="mt-2 text-center text-xs text-emerald-400">

@@ -57,9 +57,17 @@ Sichtbar ist ein Sammelspiel. Darunter arbeitet ein Karteikasten (Leitner):
   acht Sekunden pro Rechnung — Automatisieren ist der eigentliche Lernauftrag,
   nicht Ausrechnen.
 * **Blitzrunde**: ab sechs gefangenen Wesen in einer Gegend. Nur Wesen, die man
-  schon hat, sechs Sekunden pro Rechnung, keine Beeren. Hier zeigt sich der
-  Unterschied zwischen "kann sie herleiten" und "kann sie". Wer zögert, wird
-  nicht bestraft — das Wesen meldet sich nur gleich wieder statt erst in Tagen.
+  schon hat, keine Beeren. Hier zeigt sich der Unterschied zwischen "kann sie
+  herleiten" und "kann sie". Wer zögert, wird nicht bestraft — das Wesen meldet
+  sich nur gleich wieder statt erst in Tagen.
+* **Zeit nach Schwierigkeit**: 3 · 2 und 7 · 8 sind nicht gleich schwer, also
+  bekommen sie nicht dieselbe Zeit. Vier Sekunden für kleine Zahlen, sechs wenn
+  eine Zahl zwischen 6 und 9 liegt, acht für die legendären. Beim Plus und Minus
+  entscheidet der Zehnerübergang. Rund eine Sekunde geht immer fürs Tippen drauf.
+* **Luft holen**: zweimal pro Blitzrunde darf die Uhr stehenbleiben. Die Rechnung
+  zählt dann als richtig, aber nicht als blitzschnell. Damit bleibt die Messung
+  ehrlich und der Druck trotzdem aushaltbar — und das Kind lernt nebenbei, selbst
+  einzuschätzen: "weiß ich sofort" oder "muss ich rechnen".
 * **Umkehraufgaben**: statt "6 · 7 = ?" auch "6 · ? = 42", auf dem Wiesenweg
   "8 + ? = 13". Sie kommen erst, wenn ein Wesen schon zweimal wiedergesehen
   wurde, und machen etwa jede dritte Wiederholung aus. Wer nur die Reihe
@@ -82,6 +90,32 @@ Zaubersprüche in der Rätselschule:
 
 Wer eine Beere nimmt, fängt das Wesen trotzdem — nur die Freundschaftsstufe
 steigt beim Wiedersehen nicht. Auch das merkt das Kind nicht.
+
+## Tricks — Florentinas Idee
+
+Wer blitzschnell rechnet, kann seinen Wesen etwas beibringen. Nicht
+freischalten: **beibringen**.
+
+* Jede blitzschnelle Antwort in der Blitzrunde gibt **ein ⚡**. Fünf davon sind
+  ein Trick.
+* Nach der Runde entscheidet das Kind selbst, **wem** es etwas beibringt.
+* Welcher Trick es wird, sagt der Typ des Wesens: ein 8er-Wesen lernt den
+  Achtsturm 🌪️, ein 9er das Neunfeuer 🔥, ein 7er die Glücksklaue 🍀. Drei pro
+  Wesen.
+* Beibringen geht **nur bei Wesen, die in derselben Runde blitzschnell waren**.
+  Sonst könnte man ⚡ auf der 2er-Reihe sammeln und damit die 7er-Arena
+  aufrüsten — die Belohnung soll dort landen, wo das Können ist.
+
+Gebraucht werden die Tricks in der **Arena**, und damit greift zum ersten Mal
+alles ineinander:
+
+> Das Wesen, das angreift, **ist die Antwort**.
+> "8 · 7 = 56 → Rexi setzt Achtsturm ein!"
+
+Der Arenaleiter hält neun Treffer aus. Ein Wesen ohne Trick schlägt für 1, eines
+mit Trick für 2. Ohne Tricks braucht es also neun von zehn richtigen Antworten —
+genau so viel wie vorher. Wer seinen Wesen etwas beigebracht hat, darf sich
+Fehler leisten. Die Blitzrunde zahlt auf die Arena ein.
 
 ## Für die Freunde
 
@@ -111,6 +145,9 @@ Speicherplatz, eigener Schlüssel.
 * **Wiedersehensabstände**: `ABSTAND` (in Minuten).
 * **Was ab wann geübt wird**: `ORDNUNG`.
 * **Blitz-Grenze und Arena-Zeit**: `BLITZ_MS`, `KAMPF_ZEIT`.
-* **Blitzrunde**: `BLITZ_ZEIT` (Sekunden), `BLITZ_FRAGEN`, `BLITZ_AB_WESEN`.
+* **Blitzrunde**: `blitzZeit` (die Sekunden je Schwierigkeit), `BLITZ_FRAGEN`,
+  `BLITZ_AB_WESEN`, `LUFT_HOLEN`.
+* **Tricks**: `TRICK_KOSTEN` (⚡ pro Trick), `MAX_TRICKS`, die Namen in
+  `TRICK_REIHE`. `LEITER_LEBEN` legt fest, wie viel der Arenaleiter aushält.
 * **Umkehraufgaben**: `UMKEHR_ANTEIL` (Anteil an den Wiederholungen) und
   `UMKEHR_AB_STUFE` (ab welcher Freundschaftsstufe).
