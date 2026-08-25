@@ -56,6 +56,14 @@ Sichtbar ist ein Sammelspiel. Darunter arbeitet ein Karteikasten (Leitner):
 * **Tempo** zählt: unter vier Sekunden gibt es einen Blitz. In den Arenen gibt es
   acht Sekunden pro Rechnung — Automatisieren ist der eigentliche Lernauftrag,
   nicht Ausrechnen.
+* **Blitzrunde**: ab sechs gefangenen Wesen in einer Gegend. Nur Wesen, die man
+  schon hat, sechs Sekunden pro Rechnung, keine Beeren. Hier zeigt sich der
+  Unterschied zwischen "kann sie herleiten" und "kann sie". Wer zögert, wird
+  nicht bestraft — das Wesen meldet sich nur gleich wieder statt erst in Tagen.
+* **Umkehraufgaben**: statt "6 · 7 = ?" auch "6 · ? = 42", auf dem Wiesenweg
+  "8 + ? = 13". Sie kommen erst, wenn ein Wesen schon zweimal wiedergesehen
+  wurde, und machen etwa jede dritte Wiederholung aus. Wer nur die Reihe
+  aufsagen kann, kommt hier nicht weiter — genau das ist der Punkt.
 
 Das Kind sieht davon nichts. Es sieht: "8 Wesen wollen dich morgen wiedersehen."
 
@@ -103,3 +111,6 @@ Speicherplatz, eigener Schlüssel.
 * **Wiedersehensabstände**: `ABSTAND` (in Minuten).
 * **Was ab wann geübt wird**: `ORDNUNG`.
 * **Blitz-Grenze und Arena-Zeit**: `BLITZ_MS`, `KAMPF_ZEIT`.
+* **Blitzrunde**: `BLITZ_ZEIT` (Sekunden), `BLITZ_FRAGEN`, `BLITZ_AB_WESEN`.
+* **Umkehraufgaben**: `UMKEHR_ANTEIL` (Anteil an den Wiederholungen) und
+  `UMKEHR_AB_STUFE` (ab welcher Freundschaftsstufe).

@@ -96,7 +96,13 @@ von dort genommen — ab dann baut es auch ohne Internet.
 - **Lernreihenfolge**: `ORDNUNG` — was zuerst drankommt. `REVIER` legt fest, wie
   viele wilde Wesen gleichzeitig gejagt werden (Vorgabe 3).
 - **Tempo**: `BLITZ_MS` (unter 4 Sekunden = Blitz), `KAMPF_ZEIT` und
-  `KAMPF_FRAGEN` für die Arenen.
+  `KAMPF_FRAGEN` für die Arenen, `BLITZ_ZEIT` / `BLITZ_FRAGEN` /
+  `BLITZ_AB_WESEN` für die Blitzrunde.
+- **Umkehraufgaben** ("6 · ? = 42"): `UMKEHR_ANTEIL` legt fest, wie oft sie
+  vorkommen, `UMKEHR_AB_STUFE`, ab wann. Gefragt ist immer die zweite Zahl.
+- **Abwechslung**: Die Runde wird über `mischen` so gemischt, dass kein Wesen
+  zweimal hintereinander drankommt; `waehleFakt` zieht die Rechnung zufällig
+  und überspringt Rechnungen mit 1, solange es genug andere gibt.
 
 ## Zurück zur Ursprungsfassung
 

@@ -214,6 +214,27 @@ function fakten(welt, n) {
   return welt === "malfeld" ? faktenMalfeld(n) : faktenWiese(n);
 }
 
+/* Umkehraufgabe: statt "6 · 7 = ?" heißt es "6 · ? = 42".
+   Gefragt ist immer die zweite Zahl. Das deckt Lücken auf, die beim
+   Vorwärtsrechnen unsichtbar bleiben — wer nur die Reihe aufsagen
+   kann, kommt hier nicht weiter. */
+function alsUmkehr(fakt) {
+  return {
+    ...fakt,
+    id: fakt.id + "?",
+    basis: fakt.id,
+    umkehr: true,
+    antwort: fakt.b,
+    ergebnis: fakt.antwort,
+    text: fakt.a + " " + fakt.op + " ? = " + fakt.antwort,
+  };
+}
+
+/* Erst wenn ein Wesen schon zweimal wiedergesehen wurde, wird
+   gelegentlich rückwärts gefragt. Vorher wäre es zu früh. */
+const UMKEHR_AB_STUFE = 2;
+const UMKEHR_ANTEIL = 0.3;
+
 /* Wesen, die es in dieser Welt überhaupt gibt */
 const NR_MALFELD = ALLE_NR.filter((n) => paare(n).length > 0);
 const NR_WIESE = ALLE_NR.filter((n) => n <= 20);
@@ -267,6 +288,10 @@ const ABSTAND = [0, 10, 60 * 24, 60 * 24 * 3, 60 * 24 * 7, 60 * 24 * 21]; // Min
 const FANG_TREFFER = 3;   // so oft richtig, dann ist es gefangen
 const BLITZ_MS = 4000;    // schneller als das = blitzschnell
 const RUNDE_LAENGE = 10;
+const BLITZ_FRAGEN = 10;      // Länge einer Blitzrunde
+const BLITZ_ZEIT = 6;         // Sekunden pro Rechnung — davon geht
+                              // rund eine fürs Tippen drauf
+const BLITZ_AB_WESEN = 6;     // so viele gefangene Wesen braucht es dafür
 const REVIER = 4;         // so viele wilde Wesen gleichzeitig
 
 function faelligIn(stufe) {
@@ -433,6 +458,56 @@ function Rechenbild({ fakt }) {
    ============================================================ */
 function beeren(fakt) {
   const b = [];
+  if (fakt.umkehr) {
+    if (fakt.op === "·") {
+      b.push({
+        bild: "🍓",
+        name: "Punktbeere",
+        text: "Wie viele Reihen zu " + fakt.a + " braucht man für " + fakt.ergebnis + "?",
+        bild2: true,
+      });
+      b.push({
+        bild: "🪜",
+        name: "Leiterbeere",
+        text: "Zähl die " + fakt.a + "er-Reihe hoch, bis du bei " + fakt.ergebnis + " bist.",
+      });
+      b.push({
+        bild: "🔁",
+        name: "Teilbeere",
+        text: "Anders gefragt: wie oft passt " + fakt.a + " in " + fakt.ergebnis + "?",
+      });
+    } else if (fakt.op === "+") {
+      b.push({
+        bild: "🍓",
+        name: "Feldbeere",
+        text: "Von " + fakt.a + " bis " + fakt.ergebnis + " — wie viele Felder fehlen?",
+        bild2: true,
+      });
+      b.push({
+        bild: "🌉",
+        name: "Brückenbeere",
+        text: "Erst von " + fakt.a + " auf 10, dann weiter bis " + fakt.ergebnis + ".",
+      });
+      b.push({
+        bild: "🔁",
+        name: "Umkehrbeere",
+        text: "Denk minus: " + fakt.ergebnis + " − " + fakt.a + " = ?",
+      });
+    } else {
+      b.push({
+        bild: "🍓",
+        name: "Feldbeere",
+        text: "Von " + fakt.a + " auf " + fakt.ergebnis + " — wie viel muss weg?",
+        bild2: true,
+      });
+      b.push({
+        bild: "🔁",
+        name: "Umkehrbeere",
+        text: "Denk plus: " + fakt.ergebnis + " + ? = " + fakt.a + ".",
+      });
+    }
+    return b;
+  }
   if (fakt.op === "·") {
     const { a, b: bb } = fakt;
     b.push({
@@ -649,14 +724,20 @@ function mischen(liste) {
 
    Rechnungen mit 1 (10 · 1, 4 · 1) werden übersprungen, solange es
    genug andere gibt: sie sind zu leicht, um etwas zu üben. */
-function waehleFakt(t, welt, nr) {
+function waehleFakt(t, welt, nr, ohneUmkehr) {
   const alle = fakten(welt, nr);
   const ohneEins = alle.filter((x) => x.a !== 1 && x.b !== 1);
   const grund = ohneEins.length >= 2 ? ohneEins : alle;
   const f = holF(t, welt, nr);
   const ohneLetzte = f && f.l ? grund.filter((x) => x.id !== f.l) : grund;
   const topf = ohneLetzte.length ? ohneLetzte : grund;
-  return topf[Math.floor(Math.random() * topf.length)];
+  const gewaehlt = topf[Math.floor(Math.random() * topf.length)];
+  const reif = f && f.s >= UMKEHR_AB_STUFE;
+  /* Bei "a · a" wäre die Umkehr geschenkt — die Zahl steht schon da.
+     Und "1 · ? = 2" fragt gar nichts. */
+  const lohnt = gewaehlt.a !== gewaehlt.b && gewaehlt.a !== 1 && gewaehlt.b !== 1;
+  if (!ohneUmkehr && reif && lohnt && Math.random() < UMKEHR_ANTEIL) return alsUmkehr(gewaehlt);
+  return gewaehlt;
 }
 
 
@@ -926,7 +1007,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
     if (!richtig) {
       Ton.nochmal();
       setBilanz((b) => ({ ...b, falsch: b.falsch + 1 }));
-      const n = { ...f, x: (f.x || 0) + 1, l: fakt.id };
+      const n = { ...f, x: (f.x || 0) + 1, l: fakt.basis || fakt.id };
       if (n.s === 0) n.h = Math.max(0, (n.h || 0) - 1);
       else { n.s = Math.max(1, n.s - 1); n.f = faelligIn(1); }
       const neu = mitF(t, welt, nr, n);
@@ -940,7 +1021,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
     if (blitz) Ton.blitz(); else Ton.richtig();
 
     let wurdeGefangen = false;
-    const n = { ...f, l: fakt.id };
+    const n = { ...f, l: fakt.basis || fakt.id };
     if (blitz) n.blitz = true;
     if (wiederholung) {
       /* Verbesserung nach einem Fehler: zählt nicht als Treffer */
@@ -1158,8 +1239,25 @@ function Streifzug({ start, welt, speichern, onEnde }) {
       {/* Die Rechnung */}
       <div className="mt-3 rounded-3xl bg-gradient-to-b from-emerald-50 to-white p-5 text-center shadow-2xl">
         <p className={"text-4xl font-black text-emerald-950 sm:text-5xl " + (phase === "falsch" ? "a-zittern" : "")}>
-          {fakt.text} = {phase === "falsch" ? fakt.antwort : anzeige}
+          {fakt.umkehr ? (
+            <>
+              {fakt.a} {fakt.op}{" "}
+              <span className="rounded-xl bg-amber-200 px-2">
+                {phase === "falsch" ? fakt.antwort : anzeige}
+              </span>{" "}
+              = {fakt.ergebnis}
+            </>
+          ) : (
+            <>
+              {fakt.text} = {phase === "falsch" ? fakt.antwort : anzeige}
+            </>
+          )}
         </p>
+        {fakt.umkehr && phase === "frage" && (
+          <p className="mt-1 text-xs font-bold uppercase tracking-widest text-emerald-600">
+            Rückwärts gefragt — welche Zahl fehlt?
+          </p>
+        )}
         {phase === "falsch" && (
           <div className="a-rutschen mt-4">
             <p className="font-bold text-rose-700">
@@ -1231,6 +1329,210 @@ function Streifzug({ start, welt, speichern, onEnde }) {
           </p>
         </>
       )}
+    </div>
+  );
+}
+
+
+/* ============================================================
+   BLITZRUNDE
+   Nur schon gefangene Wesen, dafür fünf Sekunden pro Rechnung und
+   keine Beeren. Hier geht es nicht ums Ausrechnen, sondern ums
+   Wiedererkennen — das ist der Unterschied zwischen "kann sie
+   herleiten" und "kann sie".
+
+   Wer zögert, wird nicht bestraft: das Wesen meldet sich nur gleich
+   wieder, statt erst in ein paar Tagen.
+   ============================================================ */
+function blitzWesen(t, welt) {
+  return WELT[welt].nrs.filter((nr) => {
+    const f = holF(t, welt, nr);
+    return f && f.s >= 1;
+  });
+}
+
+function Blitzrunde({ start, welt, speichern, onEnde }) {
+  const [t, setT] = useState(start);
+  const [fragen] = useState(() => {
+    const topf = blitzWesen(start, welt);
+    const roh = [];
+    for (let i = 0; i < BLITZ_FRAGEN; i++) roh.push(topf[i % topf.length]);
+    return mischen(roh).map((nr) => ({ nr, fakt: waehleFakt(start, welt, nr, true) }));
+  });
+  const [i, setI] = useState(0);
+  const [eingabe, setEingabe] = useState("");
+  const [zeit, setZeit] = useState(BLITZ_ZEIT);
+  const [phase, setPhase] = useState("frage"); // frage | kurz | ende
+  const [letzte, setLetzte] = useState(null);  // "blitz" | "langsam" | "falsch"
+  const [bilanz, setBilanz] = useState({ blitz: 0, langsam: [], falsch: [] });
+
+  useEffect(() => {
+    speichern(t);
+  }, [t]);
+
+  useEffect(() => {
+    if (phase !== "frage") return;
+    setZeit(BLITZ_ZEIT);
+    const u = setInterval(
+      () => setZeit((z) => Math.max(0, Math.round((z - 0.1) * 10) / 10)),
+      100
+    );
+    return () => clearInterval(u);
+  }, [i, phase]);
+
+  useEffect(() => {
+    if (phase === "frage" && zeit <= 0) bewerten("langsam");
+  }, [zeit, phase]);
+
+  useEffect(() => {
+    function taste(e) {
+      if (phase !== "frage") return;
+      if (/^[0-9]$/.test(e.key)) setEingabe((v) => (v.length < 3 ? (v + e.key).replace(/^0(?=\d)/, "") : v));
+      else if (e.key === "Backspace") setEingabe((v) => v.slice(0, -1));
+      else if (e.key === "Enter") pruefen();
+    }
+    window.addEventListener("keydown", taste);
+    return () => window.removeEventListener("keydown", taste);
+  });
+
+  function bewerten(art) {
+    const { nr, fakt } = fragen[i];
+    setLetzte(art);
+    const f = holF(t, welt, nr) || { h: 0, s: 1, f: 0, x: 0 };
+    const n = { ...f, l: fakt.id };
+    if (art === "blitz") {
+      n.blitz = true;
+      Ton.blitz();
+    } else {
+      /* gezögert oder daneben: das Wesen meldet sich gleich wieder */
+      n.f = Date.now();
+      if (art === "falsch") { n.s = Math.max(1, n.s - 1); n.x = (n.x || 0) + 1; }
+      Ton.nochmal();
+    }
+    const neu = mitF(t, welt, nr, n);
+    setT({
+      ...neu,
+      stat: {
+        ...neu.stat,
+        richtig: neu.stat.richtig + (art === "falsch" ? 0 : 1),
+        falsch: neu.stat.falsch + (art === "falsch" ? 1 : 0),
+        blitze: neu.stat.blitze + (art === "blitz" ? 1 : 0),
+      },
+    });
+    setBilanz((b) => ({
+      blitz: b.blitz + (art === "blitz" ? 1 : 0),
+      langsam: art === "langsam" ? [...b.langsam, nr] : b.langsam,
+      falsch: art === "falsch" ? [...b.falsch, nr] : b.falsch,
+    }));
+    setPhase("kurz");
+    setTimeout(() => {
+      if (i + 1 >= fragen.length) {
+        setPhase("ende");
+      } else {
+        setI(i + 1);
+        setEingabe("");
+        setPhase("frage");
+      }
+    }, art === "blitz" ? 450 : 1500);
+  }
+
+  function pruefen() {
+    if (eingabe === "" || phase !== "frage") return;
+    bewerten(Number(eingabe) === fragen[i].fakt.antwort ? "blitz" : "falsch");
+  }
+
+  if (phase === "ende") {
+    const wackelig = [...new Set([...bilanz.langsam, ...bilanz.falsch])];
+    return (
+      <div className="mx-auto max-w-md p-5 text-center">
+        <div className="a-auftauchen rounded-3xl bg-emerald-900/70 p-6">
+          <div className="text-6xl">⚡</div>
+          <h2 className="mt-2 text-2xl font-black text-amber-300">
+            {bilanz.blitz} von {fragen.length} blitzschnell
+          </h2>
+          <p className="mt-2 text-sm text-emerald-200">
+            {bilanz.blitz === fragen.length
+              ? "Alle in unter fünf Sekunden. Das sitzt wirklich."
+              : bilanz.blitz >= fragen.length - 2
+              ? "Fast alles sitzt. Die paar wackeligen holst du dir gleich."
+              : "Gut gemacht. Die hier brauchen noch ein Wiedersehen:"}
+          </p>
+          {wackelig.length > 0 && (
+            <div className="mt-4 rounded-2xl border-2 border-amber-400/40 p-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+                Haben gezögert
+              </p>
+              <div className="mt-2 flex flex-wrap justify-center gap-3">
+                {wackelig.map((nr) => (
+                  <div key={nr} className="text-center">
+                    <div className="text-3xl">{WESEN[nr].bild}</div>
+                    <p className="text-xs font-bold text-emerald-100">{WESEN[nr].name}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-emerald-300">
+                Sie warten jetzt auf dem Streifzug auf dich.
+              </p>
+            </div>
+          )}
+          <div className="mt-5">
+            <Knopf onClick={onEnde}>Zurück</Knopf>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const { nr, fakt } = fragen[i];
+  return (
+    <div className="mx-auto max-w-md p-4">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onEnde}
+          className="kein-blau rounded-xl border-2 border-emerald-500/50 px-3 py-1 text-emerald-100"
+        >
+          ‹
+        </button>
+        <p className="flex-1 text-sm font-black uppercase tracking-widest text-amber-300">
+          ⚡ Blitzrunde
+        </p>
+        <span className="text-xs font-bold text-emerald-300">
+          {i + 1}/{fragen.length} · {bilanz.blitz} ⚡
+        </span>
+      </div>
+
+      <div className="mt-2 h-3 overflow-hidden rounded-full bg-emerald-900">
+        <div
+          className={"h-full transition-all " + (zeit < 2 ? "bg-rose-400" : "bg-amber-400")}
+          style={{ width: (zeit / BLITZ_ZEIT) * 100 + "%" }}
+        />
+      </div>
+
+      <div className="mt-3 rounded-3xl bg-gradient-to-b from-emerald-50 to-white p-6 text-center shadow-2xl">
+        <p className="text-4xl font-black text-emerald-950 sm:text-5xl">
+          {fakt.text} = {phase === "kurz" && letzte !== "blitz" ? fakt.antwort : eingabe === "" ? "?" : eingabe}
+        </p>
+        {phase === "kurz" && (
+          <div className="a-rutschen mt-3 flex items-center justify-center gap-2">
+            <span className="text-3xl">{WESEN[nr].bild}</span>
+            <span className={"font-black " + (letzte === "blitz" ? "text-emerald-700" : "text-rose-700")}>
+              {letzte === "blitz"
+                ? WESEN[nr].name + " — blitzschnell!"
+                : letzte === "langsam"
+                ? WESEN[nr].name + " war zu schnell weg"
+                : "Das war " + WESEN[nr].name + " (" + fakt.antwort + ")"}
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4">
+        <Ziffernblock wert={eingabe} setWert={setEingabe} onOk={pruefen} gesperrt={phase !== "frage"} />
+      </div>
+      <p className="mt-2 text-center text-xs text-emerald-400">
+        Keine Beeren, {BLITZ_ZEIT} Sekunden. Wer zögert, sieht das Wesen bald
+        wieder — mehr passiert nicht.
+      </p>
     </div>
   );
 }
@@ -1535,18 +1837,18 @@ function ArenaKampf({ t, arena, speichern, onEnde }) {
   useEffect(() => {
     if (phase !== "kampf") return;
     setZeit(KAMPF_ZEIT);
-    const u = setInterval(() => {
-      setZeit((z) => {
-        if (z <= 0.1) {
-          clearInterval(u);
-          bewerten(false);
-          return 0;
-        }
-        return Math.round((z - 0.1) * 10) / 10;
-      });
-    }, 100);
+    const u = setInterval(
+      () => setZeit((z) => Math.max(0, Math.round((z - 0.1) * 10) / 10)),
+      100
+    );
     return () => clearInterval(u);
   }, [i, phase]);
+
+  /* Zeit abgelaufen — bewusst in einem eigenen Effekt, nicht mitten
+     in der Zustandsänderung des Zählers */
+  useEffect(() => {
+    if (phase === "kampf" && zeit <= 0) bewerten(false);
+  }, [zeit, phase]);
 
   useEffect(() => {
     function taste(e) {
@@ -1976,7 +2278,10 @@ function TrainerWahl({ stand, waehle, lege, loesche, zurueck }) {
   );
 }
 
-function Weltwahl({ t, waehle, zurueck }) {
+function Weltwahl({ t, waehle, blitz, zurueck }) {
+  const blitzbereit = ["wiese", "malfeld"].filter(
+    (w) => blitzWesen(t, w).length >= BLITZ_AB_WESEN
+  );
   return (
     <div className="mx-auto max-w-md p-4">
       <Kopf titel="Wohin gehst du?" onZurueck={zurueck} />
@@ -2014,6 +2319,40 @@ function Weltwahl({ t, waehle, zurueck }) {
             </button>
           );
         })}
+      </div>
+
+      {/* Blitzrunde — erst wenn es genug gefangene Wesen gibt */}
+      <div className="mt-5 rounded-2xl border-2 border-amber-400/40 bg-emerald-900/50 p-3">
+        <p className="text-center text-xs font-bold uppercase tracking-widest text-amber-300">
+          ⚡ Blitzrunde
+        </p>
+        <p className="mt-1 text-center text-sm text-emerald-200">
+          Nur Wesen, die du schon hast. {BLITZ_ZEIT} Sekunden pro Rechnung, keine
+          Beeren.
+        </p>
+        {blitzbereit.length === 0 ? (
+          <p className="mt-2 text-center text-xs text-emerald-400">
+            Ab {BLITZ_AB_WESEN} gefangenen Wesen in einer Gegend geht das los.
+          </p>
+        ) : (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {["wiese", "malfeld"].map((w) => (
+              <button
+                key={w}
+                disabled={!blitzbereit.includes(w)}
+                onClick={() => blitz(w)}
+                className={
+                  "kein-blau rounded-xl px-3 py-3 text-sm font-black transition " +
+                  (blitzbereit.includes(w)
+                    ? "bg-amber-400 text-emerald-950 active:translate-y-px"
+                    : "bg-emerald-900 text-emerald-600")
+                }
+              >
+                {WELT[w].bild} {WELT[w].name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -2127,6 +2466,11 @@ function App() {
             speichereTrainer({ ...t, welt: w });
             setAnsicht("streifzug");
           }}
+          blitz={(w) => {
+            setWelt(w);
+            speichereTrainer({ ...t, welt: w });
+            setAnsicht("blitz");
+          }}
         />
       </>
     );
@@ -2137,6 +2481,20 @@ function App() {
       <>
         <Stile />
         <Streifzug
+          start={t}
+          welt={welt}
+          speichern={speichereTrainer}
+          onEnde={() => setAnsicht("menue")}
+        />
+      </>
+    );
+  }
+
+  if (ansicht === "blitz") {
+    return (
+      <>
+        <Stile />
+        <Blitzrunde
           start={t}
           welt={welt}
           speichern={speichereTrainer}
