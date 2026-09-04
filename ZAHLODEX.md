@@ -57,8 +57,21 @@ Sichtbar ist ein Sammelspiel. Darunter arbeitet ein Karteikasten (Leitner):
   zählt ehrlich mit: *"0 von 20 erforscht · 20 zeigen dir noch was."* Ein Wesen,
   bei dem alles saß, ist **vollständig erforscht ✨**. Damit hat der Wiesenweg
   324 Rechnungen statt 20 Wesen — er geht nicht mehr aus.
-* **Behalten** = Wiedersehen nach 10 Minuten, 1 Tag, 3 Tagen, 1 Woche, 3 Wochen.
-  Wer die Rechnung nach drei Wochen noch kann, kann sie.
+* **Behalten** = Wiedersehen nach 10 Minuten, 1 Tag, 3 Tagen, 1 Woche, 3 Wochen —
+  **wie schnell es geht, entscheidet das Tempo:**
+
+  | Antwort | Folge |
+  |---|---|
+  | blitzschnell (unter 4 s) | zwei Stufen weiter — nach zwei Wiedersehen drei Wochen Ruhe |
+  | normal | eine Stufe weiter |
+  | langsam (über 10 s) oder mit Beere | Stufe bleibt, kommt aber binnen eines Tages wieder |
+  | falsch | eine Stufe zurück |
+
+  Damit räumen sich die leichten Reihen von selbst ab, während die schweren
+  Kerne im Umlauf bleiben. Wer beim Fangen schon dreimal blitzschnell war,
+  startet gleich auf Stufe 3 statt bei zehn Minuten. Jeder Abstand bekommt
+  ±15 % Streuung, sonst wird alles aus einer Sitzung am selben Tag wieder
+  fällig und es stehen zwanzig Wesen gleichzeitig an.
 * **Falsch** heißt nie "verloren", sondern eine Stufe zurück. Das Wesen bleibt
   im Album.
 * **Tempo** zählt: unter vier Sekunden gibt es einen Blitz. In den Arenen gibt es
@@ -130,6 +143,14 @@ der Reihe sind immer dabei** (in der 6er-Arena also 6·6, 6·7, 6·8, 6·9 und d
 Umkehrungen), der Rest wird aufgefüllt. Vorher konnte ein Orden auch mit einer
 milden Ziehung fallen. Bei den 2er-, 3er-, 4er-, 5er- und 10er-Reihen gibt es
 keine schweren, dort ändert sich nichts.
+
+## Zwei Gegenden, ein Wesen
+
+Ein Wesen wird je Gegend gelernt: Zwölfhorn auf dem Wiesenweg über 5 + 7, im
+Malfeld über 3 · 4. Das ist Absicht — beides ist eigener Stoff. Aber es wird
+nur **einmal gefangen**. Taucht es in der zweiten Gegend auf, ist es kein
+wildes Wesen mehr, sondern zeigt **eine neue Seite**: kein Ball, kein Fangen,
+sondern "Zwölfhorn kennt sich auch im Malfeld aus".
 
 ## Für die Freunde
 

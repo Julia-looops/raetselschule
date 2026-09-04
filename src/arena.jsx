@@ -295,8 +295,10 @@ const WELT = {
    "eine Stufe zurück".
    ============================================================ */
 const ABSTAND = [0, 10, 60 * 24, 60 * 24 * 3, 60 * 24 * 7, 60 * 24 * 21]; // Minuten
+const MAX_STUFE = ABSTAND.length - 1;
 const FANG_TREFFER = 3;   // so oft richtig, dann ist es gefangen
 const BLITZ_MS = 4000;    // schneller als das = blitzschnell
+const LANGSAM_MS = 10000; // langsamer als das = richtig, aber unsicher
 const RUNDE_LAENGE = 10;
 const BLITZ_FRAGEN = 10;      // Länge einer Blitzrunde
 const BLITZ_AB_WESEN = 6;     // so viele gefangene Wesen braucht es dafür
@@ -400,8 +402,59 @@ const REVIER = 4;         // so viele wilde Wesen gleichzeitig
 const ENTDECKER_REVIER = 3; // so viele Wesen zeigen gleichzeitig Neues
 const ENTDECKER_PLAETZE = 2; // so oft höchstens je Wesen und Runde
 
+/* Der Abstand bekommt etwas Streuung (±15 %). Ohne sie werden alle
+   Wesen einer Sitzung am nächsten Tag gleichzeitig fällig — und dann
+   steht da "20 Wesen wollen dich wiedersehen", was erschlägt. */
 function faelligIn(stufe) {
-  return Date.now() + ABSTAND[Math.min(stufe, ABSTAND.length - 1)] * 60000;
+  const minuten = ABSTAND[Math.min(stufe, MAX_STUFE)];
+  const streuung = 0.85 + Math.random() * 0.3;
+  return Date.now() + minuten * streuung * 60000;
+}
+
+/* ============================================================
+   WIE SCHNELL KOMMT EIN WESEN WIEDER?
+
+   Nicht jede Rechnung braucht gleich viele Wiedersehen. Wer "10 · 4"
+   aus dem Stand sagt, muss es nicht in drei Tagen nochmal sagen; wer
+   bei "7 · 8" überlegen muss, schon. Also entscheidet das Tempo:
+
+     blitzschnell (< 4 s)   zwei Stufen weiter — bald lange Ruhe
+     normal                 eine Stufe weiter
+     langsam (> 10 s)       Stufe bleibt, kommt bald wieder
+     mit Beere              Stufe bleibt (Hilfe kostet nichts,
+                            beweist aber auch nichts)
+     falsch                 eine Stufe zurück
+
+   Damit räumt sich die 1er- und die 10er-Reihe von selbst ab,
+   während die schweren Kerne im Umlauf bleiben.
+   ============================================================ */
+function tempoVon(dauer, mitHilfe, richtig) {
+  if (!richtig) return "falsch";
+  if (mitHilfe) return "hilfe";
+  if (dauer <= BLITZ_MS) return "blitz";
+  if (dauer >= LANGSAM_MS) return "langsam";
+  return "normal";
+}
+
+function nachWiedersehen(f, tempo) {
+  const n = { ...f };
+  if (tempo === "falsch") {
+    n.s = Math.max(1, n.s - 1);
+    n.f = faelligIn(1);
+    return n;
+  }
+  if (tempo === "blitz") n.s = Math.min(MAX_STUFE, n.s + 2);
+  else if (tempo === "normal") n.s = Math.min(MAX_STUFE, n.s + 1);
+  if (tempo === "langsam" || tempo === "hilfe") {
+    /* Die Stufe bleibt — verloren ist nichts. Aber wiedersehen wollen
+       wir es bald: wer bei einer alten Bekannten überlegen muss, soll
+       sie nicht erst in drei Wochen wieder treffen. Eine einzige
+       schnelle Antwort schickt sie danach gleich wieder in die Ruhe. */
+    n.f = faelligIn(Math.min(n.s, 2));
+    return n;
+  }
+  n.f = faelligIn(n.s);
+  return n;
 }
 
 
@@ -1141,7 +1194,8 @@ function Streifzug({ start, welt, speichern, onEnde }) {
   const [wiederholung, setWiederholung] = useState(false);
   const [wackel, setWackel] = useState(0);
   const [neuGefangen, setNeuGefangen] = useState(null);
-  const [bilanz, setBilanz] = useState({ richtig: 0, falsch: 0, blitze: 0, gefangen: [] });
+  const [fangArt, setFangArt] = useState("neu"); // "neu" oder "seite"
+  const [bilanz, setBilanz] = useState({ richtig: 0, falsch: 0, blitze: 0, gefangen: [], seiten: [] });
   const [warBlitz, setWarBlitz] = useState(false);
   const beginn = useRef(Date.now());
 
@@ -1157,6 +1211,9 @@ function Streifzug({ start, welt, speichern, onEnde }) {
   const [fakt, setFakt] = useState(() => waehleFakt(start, welt, liste[0]));
   const tipps = beeren(fakt);
   const neueRechnung = !((f.g || []).includes(fakt.basis || fakt.id));
+  /* Ein Wesen, das sie aus der anderen Gegend schon hat, ist hier
+     nicht "wild" — es zeigt ihr nur eine neue Seite. */
+  const schonBekannt = wild && istGefangen(t, nr);
 
   useEffect(() => {
     beginn.current = Date.now();
@@ -1212,9 +1269,9 @@ function Streifzug({ start, welt, speichern, onEnde }) {
     if (!richtig) {
       Ton.nochmal();
       setBilanz((b) => ({ ...b, falsch: b.falsch + 1 }));
-      const n = { ...f, x: (f.x || 0) + 1, l: fakt.basis || fakt.id };
+      let n = { ...f, x: (f.x || 0) + 1, l: fakt.basis || fakt.id };
       if (n.s === 0) n.h = Math.max(0, (n.h || 0) - 1);
-      else { n.s = Math.max(1, n.s - 1); n.f = faelligIn(1); }
+      else n = nachWiedersehen(n, "falsch");
       const neu = mitF(t, welt, nr, n);
       setT({ ...neu, stat: { ...neu.stat, falsch: neu.stat.falsch + 1 } });
       setPhase("falsch");
@@ -1226,21 +1283,24 @@ function Streifzug({ start, welt, speichern, onEnde }) {
     if (blitz) Ton.blitz(); else Ton.richtig();
 
     let wurdeGefangen = false;
-    const n = merkeFakt({ ...f, l: fakt.basis || fakt.id }, fakt);
+    const tempo = tempoVon(dauer, mitHilfe, true);
+    let n = merkeFakt({ ...f, l: fakt.basis || fakt.id }, fakt);
     if (blitz) n.blitz = true;
     if (wiederholung) {
       /* Verbesserung nach einem Fehler: zählt nicht als Treffer */
     } else if (n.s === 0) {
       n.h = (n.h || 0) + 1;
+      if (blitz) n.fix = (n.fix || 0) + 1; // wie oft ging es aus dem Stand?
       if (n.h >= FANG_TREFFER) {
-        n.s = 1;
-        n.f = faelligIn(1);
+        /* Wer beim Fangen schon dreimal blitzschnell war, braucht das
+           erste Wiedersehen nicht nach zehn Minuten. */
+        n.s = (n.fix || 0) >= FANG_TREFFER ? 3 : (n.fix || 0) >= 2 ? 2 : 1;
+        n.f = faelligIn(n.s);
         wurdeGefangen = true;
       }
     } else if (n.f <= Date.now()) {
-      /* echtes Wiedersehen: die Freundschaft wächst */
-      if (!mitHilfe) n.s = Math.min(5, n.s + 1);
-      n.f = faelligIn(n.s);
+      /* echtes Wiedersehen: das Tempo entscheidet über den Abstand */
+      n = nachWiedersehen(n, tempo);
     }
     /* Auffrischung vor der Zeit lässt den Abstand unverändert —
        sonst würde häufiges Üben die Wiedersehen immer weiter
@@ -1255,16 +1315,21 @@ function Streifzug({ start, welt, speichern, onEnde }) {
       },
     });
 
+    const warBekannt = istGefangen(t, nr);
     setBilanz((b) => ({
       ...b,
       richtig: b.richtig + 1,
       blitze: b.blitze + (blitz ? 1 : 0),
-      gefangen: wurdeGefangen ? [...b.gefangen, nr] : b.gefangen,
+      gefangen: wurdeGefangen && !warBekannt ? [...b.gefangen, nr] : b.gefangen,
+      seiten: wurdeGefangen && warBekannt ? [...b.seiten, nr] : b.seiten,
     }));
 
     if (wurdeGefangen) {
       setNeuGefangen(nr);
-      setWackel(0);
+      setFangArt(warBekannt ? "seite" : "neu");
+      /* Bekanntes Wesen: kein Ball, keine Fangszene — es gehört ihr ja
+         schon. Nur die Meldung, dass es hier auch etwas kann. */
+      setWackel(warBekannt ? 4 : 0);
       setPhase("fang");
     } else {
       setPhase("richtig");
@@ -1293,10 +1358,28 @@ function Streifzug({ start, welt, speichern, onEnde }) {
               <p className="text-xs text-emerald-300">blitzschnell ⚡</p>
             </div>
             <div className="rounded-2xl bg-emerald-800/70 p-3">
-              <p className="text-2xl font-black text-emerald-100">{bilanz.gefangen.length}</p>
+              <p className="text-2xl font-black text-emerald-100">
+                {bilanz.gefangen.length + bilanz.seiten.length}
+              </p>
               <p className="text-xs text-emerald-300">gefangen</p>
             </div>
           </div>
+
+          {bilanz.seiten.length > 0 && (
+            <div className="mt-4 rounded-2xl border-2 border-emerald-400/40 p-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-emerald-300">
+                Neue Seite entdeckt
+              </p>
+              <div className="mt-2 flex flex-wrap justify-center gap-3">
+                {bilanz.seiten.map((x) => (
+                  <div key={x} className="text-center">
+                    <div className="text-4xl">{WESEN[x].bild}</div>
+                    <p className="text-xs font-bold text-emerald-100">{WESEN[x].name}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {bilanz.gefangen.length > 0 && (
             <div className="mt-4 rounded-2xl border-2 border-amber-400/50 p-3">
@@ -1360,8 +1443,14 @@ function Streifzug({ start, welt, speichern, onEnde }) {
         ) : (
           <div className="a-auftauchen">
             <p className="text-sm font-black uppercase tracking-widest text-amber-300">
-              Gefangen!
+              {fangArt === "seite" ? "Neue Seite!" : "Gefangen!"}
             </p>
+            {fangArt === "seite" && (
+              <p className="mt-1 text-emerald-200">
+                {WESEN[neuGefangen].name} kennt sich auch{" "}
+                {welt === "malfeld" ? "im Malfeld" : "auf dem Wiesenweg"} aus.
+              </p>
+            )}
             <div className="mt-3">
               <WesenKarte nr={neuGefangen} gross t={t} />
             </div>
@@ -1408,9 +1497,21 @@ function Streifzug({ start, welt, speichern, onEnde }) {
 
       {/* Wer ist gerade dran */}
       <div className="flex items-center gap-3 rounded-2xl bg-emerald-900/60 p-3">
-        {wild ? <Schatten nr={nr} /> : <div className="text-4xl">{WESEN[nr].bild}</div>}
+        {wild && !schonBekannt ? (
+          <Schatten nr={nr} />
+        ) : (
+          <div className="text-4xl">{WESEN[nr].bild}</div>
+        )}
         <div className="min-w-0 flex-1">
-          {wild ? (
+          {schonBekannt ? (
+            <>
+              <p className="text-sm font-black text-amber-300">{WESEN[nr].name}</p>
+              <p className="text-xs text-emerald-300">
+                zeigt dir eine neue Seite —{" "}
+                {welt === "malfeld" ? "im Malfeld" : "auf dem Wiesenweg"}
+              </p>
+            </>
+          ) : wild ? (
             <>
               <p className="text-sm font-black text-amber-300">Ein wildes Wesen!</p>
               <p className="text-xs text-emerald-300">
@@ -1626,6 +1727,9 @@ function Blitzrunde({ start, welt, speichern, onEnde }) {
     if (art === "blitz" || art === "gerechnet") n = merkeFakt(n, fakt);
     if (art === "blitz") {
       n.blitz = true;
+      /* Wer es hier aus dem Stand kann, muss es nicht bald wieder
+         zeigen — dieselbe Regel wie im Streifzug. */
+      if (n.f <= Date.now()) n = nachWiedersehen(n, "blitz");
       Ton.blitz();
     } else if (art === "gerechnet") {
       /* mit Luft holen geschafft: richtig, aber kein Blitz */
@@ -2763,7 +2867,7 @@ function Weltwahl({ t, waehle, blitz, zurueck }) {
               </div>
               <p className="mt-1 text-xs text-emerald-300">
                 {hab} von {welt.nrs.length} Wesen ·{" "}
-                {dran > 0 ? dran + " warten auf dich" : "nichts fällig"}
+                {dran > 0 ? dran + " freuen sich auf dich" : "nichts fällig"}
               </p>
               {/* Gefangen heißt noch nicht gekonnt: hier steht, bei wie
                   vielen Wesen wirklich jede Rechnung schon saß. */}
@@ -3060,8 +3164,17 @@ function App() {
         )}
 
         {dranGesamt > 0 && (
-          <p className="mt-3 rounded-2xl bg-amber-400/15 p-3 text-center text-sm font-bold text-amber-200 a-funkeln">
-            {dranGesamt} {dranGesamt === 1 ? "Wesen wartet" : "Wesen warten"} auf dich.
+          /* Bewusst ruhig formuliert: "20 Wesen warten auf dich" liest
+             sich wie eine Mahnung. Eine Runde nimmt ohnehin höchstens
+             fünf davon. */
+          <p className="mt-3 rounded-2xl bg-amber-400/15 p-3 text-center text-sm font-bold text-amber-200">
+            {dranGesamt} {dranGesamt === 1 ? "Wesen freut" : "Wesen freuen"} sich auf ein
+            Wiedersehen.
+            {dranGesamt > 5 && (
+              <span className="block text-xs font-normal text-amber-200/70">
+                Eine Runde nimmt höchstens fünf davon — kein Stress.
+              </span>
+            )}
           </p>
         )}
 

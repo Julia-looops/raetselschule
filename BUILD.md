@@ -93,6 +93,11 @@ von dort genommen — ab dann baut es auch ohne Internet.
   daraus **gerechnet** und passen sich von selbst an.
 - **Karteikasten**: `FANG_TREFFER` (dreimal richtig = gefangen) und `ABSTAND`
   (Wiedersehen nach 10 Min, 1 Tag, 3 Tagen, 1 Woche, 3 Wochen, in Minuten).
+  Wie weit ein Wesen springt, entscheidet `nachWiedersehen` anhand des Tempos
+  (`tempoVon`, Grenzen `BLITZ_MS` und `LANGSAM_MS`): blitzschnell zwei Stufen,
+  normal eine, langsam keine (kommt aber binnen eines Tages wieder), falsch
+  eine zurück. `faelligIn` streut jeden Abstand um ±15 %, damit nicht alles
+  einer Sitzung gleichzeitig wieder ansteht.
 - **Lernreihenfolge**: `ORDNUNG` — was zuerst drankommt. `REVIER` legt fest, wie
   viele wilde Wesen gleichzeitig gejagt werden (Vorgabe 3).
 - **Tempo**: `BLITZ_MS` (unter 4 Sekunden = Blitz), `KAMPF_ZEIT` und
