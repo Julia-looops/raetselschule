@@ -238,8 +238,17 @@ sondern "Zwölfhorn kennt sich auch im Malfeld aus".
 * **Duell**: zwei Kinder, ein Tablet, abwechselnd. Jedes bekommt Aufgaben aus dem
   *eigenen* Fortschritt — deshalb kann auch gewinnen, wer weniger weit ist. Genau
   das macht es unter Freunden erst spielbar.
-* **Arenen**: elf Orden, neun für die Reihen, zwei für den Zehnerübergang. Eine
-  Arena öffnet erst, wenn genug Wesen der Reihe gefangen sind.
+* **Arenen**: elf Orden, neun für die Reihen, zwei für den Zehnerübergang
+  (Brücken-Arena fürs Plus, Tauch-Arena fürs Minus). Eine Arena öffnet erst,
+  wenn genug Wesen der Reihe gefangen sind — einmal gewonnen, bleibt sie offen.
+
+## Die Texte in der App
+
+Alles, was das Kind liest, spricht das Kind an — nicht die Erwachsenen, die es
+gebaut haben. Kurze Sätze, "du", konkrete Bilder statt Mechanik-Erklärungen:
+nicht *"Jede richtige Antwort ruft das Wesen, dessen Nummer der Antwort
+entspricht"*, sondern *"Steht da 8 · 7 = 56, dann kommt Rexi."* Wer hier etwas
+ändert, sollte es laut vorlesen und sich fragen, ob eine Neunjährige weiterliest.
 
 ## Wo es liegt
 

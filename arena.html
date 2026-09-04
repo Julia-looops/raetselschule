@@ -1323,7 +1323,7 @@ function beeren(fakt) {
    Florentina und ihre Freunde dasselbe Gerät benutzen können.
    ============================================================ */
 /* wird beim Bauen ersetzt, siehe tools/build.mjs */
-const FASSUNG = "14 · 4.9.2026";
+const FASSUNG = "15 · 4.9.2026";
 const SPEICHER = "florentina-zahlodex";
 const TRAINER_BILDER = ["🐾", "🧢", "🎒", "🪄", "🛼", "🦄", "🚀", "🍀"];
 function leererTrainer(bild) {
@@ -2186,9 +2186,9 @@ function Trickbuch({
     onZurueck: onZurueck
   }), /*#__PURE__*/React.createElement("p", {
     className: "mb-3 rounded-2xl bg-emerald-900/60 p-3 text-sm text-emerald-200"
-  }, "Ein Trick bringt seinem Wesen ", /*#__PURE__*/React.createElement("b", null, "+", PUNKTE_TRICK, " Punkte"), " bei jedem Angriff in der Arena. \u26A1 daf\xFCr gibt es f\xFCr blitzschnelle Antworten im Kampf \u2014 reif werden die Wesen aber auf dem Streifzug."), koennen.length === 0 ? /*#__PURE__*/React.createElement("p", {
+  }, "Jeder Trick macht dein Wesen st\xE4rker: ", /*#__PURE__*/React.createElement("b", null, "+", PUNKTE_TRICK, " Punkte"), " bei jedem Angriff. Die \u26A1 daf\xFCr holst du dir im Kampf \u2014 stark genug zum Lernen werden deine Wesen aber nur, wenn du sie auf dem Streifzug besuchst."), koennen.length === 0 ? /*#__PURE__*/React.createElement("p", {
     className: "rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200"
-  }, "Noch kein Wesen kann einen Trick. Gewinne \u26A1 in der Arena und bring dort einem Wesen etwas bei, das blitzschnell war.") : /*#__PURE__*/React.createElement("div", {
+  }, "Noch kann keines deiner Wesen einen Trick. Hol dir \u26A1 in der Arena \u2014 und bring sie dann einem Wesen bei, das dort blitzschnell war.") : /*#__PURE__*/React.createElement("div", {
     className: "space-y-2"
   }, koennen.map(nr => /*#__PURE__*/React.createElement("div", {
     key: nr,
@@ -2263,21 +2263,21 @@ function Zahlodex({
     onClick: () => setBuch(true)
   }, "\u2728 Trickbuch \u2014 ", tricksGesamt(t), " Tricks")), /*#__PURE__*/React.createElement("p", {
     className: "mt-3 text-center text-xs text-emerald-400"
-  }, "Jedes Feld ist eine Zahl von 1 bis 100. Dunkle Felder sind Zahlen, die im 1\xD71 gar nicht vorkommen \u2014 dort wohnt niemand."), /*#__PURE__*/React.createElement("div", {
+  }, "Jedes Feld ist eine Zahl. Auf den dunklen wohnt niemand \u2014 die kommen im Einmaleins gar nicht vor."), /*#__PURE__*/React.createElement("div", {
     className: "mt-4 rounded-2xl bg-emerald-900/50 p-3 text-sm text-emerald-200"
   }, /*#__PURE__*/React.createElement("p", {
     className: "font-black text-amber-300"
-  }, "Seltenheit"), /*#__PURE__*/React.createElement("p", {
+  }, "Wie selten ist ein Wesen?"), /*#__PURE__*/React.createElement("p", {
     className: "mt-1"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-emerald-200"
-  }, "H\xE4ufig"), " \u2014 die Zahl kommt oft im 1\xD71 vor (24 = 3\xB78 = 4\xB76)."), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("span", {
+  }, "H\xE4ufig"), " \u2014 zu dieser Zahl f\xFChren viele Wege. Zu 24 kommst du \xFCber 3\xB78 und \xFCber 4\xB76."), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("span", {
     className: "text-sky-300"
-  }, "Selten \u2726\u2726"), " \u2014 es gibt nur einen Weg dorthin (35 = 5\xB77)."), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("span", {
+  }, "Selten \u2726\u2726"), " \u2014 es gibt nur einen einzigen Weg. Zu 35 nur \xFCber 5\xB77."), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("span", {
     className: "text-lime-200"
-  }, "Einzelg\xE4nger \u2726"), " \u2014 dorthin f\xFChrt nur die 1er-Reihe (7 = 1\xB77)."), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("span", {
+  }, "Einzelg\xE4nger \u2726"), " \u2014 da hilft nur die 1er-Reihe. 7 = 1\xB77, mehr geht nicht."), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("span", {
     className: "text-amber-300"
-  }, "Legend\xE4r \u2726\u2726\u2726"), " \u2014 nur mit gro\xDFen Zahlen erreichbar. Genau die neun schweren Aufgaben.")));
+  }, "Legend\xE4r \u2726\u2726\u2726"), " \u2014 nur mit zwei gro\xDFen Zahlen zu erreichen. Die neun schwersten Brocken im ganzen Malfeld. Wer die hat, kann was.")));
 }
 
 /* Was fehlt diesem Wesen noch bis zum nächsten Trick? */
@@ -2451,7 +2451,7 @@ const ARENEN = [{
   id: "minus",
   art: "wiese",
   op: "−",
-  name: "Abstieg-Arena",
+  name: "Tauch-Arena",
   leiterNr: 10
 },
 /* Der Endkampf. Öffnet erst, wenn alle elf Orden hängen — und
@@ -2613,7 +2613,10 @@ function ArenaListe({
   }, ARENEN.map(a => {
     const reif = arenaReif(t, a);
     const hat = t.orden.includes(a.id);
-    const offen = reif.hab >= reif.noetig;
+    /* Eine Arena, die schon gewonnen wurde, bleibt offen — auch
+       wenn die Wesen-Bedingung mal anders gerechnet wurde. Wer
+       den Orden hat, darf immer wieder antreten. */
+    const offen = reif.hab >= reif.noetig || hat;
     const rekord = (t.rekord || {})[a.id] || 0;
     const st = sterne(t, a.id);
     const leiter = arenaLeiter(a);
@@ -2630,7 +2633,7 @@ function ArenaListe({
       className: "font-black text-emerald-50"
     }, a.name), /*#__PURE__*/React.createElement("p", {
       className: "text-xs text-emerald-300"
-    }, a.art === "liga" ? offen ? "Die sechzehn schwersten Rechnungen: 6·6 bis 9·9" : "Erst alle Orden holen (" + reif.hab + "/" + reif.noetig + ")" : offen ? "Arenaleiter: " + WESEN[leiter].name + (a.art === "reihe" ? " (" + a.reihe + " · " + a.reihe + ")" : "") : "Fang erst " + reif.noetig + " Wesen (" + reif.hab + "/" + reif.noetig + ")"), offen && /*#__PURE__*/React.createElement("p", {
+    }, a.art === "liga" ? offen ? "Die sechzehn schwersten Rechnungen. 6·6 bis 9·9. Sonst nichts." : "Erst alle " + reif.noetig + " Orden holen (" + reif.hab + "/" + reif.noetig + ")" : offen ? "Arenaleiter: " + WESEN[leiter].name + (a.art === "reihe" ? " (" + a.reihe + " · " + a.reihe + ")" : "") : "Erst " + reif.noetig + " Wesen aus dieser Reihe fangen (" + reif.hab + "/" + reif.noetig + ")"), offen && /*#__PURE__*/React.createElement("p", {
       className: "text-xs text-amber-300"
     }, rekord > 0 ? "Rekord " + rekord + " · " : "", teamTricks(t, a) > 0 ? teamTricks(t, a) + (teamTricks(t, a) === 1 ? " Trick" : " Tricks") + " im Team" : "noch keine Tricks im Team")), offen && /*#__PURE__*/React.createElement("div", {
       className: "text-right text-sm leading-tight"
@@ -2643,13 +2646,13 @@ function ArenaListe({
     className: "mt-4 rounded-2xl bg-emerald-900/50 p-3 text-sm text-emerald-200"
   }, /*#__PURE__*/React.createElement("p", {
     className: "font-black text-amber-300"
-  }, "So l\xE4uft ein Kampf"), /*#__PURE__*/React.createElement("p", {
+  }, "Bereit f\xFCr einen Kampf?"), /*#__PURE__*/React.createElement("p", {
     className: "mt-1"
-  }, "Zw\xF6lf Rechnungen gegen die Uhr, schwere bekommen mehr Zeit. Jede richtige Antwort ruft das Wesen, das die Antwort ", /*#__PURE__*/React.createElement("i", null, "ist"), " \u2014 und je mehr Tricks es kann, desto mehr Punkte bringt sein Angriff."), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1"
-  }, /*#__PURE__*/React.createElement("b", null, "\u2605 ab ", ORDEN_PUNKTE, " Punkten"), " gibt es den Orden \u2014 zw\xF6lf richtige sind ", 12 * PUNKTE_GRUND, ", reines K\xF6nnen gen\xFCgt also immer.", " ", /*#__PURE__*/React.createElement("b", null, "\u2605\u2605 ab ", MEISTER_PUNKTE), ", und ", /*#__PURE__*/React.createElement("b", null, "\u2605\u2605\u2605"), ", wenn alle zw\xF6lf richtig", /*#__PURE__*/React.createElement("i", null, " und"), " alle blitzschnell waren. Eine Arena ist damit nie fertig."), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-emerald-300"
-  }, "Jede blitzschnelle Antwort bringt eine \u26A1 f\xFCr neue Tricks.")));
+  }, "Zw\xF6lf Rechnungen, und die Uhr l\xE4uft. F\xFCr jede richtige Antwort st\xFCrmt ein Wesen los \u2014 und zwar genau das, das die Antwort ", /*#__PURE__*/React.createElement("i", null, "ist"), ". Steht da 8 \xB7 7 = 56, dann kommt Rexi. Wesen mit Tricks hauen fester zu."), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 font-bold text-amber-200"
+  }, "Daf\xFCr gibt es Sterne:"), /*#__PURE__*/React.createElement("p", null, "\u2605 ", ORDEN_PUNKTE, " Punkte \u2014 der Orden geh\xF6rt dir"), /*#__PURE__*/React.createElement("p", null, "\u2605\u2605 ", MEISTER_PUNKTE, " Punkte \u2014 Meister"), /*#__PURE__*/React.createElement("p", null, "\u2605\u2605\u2605 alles richtig und alles blitzschnell"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-emerald-300"
+  }, "Sei schnell! Wer in der ersten H\xE4lfte der Zeit antwortet, bekommt eine \u26A1 dazu. Damit bringst du deinen Wesen neue Tricks bei.")));
 }
 
 /* ============================================================
@@ -2970,9 +2973,9 @@ function ArenaKampf({
       className: "text-center font-black text-amber-200"
     }, WESEN[g.nr].bild, " ", WESEN[g.nr].name, " kann jetzt ", g.trick.bild, " ", g.trick.name, "!"))), /*#__PURE__*/React.createElement("p", {
       className: "mb-2 text-sm text-emerald-200"
-    }, "Tricks machen dein Wesen in der Arena st\xE4rker: ", /*#__PURE__*/React.createElement("b", null, "+", PUNKTE_TRICK, " Punkte"), " ", "bei jedem Angriff, f\xFCr jeden Trick den es kann."), bereit.length === 0 && nochNicht.length === 0 ? /*#__PURE__*/React.createElement("p", {
+    }, "Ein Trick macht dein Wesen st\xE4rker: ", /*#__PURE__*/React.createElement("b", null, "+", PUNKTE_TRICK, " Punkte"), " bei jedem Angriff. Such dir aus, wer ihn lernen soll!"), bereit.length === 0 && nochNicht.length === 0 ? /*#__PURE__*/React.createElement("p", {
       className: "rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200"
-    }, "Beibringen kannst du nur den Wesen, die in diesem Kampf blitzschnell waren. Diesmal war keines dabei \u2014 deine \u26A1 bleiben dir.") : /*#__PURE__*/React.createElement(React.Fragment, null, bereit.length > 0 && /*#__PURE__*/React.createElement("div", {
+    }, "Lernen d\xFCrfen nur die Wesen, die in diesem Kampf blitzschnell waren. Diesmal war keines dabei \u2014 deine \u26A1 bleiben dir aber erhalten.") : /*#__PURE__*/React.createElement(React.Fragment, null, bereit.length > 0 && /*#__PURE__*/React.createElement("div", {
       className: "grid grid-cols-3 gap-2"
     }, bereit.map(({
       nr
@@ -2995,7 +2998,7 @@ function ArenaKampf({
       className: "mt-4 rounded-2xl bg-emerald-900/60 p-3"
     }, /*#__PURE__*/React.createElement("p", {
       className: "text-xs font-bold uppercase tracking-widest text-emerald-300"
-    }, "Noch nicht so weit"), nochNicht.map(({
+    }, "Die brauchen noch etwas"), nochNicht.map(({
       nr,
       bed
     }) => /*#__PURE__*/React.createElement("p", {
@@ -3005,7 +3008,7 @@ function ArenaKampf({
       className: "text-lg"
     }, WESEN[nr].bild), " ", /*#__PURE__*/React.createElement("b", null, WESEN[nr].name), " \u2014 ", bed.was)), /*#__PURE__*/React.createElement("p", {
       className: "mt-2 text-xs text-emerald-400"
-    }, "Das holst du auf dem Streifzug. Ein Trick will verdient sein."))), /*#__PURE__*/React.createElement("div", {
+    }, "Nimm sie mit auf den Streifzug. Ein Trick will verdient sein!"))), /*#__PURE__*/React.createElement("div", {
       className: "mt-5"
     }, /*#__PURE__*/React.createElement(Knopf, {
       onClick: onEnde
@@ -3151,7 +3154,7 @@ function ArenaKampf({
     className: "kein-blau mt-3 w-full rounded-2xl border-2 py-3 text-sm font-black transition " + (luft > 0 && !pause && phase === "kampf" ? "border-sky-400/60 text-sky-200 active:translate-y-px" : "border-emerald-800 text-emerald-700")
   }, "\uD83D\uDE2E\u200D\uD83D\uDCA8 Luft holen ", "●".repeat(luft), "○".repeat(LUFT_HOLEN - luft)), /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-center text-xs text-emerald-400"
-  }, "In der ersten H\xE4lfte der Zeit antworten: +", PUNKTE_TEMPO, " Punkte und eine \u26A1."));
+  }, "Schnell sein lohnt sich: In der ersten H\xE4lfte der Zeit gibt es +", PUNKTE_TEMPO, " Punkte und eine \u26A1. Luft holen stoppt die Uhr \u2014 dann z\xE4hlt die Rechnung, aber nicht als blitzschnell."));
 }
 
 /* ============================================================
@@ -3177,7 +3180,7 @@ function Duell({
       onZurueck: onZurueck
     }), namen.length < 2 ? /*#__PURE__*/React.createElement("p", {
       className: "rounded-2xl bg-emerald-900/60 p-4 text-emerald-200"
-    }, "F\xFCr ein Duell braucht es zwei Trainerkarten. Leg auf der Startseite noch eine an \u2014 f\xFCr Florentinas Freundin oder ihren Freund.") : /*#__PURE__*/React.createElement(React.Fragment, null, [["Trainer 1", a, setA], ["Trainer 2", b, setB]].map(([titel, wert, setzen]) => /*#__PURE__*/React.createElement("div", {
+    }, "Zum Duell geh\xF6ren zwei! Leg auf der Startseite noch eine Trainerkarte an \u2014 f\xFCr eine Freundin oder einen Freund.") : /*#__PURE__*/React.createElement(React.Fragment, null, [["Trainer 1", a, setA], ["Trainer 2", b, setB]].map(([titel, wert, setzen]) => /*#__PURE__*/React.createElement("div", {
       key: titel,
       className: "mb-3 rounded-2xl bg-emerald-900/60 p-3"
     }, /*#__PURE__*/React.createElement("p", {
@@ -3283,7 +3286,7 @@ function DuellLauf({
       className: "text-2xl font-black text-amber-300"
     }, punkte[i])))), /*#__PURE__*/React.createElement("p", {
       className: "mt-3 text-xs text-emerald-400"
-    }, "Jeder hat Aufgaben aus seinem eigenen Fortschritt bekommen \u2014 deshalb ist das fair, auch wenn einer schon weiter ist."), /*#__PURE__*/React.createElement("div", {
+    }, "Jeder hat seine eigenen Aufgaben bekommen. Deshalb kann auch gewinnen, wer noch nicht so weit ist."), /*#__PURE__*/React.createElement("div", {
       className: "mt-5"
     }, /*#__PURE__*/React.createElement(Knopf, {
       onClick: onEnde
@@ -3341,7 +3344,7 @@ function DuellLauf({
     gesperrt: phase !== "frage"
   })), /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-center text-xs text-emerald-400"
-  }, "Unter vier Sekunden gibt es zwei Punkte."), /*#__PURE__*/React.createElement("button", {
+  }, "Unter vier Sekunden gibt es doppelt: zwei Punkte!"), /*#__PURE__*/React.createElement("button", {
     onClick: onEnde,
     className: "mt-2 w-full text-center text-xs text-emerald-500"
   }, "Duell abbrechen"));
@@ -3784,7 +3787,7 @@ function App() {
     className: "mt-6 block rounded-2xl border-2 border-emerald-700 p-3 text-center text-sm text-emerald-300"
   }, "\uD83E\uDD89 Zur\xFCck zu Florentinas R\xE4tselschule"), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-center text-xs leading-relaxed text-emerald-500"
-  }, "Gefangene Wesen melden sich wieder \u2014 wer eine Rechnung aus dem Stand wei\xDF, sieht sie lange nicht, wer \xFCberlegen muss, schon bald."), /*#__PURE__*/React.createElement("p", {
+  }, "Deine Wesen besuchen dich wieder. Was du aus dem Stand kannst, kommt lange nicht mehr \u2014 wo du \xFCberlegen musst, schaut bald jemand vorbei."), /*#__PURE__*/React.createElement("p", {
     className: "mt-3 text-center text-[11px] text-emerald-500"
   }, "Zahlodex \xB7 Fassung ", FASSUNG)));
 }

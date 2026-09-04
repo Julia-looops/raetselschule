@@ -1811,14 +1811,15 @@ function Trickbuch({ t, onZurueck }) {
         onZurueck={onZurueck}
       />
       <p className="mb-3 rounded-2xl bg-emerald-900/60 p-3 text-sm text-emerald-200">
-        Ein Trick bringt seinem Wesen <b>+{PUNKTE_TRICK} Punkte</b> bei jedem
-        Angriff in der Arena. ⚡ dafür gibt es für blitzschnelle Antworten im
-        Kampf — reif werden die Wesen aber auf dem Streifzug.
+        Jeder Trick macht dein Wesen stärker: <b>+{PUNKTE_TRICK} Punkte</b> bei
+        jedem Angriff. Die ⚡ dafür holst du dir im Kampf — stark genug zum
+        Lernen werden deine Wesen aber nur, wenn du sie auf dem Streifzug
+        besuchst.
       </p>
       {koennen.length === 0 ? (
         <p className="rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200">
-          Noch kein Wesen kann einen Trick. Gewinne ⚡ in der Arena und bring dort
-          einem Wesen etwas bei, das blitzschnell war.
+          Noch kann keines deiner Wesen einen Trick. Hol dir ⚡ in der Arena —
+          und bring sie dann einem Wesen bei, das dort blitzschnell war.
         </p>
       ) : (
         <div className="space-y-2">
@@ -1909,26 +1910,27 @@ function Zahlodex({ t, onZurueck }) {
         </Knopf>
       </div>
       <p className="mt-3 text-center text-xs text-emerald-400">
-        Jedes Feld ist eine Zahl von 1 bis 100. Dunkle Felder sind Zahlen, die im
-        1×1 gar nicht vorkommen — dort wohnt niemand.
+        Jedes Feld ist eine Zahl. Auf den dunklen wohnt niemand — die kommen im
+        Einmaleins gar nicht vor.
       </p>
       <div className="mt-4 rounded-2xl bg-emerald-900/50 p-3 text-sm text-emerald-200">
-        <p className="font-black text-amber-300">Seltenheit</p>
+        <p className="font-black text-amber-300">Wie selten ist ein Wesen?</p>
         <p className="mt-1">
-          <span className="text-emerald-200">Häufig</span> — die Zahl kommt oft im 1×1
-          vor (24 = 3·8 = 4·6).
+          <span className="text-emerald-200">Häufig</span> — zu dieser Zahl führen
+          viele Wege. Zu 24 kommst du über 3·8 und über 4·6.
         </p>
         <p>
-          <span className="text-sky-300">Selten ✦✦</span> — es gibt nur einen Weg dorthin
-          (35 = 5·7).
+          <span className="text-sky-300">Selten ✦✦</span> — es gibt nur einen
+          einzigen Weg. Zu 35 nur über 5·7.
         </p>
         <p>
-          <span className="text-lime-200">Einzelgänger ✦</span> — dorthin führt nur die
-          1er-Reihe (7 = 1·7).
+          <span className="text-lime-200">Einzelgänger ✦</span> — da hilft nur die
+          1er-Reihe. 7 = 1·7, mehr geht nicht.
         </p>
         <p>
-          <span className="text-amber-300">Legendär ✦✦✦</span> — nur mit großen Zahlen
-          erreichbar. Genau die neun schweren Aufgaben.
+          <span className="text-amber-300">Legendär ✦✦✦</span> — nur mit zwei
+          großen Zahlen zu erreichen. Die neun schwersten Brocken im ganzen
+          Malfeld. Wer die hat, kann was.
         </p>
       </div>
     </div>
@@ -2071,7 +2073,7 @@ const ARENEN = [
   { id: "r8", art: "reihe", reihe: 8, name: "Achter-Arena" },
   { id: "r9", art: "reihe", reihe: 9, name: "Neuner-Arena" },
   { id: "plus", art: "wiese", op: "+", name: "Brücken-Arena", leiterNr: 20 },
-  { id: "minus", art: "wiese", op: "−", name: "Abstieg-Arena", leiterNr: 10 },
+  { id: "minus", art: "wiese", op: "−", name: "Tauch-Arena", leiterNr: 10 },
   /* Der Endkampf. Öffnet erst, wenn alle elf Orden hängen — und
      besteht aus genau den sechzehn schwersten Rechnungen des kleinen
      Einmaleins: 6·6 bis 9·9, nichts anderes. */
@@ -2193,7 +2195,10 @@ function ArenaListe({ t, onKampf, onZurueck }) {
         {ARENEN.map((a) => {
           const reif = arenaReif(t, a);
           const hat = t.orden.includes(a.id);
-          const offen = reif.hab >= reif.noetig;
+          /* Eine Arena, die schon gewonnen wurde, bleibt offen — auch
+             wenn die Wesen-Bedingung mal anders gerechnet wurde. Wer
+             den Orden hat, darf immer wieder antreten. */
+          const offen = reif.hab >= reif.noetig || hat;
           const rekord = (t.rekord || {})[a.id] || 0;
           const st = sterne(t, a.id);
           const leiter = arenaLeiter(a);
@@ -2223,12 +2228,13 @@ function ArenaListe({ t, onKampf, onZurueck }) {
                 <p className="text-xs text-emerald-300">
                   {a.art === "liga"
                     ? offen
-                      ? "Die sechzehn schwersten Rechnungen: 6·6 bis 9·9"
-                      : "Erst alle Orden holen (" + reif.hab + "/" + reif.noetig + ")"
+                      ? "Die sechzehn schwersten Rechnungen. 6·6 bis 9·9. Sonst nichts."
+                      : "Erst alle " + reif.noetig + " Orden holen (" + reif.hab + "/" + reif.noetig + ")"
                     : offen
                     ? "Arenaleiter: " + WESEN[leiter].name +
                       (a.art === "reihe" ? " (" + a.reihe + " · " + a.reihe + ")" : "")
-                    : "Fang erst " + reif.noetig + " Wesen (" + reif.hab + "/" + reif.noetig + ")"}
+                    : "Erst " + reif.noetig + " Wesen aus dieser Reihe fangen (" +
+                      reif.hab + "/" + reif.noetig + ")"}
                 </p>
                 {offen && (
                   <p className="text-xs text-amber-300">
@@ -2250,20 +2256,19 @@ function ArenaListe({ t, onKampf, onZurueck }) {
         })}
       </div>
       <div className="mt-4 rounded-2xl bg-emerald-900/50 p-3 text-sm text-emerald-200">
-        <p className="font-black text-amber-300">So läuft ein Kampf</p>
+        <p className="font-black text-amber-300">Bereit für einen Kampf?</p>
         <p className="mt-1">
-          Zwölf Rechnungen gegen die Uhr, schwere bekommen mehr Zeit. Jede
-          richtige Antwort ruft das Wesen, das die Antwort <i>ist</i> — und je
-          mehr Tricks es kann, desto mehr Punkte bringt sein Angriff.
+          Zwölf Rechnungen, und die Uhr läuft. Für jede richtige Antwort stürmt
+          ein Wesen los — und zwar genau das, das die Antwort <i>ist</i>. Steht
+          da 8 · 7 = 56, dann kommt Rexi. Wesen mit Tricks hauen fester zu.
         </p>
-        <p className="mt-1">
-          <b>★ ab {ORDEN_PUNKTE} Punkten</b> gibt es den Orden — zwölf richtige
-          sind {12 * PUNKTE_GRUND}, reines Können genügt also immer.{" "}
-          <b>★★ ab {MEISTER_PUNKTE}</b>, und <b>★★★</b>, wenn alle zwölf richtig
-          <i> und</i> alle blitzschnell waren. Eine Arena ist damit nie fertig.
-        </p>
-        <p className="mt-1 text-emerald-300">
-          Jede blitzschnelle Antwort bringt eine ⚡ für neue Tricks.
+        <p className="mt-2 font-bold text-amber-200">Dafür gibt es Sterne:</p>
+        <p>★ {ORDEN_PUNKTE} Punkte — der Orden gehört dir</p>
+        <p>★★ {MEISTER_PUNKTE} Punkte — Meister</p>
+        <p>★★★ alles richtig und alles blitzschnell</p>
+        <p className="mt-2 text-emerald-300">
+          Sei schnell! Wer in der ersten Hälfte der Zeit antwortet, bekommt eine
+          ⚡ dazu. Damit bringst du deinen Wesen neue Tricks bei.
         </p>
       </div>
     </div>
@@ -2595,14 +2600,14 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
         )}
 
         <p className="mb-2 text-sm text-emerald-200">
-          Tricks machen dein Wesen in der Arena stärker: <b>+{PUNKTE_TRICK} Punkte</b>{" "}
-          bei jedem Angriff, für jeden Trick den es kann.
+          Ein Trick macht dein Wesen stärker: <b>+{PUNKTE_TRICK} Punkte</b> bei
+          jedem Angriff. Such dir aus, wer ihn lernen soll!
         </p>
 
         {bereit.length === 0 && nochNicht.length === 0 ? (
           <p className="rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200">
-            Beibringen kannst du nur den Wesen, die in diesem Kampf blitzschnell
-            waren. Diesmal war keines dabei — deine ⚡ bleiben dir.
+            Lernen dürfen nur die Wesen, die in diesem Kampf blitzschnell waren.
+            Diesmal war keines dabei — deine ⚡ bleiben dir aber erhalten.
           </p>
         ) : (
           <>
@@ -2641,7 +2646,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
             {nochNicht.length > 0 && (
               <div className="mt-4 rounded-2xl bg-emerald-900/60 p-3">
                 <p className="text-xs font-bold uppercase tracking-widest text-emerald-300">
-                  Noch nicht so weit
+                  Die brauchen noch etwas
                 </p>
                 {nochNicht.map(({ nr, bed }) => (
                   <p key={nr} className="mt-1 text-sm text-emerald-200">
@@ -2650,7 +2655,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
                   </p>
                 ))}
                 <p className="mt-2 text-xs text-emerald-400">
-                  Das holst du auf dem Streifzug. Ein Trick will verdient sein.
+                  Nimm sie mit auf den Streifzug. Ein Trick will verdient sein!
                 </p>
               </div>
             )}
@@ -2869,7 +2874,9 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
         😮‍💨 Luft holen {"●".repeat(luft)}{"○".repeat(LUFT_HOLEN - luft)}
       </button>
       <p className="mt-2 text-center text-xs text-emerald-400">
-        In der ersten Hälfte der Zeit antworten: +{PUNKTE_TEMPO} Punkte und eine ⚡.
+        Schnell sein lohnt sich: In der ersten Hälfte der Zeit gibt es
+        +{PUNKTE_TEMPO} Punkte und eine ⚡. Luft holen stoppt die Uhr — dann
+        zählt die Rechnung, aber nicht als blitzschnell.
       </p>
     </div>
   );
@@ -2893,8 +2900,8 @@ function Duell({ stand, onZurueck, speichern }) {
         <Kopf titel="Duell" unter="Zwei Trainer, ein Gerät" onZurueck={onZurueck} />
         {namen.length < 2 ? (
           <p className="rounded-2xl bg-emerald-900/60 p-4 text-emerald-200">
-            Für ein Duell braucht es zwei Trainerkarten. Leg auf der Startseite noch
-            eine an — für Florentinas Freundin oder ihren Freund.
+            Zum Duell gehören zwei! Leg auf der Startseite noch eine
+            Trainerkarte an — für eine Freundin oder einen Freund.
           </p>
         ) : (
           <>
@@ -2989,8 +2996,8 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
             ))}
           </div>
           <p className="mt-3 text-xs text-emerald-400">
-            Jeder hat Aufgaben aus seinem eigenen Fortschritt bekommen — deshalb ist
-            das fair, auch wenn einer schon weiter ist.
+            Jeder hat seine eigenen Aufgaben bekommen. Deshalb kann auch
+            gewinnen, wer noch nicht so weit ist.
           </p>
           <div className="mt-5">
             <Knopf onClick={onEnde}>Fertig</Knopf>
@@ -3055,7 +3062,7 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
         <Ziffernblock wert={eingabe} setWert={setEingabe} onOk={pruefen} gesperrt={phase !== "frage"} />
       </div>
       <p className="mt-2 text-center text-xs text-emerald-400">
-        Unter vier Sekunden gibt es zwei Punkte.
+        Unter vier Sekunden gibt es doppelt: zwei Punkte!
       </p>
       <button onClick={onEnde} className="mt-2 w-full text-center text-xs text-emerald-500">
         Duell abbrechen
@@ -3536,8 +3543,8 @@ function App() {
         </a>
 
         <p className="mt-4 text-center text-xs leading-relaxed text-emerald-500">
-          Gefangene Wesen melden sich wieder — wer eine Rechnung aus dem Stand
-          weiß, sieht sie lange nicht, wer überlegen muss, schon bald.
+          Deine Wesen besuchen dich wieder. Was du aus dem Stand kannst, kommt
+          lange nicht mehr — wo du überlegen musst, schaut bald jemand vorbei.
         </p>
         <p className="mt-3 text-center text-[11px] text-emerald-500">
           Zahlodex · Fassung {FASSUNG}
