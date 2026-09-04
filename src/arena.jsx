@@ -214,6 +214,16 @@ function fakten(welt, n) {
   return welt === "malfeld" ? faktenMalfeld(n) : faktenWiese(n);
 }
 
+/* Die Rechnungen, die ein Wesen wirklich stellt. Aufgaben mit 1
+   (10 · 1, 4 + 1) sind zu leicht und werden übersprungen, solange
+   genug andere da sind — sie zählen deshalb auch nicht mit, wenn
+   gezählt wird, was ein Kind schon kann. */
+function zielFakten(welt, nr) {
+  const alle = fakten(welt, nr);
+  const ohneEins = alle.filter((x) => x.a !== 1 && x.b !== 1);
+  return ohneEins.length >= 2 ? ohneEins : alle;
+}
+
 /* Umkehraufgabe: statt "6 · 7 = ?" heißt es "6 · ? = 42".
    Gefragt ist immer die zweite Zahl. Das deckt Lücken auf, die beim
    Vorwärtsrechnen unsichtbar bleiben — wer nur die Reihe aufsagen
@@ -387,6 +397,8 @@ function tricksGesamt(t) {
   return Object.values(t.wesen).reduce((s2, e) => s2 + ((e && e.tr) || 0), 0);
 }
 const REVIER = 4;         // so viele wilde Wesen gleichzeitig
+const ENTDECKER_REVIER = 3; // so viele Wesen zeigen gleichzeitig Neues
+const ENTDECKER_PLAETZE = 2; // so oft höchstens je Wesen und Runde
 
 function faelligIn(stufe) {
   return Date.now() + ABSTAND[Math.min(stufe, ABSTAND.length - 1)] * 60000;
@@ -710,6 +722,53 @@ function mitF(t, welt, nr, wert) {
   return { ...t, wesen };
 }
 
+/* ============================================================
+   ABDECKUNG — Rechnungen zählen, nicht nur Wesen
+
+   Ein Wesen gilt nach drei richtigen Antworten als gefangen. Im
+   Malfeld sind das alle seine Rechnungen (im Schnitt 2,4). Auf dem
+   Wiesenweg hat ein Wesen aber 16 Rechnungen — "gefangen" heißt
+   dort also nur "einmal irgendwie erreicht", nicht "kann ich".
+
+   Deshalb merkt sich das Spiel je Wesen, welche seiner Rechnungen
+   schon einmal richtig waren. Der Streifzug zieht bevorzugt die,
+   die noch fehlen, und im Zahlodex steht ehrlich, wie weit ein
+   Wesen erforscht ist.
+   ============================================================ */
+function abdeckung(t, welt, nr) {
+  const f = holF(t, welt, nr);
+  const ziel = zielFakten(welt, nr);
+  const hab = f && f.g ? ziel.filter((x) => f.g.includes(x.id)).length : 0;
+  return { hab, ziel: ziel.length };
+}
+
+function erforscht(t, welt, nr) {
+  const a = abdeckung(t, welt, nr);
+  return a.hab >= a.ziel;
+}
+
+/* Wesen, die gefangen sind, aber noch Rechnungen offen haben */
+function nochWasZuZeigen(t, welt) {
+  return WELT[welt].nrs.filter((nr) => {
+    const f = holF(t, welt, nr);
+    return f && f.s >= 1 && !erforscht(t, welt, nr);
+  });
+}
+
+function erforschteZahl(t, welt) {
+  return WELT[welt].nrs.filter((nr) => {
+    const f = holF(t, welt, nr);
+    return f && f.s >= 1 && erforscht(t, welt, nr);
+  }).length;
+}
+
+/* eine Rechnung als "saß schon" vermerken */
+function merkeFakt(f, fakt) {
+  const id = fakt.basis || fakt.id;
+  const g = f.g || [];
+  return g.includes(id) ? f : { ...f, g: [...g, id] };
+}
+
 function istGefangen(t, nr) {
   const e = t.wesen[nr];
   return !!(e && ((e.w && e.w.s >= 1) || (e.m && e.m.s >= 1)));
@@ -767,9 +826,33 @@ function baueRunde(t, welt, laenge) {
     roh.push(revier[i % revier.length]);
   }
 
-  /* Auffrischen: schon gefangene Wesen, die noch nicht dran wären.
-     Sie erweitern den Antwortraum — sonst kommen in einer Runde nur
-     drei verschiedene Ergebnisse vor und man kann sie erraten. */
+  /* Entdecken: gefangene Wesen, die noch Rechnungen übrig haben, die
+     nie dran waren. Das ist der eigentliche Nachschub, sobald eine
+     Gegend "voll" ist — auf dem Wiesenweg hat jedes Wesen 16
+     Rechnungen, nach dem Fangen sind erst drei davon gesessen. */
+  const entdeckbar = nochWasZuZeigen(t, welt)
+    .filter((nr) => !faellig.includes(nr))
+    /* Die, denen am wenigsten fehlt, zuerst: sonst käme überall ein
+       bisschen dazu und kein einziges Wesen würde je fertig. So wird
+       alle paar Runden eines vollständig erforscht. */
+    .sort((a, b) => {
+      const fa = abdeckung(t, welt, a);
+      const fb = abdeckung(t, welt, b);
+      return fa.ziel - fa.hab - (fb.ziel - fb.hab);
+    })
+    .slice(0, ENTDECKER_REVIER);
+  /* Höchstens zwei Plätze je Wesen: sonst bestünde die halbe Runde
+     aus einer einzigen Antwortzahl, und man könnte wieder raten,
+     ohne zu lesen. */
+  const plaetze = [];
+  entdeckbar.forEach((nr) => {
+    for (let k = 0; k < ENTDECKER_PLAETZE; k++) plaetze.push(nr);
+  });
+  while (roh.length < laenge && plaetze.length) {
+    roh.push(plaetze.splice(Math.floor(Math.random() * plaetze.length), 1)[0]);
+  }
+
+  /* Auffrischen: alles schon erforscht — dann eben wiederholen. */
   const auffrischbar = gefangen.filter((nr) => !faellig.includes(nr));
   while (roh.length < laenge && auffrischbar.length) {
     const i = Math.floor(Math.random() * auffrischbar.length);
@@ -820,12 +903,15 @@ function mischen(liste) {
    Rechnungen mit 1 (10 · 1, 4 · 1) werden übersprungen, solange es
    genug andere gibt: sie sind zu leicht, um etwas zu üben. */
 function waehleFakt(t, welt, nr, ohneUmkehr) {
-  const alle = fakten(welt, nr);
-  const ohneEins = alle.filter((x) => x.a !== 1 && x.b !== 1);
-  const grund = ohneEins.length >= 2 ? ohneEins : alle;
+  const grund = zielFakten(welt, nr);
   const f = holF(t, welt, nr);
-  const ohneLetzte = f && f.l ? grund.filter((x) => x.id !== f.l) : grund;
-  const topf = ohneLetzte.length ? ohneLetzte : grund;
+  /* Was noch nie saß, kommt zuerst dran — sonst würde ein Wesen mit
+     16 Rechnungen ewig dieselben drei zeigen. */
+  const g = (f && f.g) || [];
+  const neu2 = grund.filter((x) => !g.includes(x.id));
+  const vorzug = neu2.length ? neu2 : grund;
+  const ohneLetzte = f && f.l ? vorzug.filter((x) => x.id !== f.l) : vorzug;
+  const topf = ohneLetzte.length ? ohneLetzte : vorzug;
   const gewaehlt = topf[Math.floor(Math.random() * topf.length)];
   const reif = f && f.s >= UMKEHR_AB_STUFE;
   /* Bei "a · a" wäre die Umkehr geschenkt — die Zahl steht schon da.
@@ -1070,6 +1156,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
      sonst würde sie sich bei jedem Neuzeichnen ändern. */
   const [fakt, setFakt] = useState(() => waehleFakt(start, welt, liste[0]));
   const tipps = beeren(fakt);
+  const neueRechnung = !((f.g || []).includes(fakt.basis || fakt.id));
 
   useEffect(() => {
     beginn.current = Date.now();
@@ -1139,7 +1226,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
     if (blitz) Ton.blitz(); else Ton.richtig();
 
     let wurdeGefangen = false;
-    const n = { ...f, l: fakt.basis || fakt.id };
+    const n = merkeFakt({ ...f, l: fakt.basis || fakt.id }, fakt);
     if (blitz) n.blitz = true;
     if (wiederholung) {
       /* Verbesserung nach einem Fehler: zählt nicht als Treffer */
@@ -1332,9 +1419,13 @@ function Streifzug({ start, welt, speichern, onEnde }) {
             </>
           ) : (
             <>
-              <p className="text-sm font-black text-amber-300">{WESEN[nr].name} · Nr. {nr}</p>
+              {/* Bewusst ohne Nummer: die Nummer IST das Ergebnis der
+                  Rechnung, die gerade gefragt wird. */}
+              <p className="text-sm font-black text-amber-300">{WESEN[nr].name}</p>
               <p className="text-xs text-emerald-300">
-                {"❤️".repeat(f.s)} will dich wiedersehen
+                {neueRechnung
+                  ? "zeigt dir eine neue Rechnung ✨"
+                  : "❤️".repeat(f.s) + " will dich wiedersehen"}
               </p>
             </>
           )}
@@ -1531,7 +1622,8 @@ function Blitzrunde({ start, welt, speichern, onEnde }) {
     setLetzte(art);
     setPause(false);
     const f = holF(t, welt, nr) || { h: 0, s: 1, f: 0, x: 0 };
-    const n = { ...f, l: fakt.id };
+    let n = { ...f, l: fakt.id };
+    if (art === "blitz" || art === "gerechnet") n = merkeFakt(n, fakt);
     if (art === "blitz") {
       n.blitz = true;
       Ton.blitz();
@@ -1910,6 +2002,7 @@ function WesenDetail({ t, nr, onZurueck }) {
           angeschlagen — {f.h || 0}/{FANG_TREFFER} Treffer
         </span>
       );
+    const ab = abdeckung(t, welt, nr);
     const min = Math.max(0, Math.round((f.f - Date.now()) / 60000));
     const wann =
       min <= 0 ? "wartet jetzt auf dich" : min < 90 ? "in " + min + " Min wieder" :
@@ -1917,6 +2010,12 @@ function WesenDetail({ t, nr, onZurueck }) {
     return (
       <span className="text-emerald-200">
         Freundschaft {"❤️".repeat(f.s)} · {wann}
+        <br />
+        <span className={ab.hab >= ab.ziel ? "text-amber-300" : "text-emerald-400"}>
+          {ab.hab >= ab.ziel
+            ? "vollständig erforscht ✨ — jede Rechnung saß schon"
+            : ab.hab + " von " + ab.ziel + " Rechnungen saßen schon"}
+        </span>
       </span>
     );
   }
@@ -2055,6 +2154,15 @@ function arenaAufgaben(a, anzahl) {
       if (b !== a.reihe)
         pool.push({ text: b + " · " + a.reihe, antwort: a.reihe * b, a: b, b: a.reihe, op: "·" });
     }
+    /* Ein Orden soll etwas heißen. Bisher wurden zehn Rechnungen aus
+       neunzehn gelost — die schweren (6·7, 6·8, 6·9 …) konnten dabei
+       auch ausbleiben. Jetzt sind sie immer dabei, der Rest wird
+       aufgefüllt. Bei den 2er-, 3er-, 4er-, 5er- und 10er-Reihen gibt
+       es keine schweren, dort ändert sich nichts. */
+    const hart = pool.filter((x) => schwereZahl(x.a) && schwereZahl(x.b));
+    const rest = pool.filter((x) => !(schwereZahl(x.a) && schwereZahl(x.b)));
+    const gelost = rest.sort(() => Math.random() - 0.5).slice(0, Math.max(0, anzahl - hart.length));
+    return [...hart, ...gelost].sort(() => Math.random() - 0.5).slice(0, anzahl);
   } else if (a.op === "+") {
     for (let x = 2; x <= 9; x++)
       for (let y = 2; y <= 9; y++)
@@ -2632,6 +2740,8 @@ function Weltwahl({ t, waehle, blitz, zurueck }) {
             return f && f.s >= 1;
           }).length;
           const dran = faelligeZahl(t, w);
+          const erf = erforschteZahl(t, w);
+          const offen = nochWasZuZeigen(t, w).length;
           return (
             <button
               key={w}
@@ -2654,6 +2764,16 @@ function Weltwahl({ t, waehle, blitz, zurueck }) {
               <p className="mt-1 text-xs text-emerald-300">
                 {hab} von {welt.nrs.length} Wesen ·{" "}
                 {dran > 0 ? dran + " warten auf dich" : "nichts fällig"}
+              </p>
+              {/* Gefangen heißt noch nicht gekonnt: hier steht, bei wie
+                  vielen Wesen wirklich jede Rechnung schon saß. */}
+              <p className="mt-0.5 text-xs text-emerald-400">
+                {erf} von {hab} erforscht
+                {offen > 0
+                  ? " · " + offen + " zeigen dir noch was"
+                  : hab === welt.nrs.length
+                  ? " · alles erkundet ✨"
+                  : ""}
               </p>
             </button>
           );

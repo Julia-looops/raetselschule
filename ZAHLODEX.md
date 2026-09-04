@@ -49,6 +49,14 @@ Sichtbar ist ein Sammelspiel. Darunter arbeitet ein Karteikasten (Leitner):
 
 * **Fangen** = dreimal richtig. Bei Wesen mit mehreren Rechnungen wird
   durchgewechselt — wer 24 will, lernt 3·8 *und* 4·6.
+* **Erforschen**: Gefangen heißt noch nicht gekonnt. Im Malfeld hat ein Wesen im
+  Schnitt 2,4 Rechnungen — nach dem Fangen sitzen also alle. Auf dem Wiesenweg
+  sind es **16**: "20 von 20 Wesen" hieße dort nur "jede Zahl schon mal
+  irgendwie erreicht". Deshalb merkt sich das Spiel je Wesen, welche seiner
+  Rechnungen schon einmal richtig waren, zieht bevorzugt die fehlenden, und
+  zählt ehrlich mit: *"0 von 20 erforscht · 20 zeigen dir noch was."* Ein Wesen,
+  bei dem alles saß, ist **vollständig erforscht ✨**. Damit hat der Wiesenweg
+  324 Rechnungen statt 20 Wesen — er geht nicht mehr aus.
 * **Behalten** = Wiedersehen nach 10 Minuten, 1 Tag, 3 Tagen, 1 Woche, 3 Wochen.
   Wer die Rechnung nach drei Wochen noch kann, kann sie.
 * **Falsch** heißt nie "verloren", sondern eine Stufe zurück. Das Wesen bleibt
@@ -116,6 +124,12 @@ Der Arenaleiter hält neun Treffer aus. Ein Wesen ohne Trick schlägt für 1, ei
 mit Trick für 2. Ohne Tricks braucht es also neun von zehn richtigen Antworten —
 genau so viel wie vorher. Wer seinen Wesen etwas beigebracht hat, darf sich
 Fehler leisten. Die Blitzrunde zahlt auf die Arena ein.
+
+Die zehn Kampffragen werden nicht mehr frei gelost: **die schweren Rechnungen
+der Reihe sind immer dabei** (in der 6er-Arena also 6·6, 6·7, 6·8, 6·9 und die
+Umkehrungen), der Rest wird aufgefüllt. Vorher konnte ein Orden auch mit einer
+milden Ziehung fallen. Bei den 2er-, 3er-, 4er-, 5er- und 10er-Reihen gibt es
+keine schweren, dort ändert sich nichts.
 
 ## Für die Freunde
 

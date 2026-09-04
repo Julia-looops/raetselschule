@@ -107,6 +107,12 @@ von dort genommen — ab dann baut es auch ohne Internet.
 - **Abwechslung**: Die Runde wird über `mischen` so gemischt, dass kein Wesen
   zweimal hintereinander drankommt; `waehleFakt` zieht die Rechnung zufällig
   und überspringt Rechnungen mit 1, solange es genug andere gibt.
+- **Erforschen**: `zielFakten` sagt, welche Rechnungen ein Wesen überhaupt
+  stellt, `abdeckung` wie viele davon schon saßen (gespeichert je Wesen unter
+  `g`). `waehleFakt` bevorzugt die noch fehlenden. `ENTDECKER_REVIER` legt fest,
+  wie viele Wesen gleichzeitig Neues zeigen, `ENTDECKER_PLAETZE` wie oft eines
+  davon je Runde drankommen darf — beides zusammen entscheidet, wie schnell
+  Wesen fertig werden und wie abwechslungsreich die Runde bleibt.
 
 ## Zurück zur Ursprungsfassung
 
