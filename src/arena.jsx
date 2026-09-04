@@ -2899,7 +2899,11 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
           <div className="text-6xl">{gewonnen ? "🏅" : WESEN[leiterNr].bild}</div>
           <p className="mt-2 text-5xl font-black text-amber-300">{punkte}</p>
           <p className="text-xs uppercase tracking-widest text-emerald-300">Punkte</p>
-          <div className="mt-1 text-3xl">
+          {/* Ohne den Namen weiß niemand, für welche Arena die Sterne sind. */}
+          <p className="mt-3 text-sm font-black uppercase tracking-widest text-amber-200">
+            {arena.name}
+          </p>
+          <div className="text-3xl">
             <Sterne3 n={Math.max(vorherSterne, jetztSterne)} />
           </div>
           <h2 className="mt-1 text-xl font-black text-emerald-50">

@@ -1399,7 +1399,7 @@ function beeren(fakt) {
    Florentina und ihre Freunde dasselbe Gerät benutzen können.
    ============================================================ */
 /* wird beim Bauen ersetzt, siehe tools/build.mjs */
-const FASSUNG = "17 · 4.9.2026";
+const FASSUNG = "18 · 4.9.2026";
 const SPEICHER = "florentina-zahlodex";
 const TRAINER_BILDER = ["🐾", "🧢", "🎒", "🪄", "🛼", "🦄", "🚀", "🍀"];
 function leererTrainer(bild) {
@@ -3239,8 +3239,10 @@ function ArenaKampf({
       className: "mt-2 text-5xl font-black text-amber-300"
     }, punkte), /*#__PURE__*/React.createElement("p", {
       className: "text-xs uppercase tracking-widest text-emerald-300"
-    }, "Punkte"), /*#__PURE__*/React.createElement("div", {
-      className: "mt-1 text-3xl"
+    }, "Punkte"), /*#__PURE__*/React.createElement("p", {
+      className: "mt-3 text-sm font-black uppercase tracking-widest text-amber-200"
+    }, arena.name), /*#__PURE__*/React.createElement("div", {
+      className: "text-3xl"
     }, /*#__PURE__*/React.createElement(Sterne3, {
       n: Math.max(vorherSterne, jetztSterne)
     })), /*#__PURE__*/React.createElement("h2", {
