@@ -294,14 +294,56 @@ const WELT = {
    immer größeren Abständen. Falsch heißt nie "verloren", nur
    "eine Stufe zurück".
    ============================================================ */
-const ABSTAND = [0, 10, 60 * 24, 60 * 24 * 3, 60 * 24 * 7, 60 * 24 * 21]; // Minuten
-const MAX_STUFE = ABSTAND.length - 1;
+/* ============================================================
+   REIFEN — drei Leitern statt einer
+
+   Nicht jede Rechnung braucht gleich lang, bis sie wirklich sitzt.
+   3 · 4 ist in zwei Wochen verankert, 7 · 8 nicht. Zwei Dinge müssen
+   dabei aber auseinandergehalten werden:
+
+     · WIE OFT kommt es dran   — Schweres öfter
+     · WIE LANGE bis zur Reife — Schweres später
+
+   Beides über längere Abstände zu regeln ginge nach hinten los: dann
+   käme das Schwere seltener dran. Stattdessen bekommen schwere Wesen
+   eine ENGERE, aber LÄNGERE Leiter: 12 Stunden statt einem Tag am
+   Anfang, dafür zwei Stufen mehr und 28 statt 21 Tage ganz oben.
+
+   Durchgereift ist ein Wesen, wenn es ein Wiedersehen bestanden hat,
+   das aus der obersten Stufe kam — also nach der langen Pause.
+   ============================================================ */
+const LEITER = {
+  /* Minuten. Stufe 0 ist "noch wild". */
+  leicht: [0, 10, 60 * 24, 60 * 24 * 3, 60 * 24 * 10],
+  mittel: [0, 10, 60 * 24, 60 * 24 * 3, 60 * 24 * 7, 60 * 24 * 21],
+  schwer: [0, 10, 60 * 12, 60 * 24 * 2, 60 * 24 * 5, 60 * 24 * 12, 60 * 24 * 28],
+};
+
+/* Wie schwer ist ein Wesen? Nach seinem LEICHTESTEN Weg: wer 24 über
+   3 · 8 rechnet, hat eine große Zahl dabei; wer 12 über 3 · 4 rechnet,
+   nicht. Im Malfeld fallen so genau die neun legendären Wesen in
+   "schwer" — dieselben neun, die auch im Album selten sind. */
+function reifeArt(welt, nr) {
+  if (welt === "wiese") return nr <= 10 ? "leicht" : "mittel";
+  const wege = zielFakten("malfeld", nr).map(
+    (x) => (schwereZahl(x.a) ? 1 : 0) + (schwereZahl(x.b) ? 1 : 0)
+  );
+  if (wege.length === 0) return "mittel"; // kommt im Malfeld gar nicht vor
+  const leichtester = Math.min(...wege);
+  return leichtester === 0 ? "leicht" : leichtester === 1 ? "mittel" : "schwer";
+}
+
+function leiter(welt, nr) {
+  return LEITER[reifeArt(welt, nr)];
+}
+
+function maxStufe(welt, nr) {
+  return leiter(welt, nr).length - 1;
+}
 const FANG_TREFFER = 3;   // so oft richtig, dann ist es gefangen
 const BLITZ_MS = 4000;    // schneller als das = blitzschnell
 const LANGSAM_MS = 10000; // langsamer als das = richtig, aber unsicher
 const RUNDE_LAENGE = 10;
-const BLITZ_FRAGEN = 10;      // Länge einer Blitzrunde
-const BLITZ_AB_WESEN = 6;     // so viele gefangene Wesen braucht es dafür
 const LUFT_HOLEN = 2;         // so oft darf die Uhr pro Runde anhalten
 const TRICK_KOSTEN = 5;       // ⚡ für einen Trick
 const MAX_TRICKS = 3;         // so viele kann ein Wesen lernen
@@ -391,6 +433,59 @@ function kannNochLernen(t, nr) {
   return trickZahl(t, nr) < trickListe(nr).length;
 }
 
+/* ============================================================
+   WANN DARF EIN WESEN EINEN TRICK LERNEN?
+
+   Drei Tricks, drei Zeithorizonte — jeder sagt etwas anderes:
+
+     1  war im Kampf blitzschnell        (sofort)
+     2  alle Rechnungen saßen schon und  (Tage)
+        das Wesen steht auf Stufe 3
+     3  ein Wiedersehen nach der langen  (Wochen)
+        Pause bestanden
+
+   Der dritte ist nicht abzukürzen: die Zeit selbst ist die Hürde.
+   Gelernte Tricks bleiben, auch wenn ein Wesen später zurückfällt —
+   die Bedingung gilt fürs Lernen, nicht fürs Behalten.
+   ============================================================ */
+function trickBedingung(t, welt, nr) {
+  const habe = trickZahl(t, nr);
+  if (habe >= trickListe(nr).length) return { ok: false, was: "kann schon alles" };
+  const f = holF(t, welt, nr);
+  if (habe === 0) return { ok: true, was: "" };
+  if (habe === 1) {
+    const ab = abdeckung(t, welt, nr);
+    if (ab.hab < ab.ziel)
+      return {
+        ok: false,
+        was: "noch " + (ab.ziel - ab.hab) +
+          (ab.ziel - ab.hab === 1 ? " Rechnung" : " Rechnungen") + " erforschen",
+      };
+    if (!f || f.s < 3)
+      return { ok: false, was: "Stufe 3 erreichen (jetzt " + (f ? f.s : 0) + ")" };
+    return { ok: true, was: "" };
+  }
+  if (f && f.dauer) return { ok: true, was: "" };
+  const max = maxStufe(welt, nr);
+  return {
+    ok: false,
+    was: f && f.s >= max
+      ? "die lange Pause überstehen — es meldet sich von selbst"
+      : "erst Stufe " + max + " erreichen (jetzt " + (f ? f.s : 0) + "), dann die lange Pause",
+  };
+}
+
+/* Wesen, die schon einen Trick haben und deren nächste Bedingung
+   erfüllt ist — die also nur noch ⚡ und einen Kampf brauchen. Das ist
+   das Ziel, das der Streifzug künftig anzeigt. */
+function bereitFuerTrick(t, welt) {
+  return WELT[welt].nrs.filter((nr) => {
+    if (trickZahl(t, nr) === 0) return false;
+    if (!kannNochLernen(t, nr)) return false;
+    return trickBedingung(t, welt, nr).ok;
+  });
+}
+
 function trickPunkte(t) {
   return t.punkte || 0;
 }
@@ -405,8 +500,9 @@ const ENTDECKER_PLAETZE = 2; // so oft höchstens je Wesen und Runde
 /* Der Abstand bekommt etwas Streuung (±15 %). Ohne sie werden alle
    Wesen einer Sitzung am nächsten Tag gleichzeitig fällig — und dann
    steht da "20 Wesen wollen dich wiedersehen", was erschlägt. */
-function faelligIn(stufe) {
-  const minuten = ABSTAND[Math.min(stufe, MAX_STUFE)];
+function faelligIn(welt, nr, stufe) {
+  const l = leiter(welt, nr);
+  const minuten = l[Math.min(stufe, l.length - 1)];
   const streuung = 0.85 + Math.random() * 0.3;
   return Date.now() + minuten * streuung * 60000;
 }
@@ -436,24 +532,29 @@ function tempoVon(dauer, mitHilfe, richtig) {
   return "normal";
 }
 
-function nachWiedersehen(f, tempo) {
+function nachWiedersehen(f, tempo, welt, nr) {
   const n = { ...f };
+  const max = maxStufe(welt, nr);
+  /* Kam dieses Wiedersehen aus der obersten Stufe? Dann ist gerade die
+     lange Pause überstanden — das ist der Beweis, dass es wirklich
+     sitzt, und die Bedingung für den dritten Trick. */
+  if (tempo !== "falsch" && f.s >= max) n.dauer = true;
   if (tempo === "falsch") {
     n.s = Math.max(1, n.s - 1);
-    n.f = faelligIn(1);
+    n.f = faelligIn(welt, nr, 1);
     return n;
   }
-  if (tempo === "blitz") n.s = Math.min(MAX_STUFE, n.s + 2);
-  else if (tempo === "normal") n.s = Math.min(MAX_STUFE, n.s + 1);
+  if (tempo === "blitz") n.s = Math.min(max, n.s + 2);
+  else if (tempo === "normal") n.s = Math.min(max, n.s + 1);
   if (tempo === "langsam" || tempo === "hilfe") {
     /* Die Stufe bleibt — verloren ist nichts. Aber wiedersehen wollen
        wir es bald: wer bei einer alten Bekannten überlegen muss, soll
        sie nicht erst in drei Wochen wieder treffen. Eine einzige
        schnelle Antwort schickt sie danach gleich wieder in die Ruhe. */
-    n.f = faelligIn(Math.min(n.s, 2));
+    n.f = faelligIn(welt, nr, Math.min(n.s, 2));
     return n;
   }
-  n.f = faelligIn(n.s);
+  n.f = faelligIn(welt, nr, n.s);
   return n;
 }
 
@@ -1104,7 +1205,7 @@ function TrickReihe({ t, nr }) {
               : "bg-emerald-200/60 text-emerald-500")
           }
         >
-          {k < kann.length ? tr.bild + " " + tr.name : "?"}
+          {k < kann.length ? tr.bild + " " + tr.name : "🔒 " + tr.name}
         </span>
       ))}
     </div>
@@ -1189,6 +1290,10 @@ function Schatten({ nr, gross }) {
    ============================================================ */
 function Streifzug({ start, welt, speichern, onEnde }) {
   const [t, setT] = useState(start);
+  /* Stand bei Rundenbeginn festhalten: start wandert mit, weil der
+     Trainer laufend gespeichert wird. Für den Bericht brauchen wir
+     aber den Vergleich mit dem Anfang. */
+  const [anfang] = useState(start);
   const [liste] = useState(() => baueRunde(start, welt, RUNDE_LAENGE));
   const [pos, setPos] = useState(0);
   const [phase, setPhase] = useState("frage"); // frage | falsch | richtig | fang | bericht
@@ -1274,7 +1379,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
       setBilanz((b) => ({ ...b, falsch: b.falsch + 1 }));
       let n = { ...f, x: (f.x || 0) + 1, l: fakt.basis || fakt.id };
       if (n.s === 0) n.h = Math.max(0, (n.h || 0) - 1);
-      else n = nachWiedersehen(n, "falsch");
+      else n = nachWiedersehen(n, "falsch", welt, nr);
       const neu = mitF(t, welt, nr, n);
       setT({ ...neu, stat: { ...neu.stat, falsch: neu.stat.falsch + 1 } });
       setPhase("falsch");
@@ -1297,13 +1402,16 @@ function Streifzug({ start, welt, speichern, onEnde }) {
       if (n.h >= FANG_TREFFER) {
         /* Wer beim Fangen schon dreimal blitzschnell war, braucht das
            erste Wiedersehen nicht nach zehn Minuten. */
-        n.s = (n.fix || 0) >= FANG_TREFFER ? 3 : (n.fix || 0) >= 2 ? 2 : 1;
-        n.f = faelligIn(n.s);
+        n.s = Math.min(
+          maxStufe(welt, nr),
+          (n.fix || 0) >= FANG_TREFFER ? 3 : (n.fix || 0) >= 2 ? 2 : 1
+        );
+        n.f = faelligIn(welt, nr, n.s);
         wurdeGefangen = true;
       }
     } else if (n.f <= Date.now()) {
       /* echtes Wiedersehen: das Tempo entscheidet über den Abstand */
-      n = nachWiedersehen(n, tempo);
+      n = nachWiedersehen(n, tempo, welt, nr);
     }
     /* Auffrischung vor der Zeit lässt den Abstand unverändert —
        sonst würde häufiges Üben die Wiedersehen immer weiter
@@ -1342,6 +1450,14 @@ function Streifzug({ start, welt, speichern, onEnde }) {
 
   /* -------------------- Bericht -------------------- */
   if (phase === "bericht") {
+    /* Was ist in dieser Runde reif geworden? Vergleich mit dem Stand
+       vom Rundenbeginn — das ist das Ziel, auf das der Streifzug
+       hinarbeitet, seit alles gefangen ist. */
+    const vorher = bereitFuerTrick(anfang, welt);
+    const jetztReif = bereitFuerTrick(t, welt).filter((nr) => !vorher.includes(nr));
+    const neuErforscht = WELT[welt].nrs.filter(
+      (x) => erforscht(t, welt, x) && holF(t, welt, x) && !erforscht(anfang, welt, x)
+    );
     const morgen = WELT[welt].nrs.filter((x) => {
       const g = holF(t, welt, x);
       return g && g.s >= 1 && g.f > Date.now() && g.f < Date.now() + 36 * 3600 * 1000;
@@ -1397,6 +1513,37 @@ function Streifzug({ start, welt, speichern, onEnde }) {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {neuErforscht.length > 0 && (
+            <div className="mt-4 rounded-2xl border-2 border-emerald-400/40 p-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-emerald-300">
+                Vollständig erforscht ✨
+              </p>
+              <p className="mt-1 text-sm text-emerald-100">
+                {neuErforscht.map((x) => WESEN[x].name).join(", ")} — jede Rechnung
+                hat gesessen.
+              </p>
+            </div>
+          )}
+
+          {jetztReif.length > 0 && (
+            <div className="mt-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+                Reif für einen neuen Trick
+              </p>
+              <div className="mt-2 flex flex-wrap justify-center gap-3">
+                {jetztReif.map((x) => (
+                  <div key={x} className="text-center">
+                    <div className="text-3xl">{WESEN[x].bild}</div>
+                    <p className="text-xs font-bold text-emerald-100">{WESEN[x].name}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-amber-200">
+                Nimm sie mit in die Arena — wer dort blitzschnell ist, darf lernen.
+              </p>
             </div>
           )}
 
@@ -1648,389 +1795,72 @@ function Streifzug({ start, welt, speichern, onEnde }) {
 
 
 /* ============================================================
-   BLITZRUNDE
-   Nur schon gefangene Wesen, dafür fünf Sekunden pro Rechnung und
-   keine Beeren. Hier geht es nicht ums Ausrechnen, sondern ums
-   Wiedererkennen — das ist der Unterschied zwischen "kann sie
-   herleiten" und "kann sie".
-
-   Wer zögert, wird nicht bestraft: das Wesen meldet sich nur gleich
-   wieder, statt erst in ein paar Tagen.
-   ============================================================ */
-function blitzWesen(t, welt) {
-  return WELT[welt].nrs.filter((nr) => {
-    const f = holF(t, welt, nr);
-    return f && f.s >= 1;
-  });
-}
-
-function Blitzrunde({ start, welt, speichern, onEnde }) {
-  const [t, setT] = useState(start);
-  const [fragen] = useState(() => {
-    const topf = blitzWesen(start, welt);
-    const roh = [];
-    for (let i = 0; i < BLITZ_FRAGEN; i++) roh.push(topf[i % topf.length]);
-    return mischen(roh).map((nr) => ({ nr, fakt: waehleFakt(start, welt, nr, true) }));
-  });
-  const [i, setI] = useState(0);
-  const [eingabe, setEingabe] = useState("");
-  const [zeit, setZeit] = useState(() => blitzZeit(fragen[0].fakt));
-  const [luft, setLuft] = useState(LUFT_HOLEN);
-  const [pause, setPause] = useState(false);
-  const [geschnauft, setGeschnauft] = useState(false);
-  const [phase, setPhase] = useState("frage"); // frage | kurz | ende | lehren
-  const [letzte, setLetzte] = useState(null);  // blitz | gerechnet | langsam | falsch
-  const [bilanz, setBilanz] = useState({ blitz: 0, schnell: [], langsam: [], falsch: [] });
-  const [gelehrt, setGelehrt] = useState([]);
-
-  const dran = fragen[Math.min(i, fragen.length - 1)];
-  const dauer = blitzZeit(dran.fakt);
-
-  useEffect(() => {
-    speichern(t);
-  }, [t]);
-
-  /* neue Frage: Uhr neu stellen */
-  useEffect(() => {
-    setZeit(dauer);
-    setGeschnauft(false);
-    setPause(false);
-  }, [i]);
-
-  useEffect(() => {
-    if (phase !== "frage" || pause) return;
-    const u = setInterval(
-      () => setZeit((z) => Math.max(0, Math.round((z - 0.1) * 10) / 10)),
-      100
-    );
-    return () => clearInterval(u);
-  }, [i, phase, pause]);
-
-  useEffect(() => {
-    if (phase === "frage" && !pause && zeit <= 0) bewerten("langsam");
-  }, [zeit, phase, pause]);
-
-  useEffect(() => {
-    function taste(e) {
-      if (phase !== "frage") return;
-      if (/^[0-9]$/.test(e.key)) setEingabe((v) => (v.length < 3 ? (v + e.key).replace(/^0(?=\d)/, "") : v));
-      else if (e.key === "Backspace") setEingabe((v) => v.slice(0, -1));
-      else if (e.key === "Enter") pruefen();
-    }
-    window.addEventListener("keydown", taste);
-    return () => window.removeEventListener("keydown", taste);
-  });
-
-  function bewerten(art) {
-    const { nr, fakt } = fragen[i];
-    setLetzte(art);
-    setPause(false);
-    const f = holF(t, welt, nr) || { h: 0, s: 1, f: 0, x: 0 };
-    let n = { ...f, l: fakt.id };
-    if (art === "blitz" || art === "gerechnet") n = merkeFakt(n, fakt);
-    if (art === "blitz") {
-      n.blitz = true;
-      /* Wer es hier aus dem Stand kann, muss es nicht bald wieder
-         zeigen — dieselbe Regel wie im Streifzug. */
-      if (n.f <= Date.now()) n = nachWiedersehen(n, "blitz");
-      Ton.blitz();
-    } else if (art === "gerechnet") {
-      /* mit Luft holen geschafft: richtig, aber kein Blitz */
-      Ton.richtig();
-    } else {
-      /* gezoegert oder daneben: das Wesen meldet sich gleich wieder */
-      n.f = Date.now();
-      if (art === "falsch") { n.s = Math.max(1, n.s - 1); n.x = (n.x || 0) + 1; }
-      Ton.nochmal();
-    }
-    const neu = mitF(t, welt, nr, n);
-    setT({
-      ...neu,
-      punkte: trickPunkte(neu) + (art === "blitz" ? 1 : 0),
-      stat: {
-        ...neu.stat,
-        richtig: neu.stat.richtig + (art === "falsch" ? 0 : 1),
-        falsch: neu.stat.falsch + (art === "falsch" ? 1 : 0),
-        blitze: neu.stat.blitze + (art === "blitz" ? 1 : 0),
-      },
-    });
-    setBilanz((b) => ({
-      blitz: b.blitz + (art === "blitz" ? 1 : 0),
-      /* nur wer hier blitzschnell war, darf nachher etwas lernen */
-      schnell: art === "blitz" ? [...new Set([...b.schnell, nr])] : b.schnell,
-      langsam: art === "langsam" ? [...b.langsam, nr] : b.langsam,
-      falsch: art === "falsch" ? [...b.falsch, nr] : b.falsch,
-    }));
-    setPhase("kurz");
-    setTimeout(() => {
-      if (i + 1 >= fragen.length) {
-        setPhase("ende");
-      } else {
-        setI(i + 1);
-        setEingabe("");
-        setPhase("frage");
-      }
-    }, art === "blitz" ? 450 : 1500);
-  }
-
-  function pruefen() {
-    if (eingabe === "" || phase !== "frage") return;
-    const richtig = Number(eingabe) === fragen[i].fakt.antwort;
-    bewerten(richtig ? (geschnauft ? "gerechnet" : "blitz") : "falsch");
-  }
-
-  function luftHolen() {
-    if (luft <= 0 || pause || phase !== "frage") return;
-    setLuft(luft - 1);
-    setGeschnauft(true);
-    setPause(true);
-    Ton.tippen();
-  }
-
-  function lehren(nr) {
-    if (trickPunkte(t) < TRICK_KOSTEN || !kannNochLernen(t, nr)) return;
-    const e = t.wesen[nr] || {};
-    const anzahl = trickZahl(t, nr) + 1;
-    const trick = trickListe(nr)[anzahl - 1];
-    Ton.orden();
-    setT({
-      ...t,
-      punkte: trickPunkte(t) - TRICK_KOSTEN,
-      wesen: { ...t.wesen, [nr]: { ...e, tr: anzahl } },
-    });
-    setGelehrt((g) => [...g, { nr, trick }]);
-  }
-
-  /* -------------------- Tricks beibringen -------------------- */
-  if (phase === "lehren") {
-    const punkte = trickPunkte(t);
-    /* Beibringen darf sie nur den Wesen, die in dieser Runde
-       blitzschnell waren. Sonst könnte man ⚡ auf der 2er-Reihe
-       sammeln und damit die 7er-Arena aufrüsten. */
-    const lernbereit = bilanz.schnell.filter((nr) => kannNochLernen(t, nr));
-    return (
-      <div className="mx-auto max-w-md p-4">
-        <Kopf
-          titel="Tricks beibringen"
-          unter={punkte + " ⚡ übrig · ein Trick kostet " + TRICK_KOSTEN}
-          onZurueck={onEnde}
-        />
-        {gelehrt.length > 0 && (
-          <div className="a-auftauchen mb-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3">
-            {gelehrt.map((g, k) => (
-              <p key={k} className="text-center font-black text-amber-200">
-                {WESEN[g.nr].bild} {WESEN[g.nr].name} kann jetzt {g.trick.bild}{" "}
-                {g.trick.name}!
-              </p>
-            ))}
-          </div>
-        )}
-        {punkte < TRICK_KOSTEN ? (
-          <p className="rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200">
-            {punkte === 0
-              ? "Keine ⚡ übrig. Die nächste Blitzrunde bringt neue."
-              : "Noch " + (TRICK_KOSTEN - punkte) +
-                " ⚡ bis zum nächsten Trick. Sie bleiben dir erhalten."}
-          </p>
-        ) : lernbereit.length === 0 ? (
-          <p className="rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200">
-            {bilanz.schnell.length === 0
-              ? "Beibringen kannst du nur den Wesen, die gerade blitzschnell waren. Diese Runde war keines dabei — deine ⚡ bleiben dir."
-              : "Die Wesen aus dieser Runde können schon alles, was sie lernen können. Deine ⚡ bleiben dir."}
-          </p>
-        ) : (
-          <>
-            <p className="mb-2 text-sm text-emerald-200">
-              Wem bringst du etwas bei? Nur Wesen, die gerade blitzschnell waren,
-              können lernen. Welcher Trick es wird, sagt ihre Reihe.
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {lernbereit.map((nr) => {
-                const naechster = trickListe(nr)[trickZahl(t, nr)];
-                return (
-                  <button
-                    key={nr}
-                    onClick={() => lehren(nr)}
-                    className="kein-blau rounded-2xl bg-emerald-800/70 p-2 text-center transition hover:bg-emerald-700 active:translate-y-px"
-                  >
-                    <div className="text-3xl">{WESEN[nr].bild}</div>
-                    <p className="truncate text-xs font-bold text-emerald-50">
-                      {WESEN[nr].name}
-                    </p>
-                    <p className="mt-1 text-[10px] leading-tight text-amber-300">
-                      lernt {naechster.bild}
-                      <br />
-                      {naechster.name}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        )}
-        <div className="mt-5">
-          <Knopf onClick={onEnde}>Fertig</Knopf>
-        </div>
-      </div>
-    );
-  }
-
-  /* -------------------- Bericht -------------------- */
-  if (phase === "ende") {
-    const wackelig = [...new Set([...bilanz.langsam, ...bilanz.falsch])];
-    const reicht =
-      trickPunkte(t) >= TRICK_KOSTEN &&
-      bilanz.schnell.some((nr) => kannNochLernen(t, nr));
-    return (
-      <div className="mx-auto max-w-md p-5 text-center">
-        <div className="a-auftauchen rounded-3xl bg-emerald-900/70 p-6">
-          <div className="text-6xl">⚡</div>
-          <h2 className="mt-2 text-2xl font-black text-amber-300">
-            {bilanz.blitz} von {fragen.length} blitzschnell
-          </h2>
-          <p className="mt-2 text-sm text-emerald-200">
-            {bilanz.blitz === fragen.length
-              ? "Alles in der Zeit. Das sitzt wirklich."
-              : bilanz.blitz >= fragen.length - 2
-              ? "Fast alles sitzt. Die paar wackeligen holst du dir gleich."
-              : "Gut gemacht. Die hier brauchen noch ein Wiedersehen:"}
-          </p>
-          {wackelig.length > 0 && (
-            <div className="mt-4 rounded-2xl border-2 border-amber-400/40 p-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
-                Haben gezögert
-              </p>
-              <div className="mt-2 flex flex-wrap justify-center gap-3">
-                {wackelig.map((nr) => (
-                  <div key={nr} className="text-center">
-                    <div className="text-3xl">{WESEN[nr].bild}</div>
-                    <p className="text-xs font-bold text-emerald-100">{WESEN[nr].name}</p>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-2 text-xs text-emerald-300">
-                Sie warten jetzt auf dem Streifzug auf dich.
-              </p>
-            </div>
-          )}
-
-          <div className="mt-4 rounded-2xl bg-emerald-950/60 p-3">
-            <p className="text-2xl font-black text-amber-300">+{bilanz.blitz} ⚡</p>
-            <p className="text-xs text-emerald-300">
-              macht {trickPunkte(t)} ⚡ · ein Trick kostet {TRICK_KOSTEN}
-            </p>
-          </div>
-
-          <div className="mt-5 space-y-2">
-            {reicht && (
-              <Knopf onClick={() => setPhase("lehren")}>Trick beibringen ✨</Knopf>
-            )}
-            <Knopf art={reicht ? "ruhig" : "haupt"} onClick={onEnde}>
-              Zurück
-            </Knopf>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  /* -------------------- Frage -------------------- */
-  const { nr, fakt } = dran;
-  const offen = phase === "kurz" && letzte !== "blitz" && letzte !== "gerechnet";
-  return (
-    <div className="mx-auto max-w-md p-4">
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onEnde}
-          className="kein-blau rounded-xl border-2 border-emerald-500/50 px-3 py-1 text-emerald-100"
-        >
-          ‹
-        </button>
-        <p className="flex-1 text-sm font-black uppercase tracking-widest text-amber-300">
-          ⚡ Blitzrunde
-        </p>
-        <span className="text-xs font-bold text-emerald-300">
-          {i + 1}/{fragen.length} · {bilanz.blitz} ⚡
-        </span>
-      </div>
-
-      <div className="mt-2 h-3 overflow-hidden rounded-full bg-emerald-900">
-        <div
-          className={
-            "h-full transition-all " +
-            (pause ? "bg-sky-300" : zeit < 2 ? "bg-rose-400" : "bg-amber-400")
-          }
-          style={{ width: (zeit / dauer) * 100 + "%" }}
-        />
-      </div>
-
-      <div className="mt-3 rounded-3xl bg-gradient-to-b from-emerald-50 to-white p-6 text-center shadow-2xl">
-        <p className="text-4xl font-black text-emerald-950 sm:text-5xl">
-          {fakt.text} = {offen ? fakt.antwort : eingabe === "" ? "?" : eingabe}
-        </p>
-        {pause && phase === "frage" && (
-          <p className="a-rutschen mt-2 text-sm font-black text-sky-700">
-            Uhr angehalten — lass dir Zeit.
-          </p>
-        )}
-        {phase === "kurz" && (
-          <div className="a-rutschen mt-3 flex items-center justify-center gap-2">
-            <span className="text-3xl">{WESEN[nr].bild}</span>
-            <span
-              className={
-                "font-black " +
-                (letzte === "blitz" || letzte === "gerechnet"
-                  ? "text-emerald-700"
-                  : "text-rose-700")
-              }
-            >
-              {letzte === "blitz"
-                ? WESEN[nr].name + " — blitzschnell!"
-                : letzte === "gerechnet"
-                ? WESEN[nr].name + " — richtig gerechnet"
-                : letzte === "langsam"
-                ? WESEN[nr].name + " war zu schnell weg"
-                : "Das war " + WESEN[nr].name + " (" + fakt.antwort + ")"}
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div className="mt-4">
-        <Ziffernblock wert={eingabe} setWert={setEingabe} onOk={pruefen} gesperrt={phase !== "frage"} />
-      </div>
-
-      <button
-        onClick={luftHolen}
-        disabled={luft <= 0 || pause || phase !== "frage"}
-        className={
-          "kein-blau mt-3 w-full rounded-2xl border-2 py-3 text-sm font-black transition " +
-          (luft > 0 && !pause && phase === "frage"
-            ? "border-sky-400/60 text-sky-200 active:translate-y-px"
-            : "border-emerald-800 text-emerald-700")
-        }
-      >
-        😮‍💨 Luft holen {"●".repeat(luft)}{"○".repeat(LUFT_HOLEN - luft)}
-      </button>
-      <p className="mt-2 text-center text-xs text-emerald-400">
-        Luft holen hält die Uhr an. Die Rechnung zählt dann als richtig — aber
-        nicht als blitzschnell.
-      </p>
-    </div>
-  );
-}
-
-
-/* ============================================================
    ZAHLODEX
    Das Album ist die Hundertertafel. Man sieht sofort: welche
    Zahlen im 1×1 vorkommen — und welche noch fehlen.
    ============================================================ */
+function Trickbuch({ t, onZurueck }) {
+  const koennen = ALLE_NR.filter((nr) => trickZahl(t, nr) > 0);
+  const moeglich = ALLE_NR.reduce((n, nr) => n + trickListe(nr).length, 0);
+  const habe = tricksGesamt(t);
+  return (
+    <div className="mx-auto max-w-md p-4">
+      <Kopf
+        titel="Trickbuch"
+        unter={habe + " von " + moeglich + " Tricks beigebracht"}
+        onZurueck={onZurueck}
+      />
+      <p className="mb-3 rounded-2xl bg-emerald-900/60 p-3 text-sm text-emerald-200">
+        Ein Trick bringt seinem Wesen <b>+{PUNKTE_TRICK} Punkte</b> bei jedem
+        Angriff in der Arena. ⚡ dafür gibt es für blitzschnelle Antworten im
+        Kampf — reif werden die Wesen aber auf dem Streifzug.
+      </p>
+      {koennen.length === 0 ? (
+        <p className="rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200">
+          Noch kein Wesen kann einen Trick. Gewinne ⚡ in der Arena und bring dort
+          einem Wesen etwas bei, das blitzschnell war.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {koennen.map((nr) => (
+            <div key={nr} className="flex items-center gap-3 rounded-2xl bg-emerald-900/60 p-3">
+              <span className="text-3xl">{WESEN[nr].bild}</span>
+              <div className="min-w-0 flex-1">
+                <p className="font-black text-emerald-50">{WESEN[nr].name}</p>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {trickListe(nr).map((tr, k) => (
+                    <span
+                      key={k}
+                      className={
+                        "rounded-full px-2 py-0.5 text-[11px] font-bold " +
+                        (k < trickZahl(t, nr)
+                          ? "bg-amber-300 text-emerald-950"
+                          : "bg-emerald-800 text-emerald-500")
+                      }
+                    >
+                      {k < trickZahl(t, nr) ? tr.bild + " " + tr.name : "🔒 " + tr.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <span className="text-lg font-black text-amber-300">
+                +{trickZahl(t, nr) * PUNKTE_TRICK}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Zahlodex({ t, onZurueck }) {
   const [gewaehlt, setGewaehlt] = useState(null);
+  const [buch, setBuch] = useState(false);
   const gefangen = anzahlGefangen(t);
 
   if (gewaehlt) return <WesenDetail t={t} nr={gewaehlt} onZurueck={() => setGewaehlt(null)} />;
+  if (buch) return <Trickbuch t={t} onZurueck={() => setBuch(false)} />;
 
   const zellen = [];
   for (let n = 1; n <= 100; n++) {
@@ -2050,7 +1880,12 @@ function Zahlodex({ t, onZurueck }) {
         }
       >
         {hab ? (
-          <span>{w.bild}</span>
+          <>
+            <span>{w.bild}</span>
+            {trickZahl(t, n) > 0 && (
+              <span className="absolute right-0 top-0 text-[8px]">✨</span>
+            )}
+          </>
         ) : (
           <span className="text-[10px] font-bold text-emerald-600">{n}</span>
         )}
@@ -2067,6 +1902,11 @@ function Zahlodex({ t, onZurueck }) {
       />
       <div className="rounded-3xl bg-emerald-900/50 p-3">
         <div className="grid grid-cols-10 gap-1">{zellen}</div>
+      </div>
+      <div className="mt-3">
+        <Knopf art="ruhig" klein onClick={() => setBuch(true)}>
+          ✨ Trickbuch — {tricksGesamt(t)} Tricks
+        </Knopf>
       </div>
       <p className="mt-3 text-center text-xs text-emerald-400">
         Jedes Feld ist eine Zahl von 1 bis 100. Dunkle Felder sind Zahlen, die im
@@ -2092,6 +1932,22 @@ function Zahlodex({ t, onZurueck }) {
         </p>
       </div>
     </div>
+  );
+}
+
+/* Was fehlt diesem Wesen noch bis zum nächsten Trick? */
+function TrickZiel({ t, welt, nr }) {
+  const habe = trickZahl(t, nr);
+  if (habe >= trickListe(nr).length)
+    return <p className="mt-1 text-xs font-bold text-amber-300">kann alle Tricks ✨</p>;
+  const bed = trickBedingung(t, welt, nr);
+  const naechster = trickListe(nr)[habe];
+  return (
+    <p className={"mt-1 text-xs " + (bed.ok ? "font-bold text-amber-300" : "text-emerald-400")}>
+      {bed.ok
+        ? "reif für " + naechster.bild + " " + naechster.name + " — ab in die Arena!"
+        : "bis " + naechster.bild + " " + naechster.name + ": " + bed.was}
+    </p>
   );
 }
 
@@ -2175,6 +2031,7 @@ function WesenDetail({ t, nr, onZurueck }) {
             </p>
             <Rechnungen liste={paareUngeordnet(nr).map(([a, b]) => a + " · " + b)} />
             <p className="mt-1 text-xs">{stand(fm, "malfeld")}</p>
+            {fm && fm.s >= 1 && <TrickZiel t={t} welt="malfeld" nr={nr} />}
           </div>
         )}
 
@@ -2188,6 +2045,7 @@ function WesenDetail({ t, nr, onZurueck }) {
               mehr={faktenWiese(nr).length > 6}
             />
             <p className="mt-1 text-xs">{stand(fw, "wiese")}</p>
+            {fw && fw.s >= 1 && <TrickZiel t={t} welt="wiese" nr={nr} />}
           </div>
         )}
       </div>
@@ -2257,9 +2115,9 @@ function arenaAufgaben(a, anzahl) {
   const pool = [];
   if (a.art === "reihe") {
     for (let b = 1; b <= 10; b++) {
-      pool.push({ text: a.reihe + " · " + b, antwort: a.reihe * b, a: a.reihe, b, op: "·" });
+      pool.push({ id: "m" + a.reihe + "x" + b, text: a.reihe + " · " + b, antwort: a.reihe * b, a: a.reihe, b, op: "·" });
       if (b !== a.reihe)
-        pool.push({ text: b + " · " + a.reihe, antwort: a.reihe * b, a: b, b: a.reihe, op: "·" });
+        pool.push({ id: "m" + b + "x" + a.reihe, text: b + " · " + a.reihe, antwort: a.reihe * b, a: b, b: a.reihe, op: "·" });
     }
     /* Ein Orden soll etwas heißen. Bisher wurden zehn Rechnungen aus
        neunzehn gelost — die schweren (6·7, 6·8, 6·9 …) konnten dabei
@@ -2273,11 +2131,13 @@ function arenaAufgaben(a, anzahl) {
   } else if (a.op === "+") {
     for (let x = 2; x <= 9; x++)
       for (let y = 2; y <= 9; y++)
-        if (x + y > 10 && x + y <= 20) pool.push({ text: x + " + " + y, antwort: x + y, a: x, b: y, op: "+" });
+        if (x + y > 10 && x + y <= 20)
+          pool.push({ id: "p" + x + "+" + y, text: x + " + " + y, antwort: x + y, a: x, b: y, op: "+" });
   } else {
     for (let m = 11; m <= 20; m++)
       for (let k = 2; k <= 9; k++)
-        if (m - k < 10 && m - k > 0) pool.push({ text: m + " − " + k, antwort: m - k, a: m, b: k, op: "−" });
+        if (m - k < 10 && m - k > 0)
+          pool.push({ id: "s" + m + "-" + k, text: m + " − " + k, antwort: m - k, a: m, b: k, op: "−" });
   }
   const gemischt = pool.sort(() => Math.random() - 0.5);
   return gemischt.slice(0, anzahl);
@@ -2297,6 +2157,7 @@ function ArenaListe({ t, onKampf, onZurueck }) {
           const reif = arenaReif(t, a);
           const hat = t.orden.includes(a.id);
           const offen = reif.hab >= reif.noetig;
+          const rekord = (t.rekord || {})[a.id] || 0;
           const leiter = arenaLeiter(a);
           return (
             <button
@@ -2323,10 +2184,10 @@ function ArenaListe({ t, onKampf, onZurueck }) {
                 </p>
                 {offen && (
                   <p className="text-xs text-amber-300">
+                    {rekord > 0 ? "Rekord " + rekord + " · " : ""}
                     {teamTricks(t, a) > 0
-                      ? "Dein Team kennt " + teamTricks(t, a) +
-                        (teamTricks(t, a) === 1 ? " Trick" : " Tricks")
-                      : "Dein Team kennt noch keine Tricks"}
+                      ? teamTricks(t, a) + (teamTricks(t, a) === 1 ? " Trick" : " Tricks") + " im Team"
+                      : "noch keine Tricks im Team"}
                   </p>
                 )}
               </div>
@@ -2335,49 +2196,136 @@ function ArenaListe({ t, onKampf, onZurueck }) {
           );
         })}
       </div>
-      <p className="mt-3 text-center text-xs text-emerald-400">
-        In der Arena zählt Tempo: acht Sekunden pro Rechnung. Neun von zehn müssen
-        sitzen.
-      </p>
+      <div className="mt-4 rounded-2xl bg-emerald-900/50 p-3 text-sm text-emerald-200">
+        <p className="font-black text-amber-300">So läuft ein Kampf</p>
+        <p className="mt-1">
+          Zwölf Rechnungen gegen die Uhr, schwere bekommen mehr Zeit. Jede
+          richtige Antwort ruft das Wesen, das die Antwort <i>ist</i> — und je
+          mehr Tricks es kann, desto mehr Punkte bringt sein Angriff.
+        </p>
+        <p className="mt-1">
+          <b>Ab {ORDEN_PUNKTE} Punkten gibt es den Orden.</b> Zwölf richtige sind
+          {" "}{12 * PUNKTE_GRUND} — Können allein genügt also immer. Danach geht
+          es um den Rekord.
+        </p>
+        <p className="mt-1 text-emerald-300">
+          Jede blitzschnelle Antwort bringt eine ⚡ für neue Tricks.
+        </p>
+      </div>
     </div>
   );
 }
 
-const KAMPF_FRAGEN = 10;
-const KAMPF_ZEIT = 8;
-/* Der Arenaleiter hält neun Treffer aus. Ohne Tricks braucht es also
-   neun von zehn richtigen Antworten — genau wie bisher. Wer seinen
-   Wesen Tricks beigebracht hat, schlägt härter und darf sich
-   dadurch mehr Fehler leisten. Das ist der Lohn der Blitzrunden. */
-const LEITER_LEBEN = 9;
+/* ============================================================
+   DER ARENAKAMPF
 
-function ArenaKampf({ t, arena, speichern, onEnde }) {
+   Hier ist alles zusammengelaufen, was vorher nebeneinander lag:
+   die Blitzrunde (Tempo, ⚡, Tricks beibringen) und der Arenakampf
+   (Reihe, Orden). Es gab drei Modi, von denen sich zwei gleich
+   anfühlten — jetzt sind es zwei mit klaren Rollen:
+
+     Streifzug  üben, fangen, wiedersehen, entdecken
+     Arena      zeigen, was sitzt — Punkte, Orden, Rekord, ⚡
+
+   Die Zahl der Rechnungen ist FEST (zwölf). Tricks machen den Kampf
+   nicht kürzer, sondern wertvoller — in einem Lernspiel darf Können
+   nicht mit weniger Übung belohnt werden.
+   ============================================================ */
+const KAMPF_FRAGEN = 12;
+const PUNKTE_GRUND = 10;   // je richtige Antwort
+const PUNKTE_TEMPO = 5;    // unter der halben Zeit
+const PUNKTE_TRICK = 5;    // je Trick des angreifenden Wesens
+const PUNKTE_KOMBO = 10;   // je dritte richtige in Folge
+const KOMBO_LAENGE = 3;
+const ORDEN_PUNKTE = 110;  // zwölf richtige ohne alles sind 120
+
+function arenaWelt(a) {
+  return a.art === "reihe" ? "malfeld" : "wiese";
+}
+
+/* Die Bank: die Wesen der Reihe, die im Kampf auftreten können. */
+function ArenaBank({ t, arena, aktiv }) {
+  return (
+    <div className="flex flex-wrap justify-center gap-1">
+      {arenaTeam(arena).map((nr) => {
+        if (!WESEN[nr]) return null;
+        const hab = istGefangen(t, nr);
+        const tr = trickZahl(t, nr);
+        return (
+          <div
+            key={nr}
+            className={
+              "relative rounded-lg px-1 py-0.5 transition " +
+              (aktiv === nr ? "scale-125 bg-amber-400/30 ring-2 ring-amber-400" : "")
+            }
+          >
+            <span className={"text-lg " + (hab ? "" : "opacity-25 grayscale brightness-0")}>
+              {WESEN[nr].bild}
+            </span>
+            {tr > 0 && (
+              <span className="absolute -right-0.5 -top-1 text-[9px]">
+                {"✨".repeat(Math.min(tr, 3))}
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ArenaKampf({ start, arena, speichern, onEnde }) {
+  const welt = arenaWelt(arena);
+  const [t, setT] = useState(start);
   const [fragen] = useState(() => arenaAufgaben(arena, KAMPF_FRAGEN));
   const [i, setI] = useState(0);
   const [eingabe, setEingabe] = useState("");
+  const [zeit, setZeit] = useState(() => blitzZeit(fragen[0]));
+  const [luft, setLuft] = useState(LUFT_HOLEN);
+  const [pause, setPause] = useState(false);
+  const [geschnauft, setGeschnauft] = useState(false);
+  const [phase, setPhase] = useState("kampf"); // kampf | kurz | ende | lehren
+  const [letzte, setLetzte] = useState(null);  // "schnell" | "richtig" | "langsam" | "falsch"
+  const [punkte, setPunkte] = useState(0);
   const [treffer, setTreffer] = useState(0);
-  const [schaden, setSchaden] = useState(0);
-  const [zeit, setZeit] = useState(KAMPF_ZEIT);
-  const [phase, setPhase] = useState("kampf"); // kampf | kurz | ende
-  const [letzte, setLetzte] = useState(null);
-  const [angriff, setAngriff] = useState(null); // welches Wesen hat zugeschlagen
-  const leiter = arenaLeiter(arena);
+  const [kombo, setKombo] = useState(0);
+  const [schnelle, setSchnelle] = useState([]);
+  const [beitrag, setBeitrag] = useState({});
+  const [angriff, setAngriff] = useState(null);
+  const [gelehrt, setGelehrt] = useState([]);
+  /* Stand VOR dem Kampf festhalten. start ändert sich während des
+     Kampfes mit, weil der Trainer laufend gespeichert wird — sonst
+     hieße es am Ende "Orden verteidigt", obwohl er gerade erst
+     gewonnen wurde. */
+  const [vorherOrden] = useState(() => start.orden.includes(arena.id));
+  const [vorherRekord] = useState(() => (start.rekord || {})[arena.id] || 0);
+
+  const frage = fragen[Math.min(i, fragen.length - 1)];
+  const dauer = blitzZeit(frage);
+  const leiterNr = arenaLeiter(arena);
 
   useEffect(() => {
-    if (phase !== "kampf") return;
-    setZeit(KAMPF_ZEIT);
+    speichern(t);
+  }, [t]);
+
+  useEffect(() => {
+    setZeit(dauer);
+    setGeschnauft(false);
+    setPause(false);
+  }, [i]);
+
+  useEffect(() => {
+    if (phase !== "kampf" || pause) return;
     const u = setInterval(
       () => setZeit((z) => Math.max(0, Math.round((z - 0.1) * 10) / 10)),
       100
     );
     return () => clearInterval(u);
-  }, [i, phase]);
+  }, [i, phase, pause]);
 
-  /* Zeit abgelaufen — bewusst in einem eigenen Effekt, nicht mitten
-     in der Zustandsänderung des Zählers */
   useEffect(() => {
-    if (phase === "kampf" && zeit <= 0) bewerten(false);
-  }, [zeit, phase]);
+    if (phase === "kampf" && !pause && zeit <= 0) bewerten("langsam", 0);
+  }, [zeit, phase, pause]);
 
   useEffect(() => {
     function taste(e) {
@@ -2390,121 +2338,394 @@ function ArenaKampf({ t, arena, speichern, onEnde }) {
     return () => window.removeEventListener("keydown", taste);
   });
 
-  function bewerten(richtig) {
-    setLetzte(richtig);
+  function bewerten(art, rest) {
+    const nr = frage.antwort;
+    const wesen = WESEN[nr];
+    const richtig = art === "schnell" || art === "richtig";
+    const schnell = art === "schnell";
+    setLetzte(art);
+    setPause(false);
+
+    /* --- Punkte --- */
+    let dazu = 0;
+    let neueKombo = kombo;
     if (richtig) {
-      /* Das Wesen, das angreift, ist die Antwort selbst. */
-      const wer = fragen[i].antwort;
-      const tricks = WESEN[wer] ? gelernteTricks(t, wer) : [];
-      const wucht = 1 + (tricks.length > 0 ? 1 : 0);
-      setAngriff({ nr: wer, trick: tricks[0] || null, wucht });
+      const tricks = wesen ? gelernteTricks(t, nr).length : 0;
+      neueKombo = kombo + 1;
+      dazu = PUNKTE_GRUND + (schnell ? PUNKTE_TEMPO : 0) + tricks * PUNKTE_TRICK;
+      if (neueKombo % KOMBO_LAENGE === 0) dazu += PUNKTE_KOMBO;
+      setAngriff({
+        nr,
+        trick: tricks > 0 ? gelernteTricks(t, nr)[0] : null,
+        punkte: dazu,
+        tricks,
+        kombo: neueKombo % KOMBO_LAENGE === 0 ? neueKombo : 0,
+      });
       setTreffer((x) => x + 1);
-      setSchaden((x) => x + wucht);
-      Ton.richtig();
+      setPunkte((x) => x + dazu);
+      setBeitrag((b) => ({ ...b, [nr]: (b[nr] || 0) + dazu }));
+      if (schnell) setSchnelle((s2) => [...new Set([...s2, nr])]);
+      schnell ? Ton.blitz() : Ton.richtig();
     } else {
       setAngriff(null);
       Ton.nochmal();
     }
+    setKombo(richtig ? neueKombo : 0);
+
+    /* --- Karteikasten: der Kampf zählt auch als Wiedersehen --- */
+    const f = holF(t, welt, nr);
+    if (f && f.s >= 1) {
+      let n = { ...f, l: frage.id };
+      if (richtig) n = merkeFakt(n, frage);
+      if (art === "schnell" && n.f <= Date.now()) n = nachWiedersehen(n, "blitz", welt, nr);
+      else if (art === "richtig" && n.f <= Date.now()) n = nachWiedersehen(n, "normal", welt, nr);
+      else if (!richtig || art === "langsam") {
+        /* gezögert oder daneben: bald wiedersehen, Stufe bleibt bzw.
+           fällt — dieselbe Regel wie im Streifzug */
+        n = nachWiedersehen(n, art === "falsch" ? "falsch" : "langsam", welt, nr);
+      }
+      const neu = mitF(t, welt, nr, n);
+      setT({
+        ...neu,
+        punkte: trickPunkte(neu) + (schnell ? 1 : 0),
+        stat: {
+          ...neu.stat,
+          richtig: neu.stat.richtig + (richtig ? 1 : 0),
+          falsch: neu.stat.falsch + (richtig ? 0 : 1),
+          blitze: neu.stat.blitze + (schnell ? 1 : 0),
+        },
+      });
+    } else {
+      setT((alt) => ({
+        ...alt,
+        punkte: trickPunkte(alt) + (schnell ? 1 : 0),
+        stat: {
+          ...alt.stat,
+          richtig: alt.stat.richtig + (richtig ? 1 : 0),
+          falsch: alt.stat.falsch + (richtig ? 0 : 1),
+          blitze: alt.stat.blitze + (schnell ? 1 : 0),
+        },
+      }));
+    }
+
     setPhase("kurz");
     setTimeout(() => {
-      if (i + 1 >= fragen.length) {
-        setPhase("ende");
-      } else {
+      if (i + 1 >= fragen.length) setPhase("ende");
+      else {
         setI(i + 1);
         setEingabe("");
         setPhase("kampf");
       }
-    }, richtig ? 500 : 1500);
+    }, richtig ? 700 : 1600);
   }
 
   function pruefen() {
     if (eingabe === "" || phase !== "kampf") return;
-    bewerten(Number(eingabe) === fragen[i].antwort);
+    const richtig = Number(eingabe) === frage.antwort;
+    if (!richtig) return bewerten("falsch", zeit);
+    /* blitzschnell = in der ersten Hälfte der Zeit und ohne Luft holen */
+    const schnell = !geschnauft && zeit > dauer / 2;
+    bewerten(schnell ? "schnell" : "richtig", zeit);
   }
 
+  function luftHolen() {
+    if (luft <= 0 || pause || phase !== "kampf") return;
+    setLuft(luft - 1);
+    setGeschnauft(true);
+    setPause(true);
+    Ton.tippen();
+  }
+
+  function lehren(nr) {
+    const bed = trickBedingung(t, welt, nr);
+    if (trickPunkte(t) < TRICK_KOSTEN || !bed.ok) return;
+    const e = t.wesen[nr] || {};
+    const anzahl = trickZahl(t, nr) + 1;
+    const trick = trickListe(nr)[anzahl - 1];
+    Ton.orden();
+    setT({
+      ...t,
+      punkte: trickPunkte(t) - TRICK_KOSTEN,
+      wesen: { ...t.wesen, [nr]: { ...e, tr: anzahl } },
+    });
+    setGelehrt((g) => [...g, { nr, trick }]);
+  }
+
+  /* Am Ende: Orden und Rekord festhalten */
   useEffect(() => {
     if (phase !== "ende") return;
-    const gewonnen = schaden >= LEITER_LEBEN;
-    if (gewonnen && !t.orden.includes(arena.id)) {
-      Ton.orden();
-      speichern({ ...t, orden: [...t.orden, arena.id] });
+    const gewonnen = punkte >= ORDEN_PUNKTE;
+    const neuerRekord = punkte > vorherRekord;
+    if (gewonnen || neuerRekord) {
+      if (gewonnen && !vorherOrden) Ton.orden();
+      setT((alt) => ({
+        ...alt,
+        orden: gewonnen && !alt.orden.includes(arena.id) ? [...alt.orden, arena.id] : alt.orden,
+        rekord: { ...(alt.rekord || {}), [arena.id]: Math.max(vorherRekord, punkte) },
+      }));
     }
   }, [phase]);
 
-  if (phase === "ende") {
-    const gewonnen = schaden >= LEITER_LEBEN;
+  /* -------------------- Tricks beibringen -------------------- */
+  if (phase === "lehren") {
+    const habePunkte = trickPunkte(t);
+    const kandidaten = schnelle
+      .filter((nr) => WESEN[nr] && kannNochLernen(t, nr))
+      .map((nr) => ({ nr, bed: trickBedingung(t, welt, nr) }));
+    const bereit = kandidaten.filter((k) => k.bed.ok);
+    const nochNicht = kandidaten.filter((k) => !k.bed.ok);
     return (
-      <div className="mx-auto max-w-md p-5 text-center">
-        <div className="a-auftauchen rounded-3xl bg-emerald-900/70 p-6">
-          <div className="text-7xl">{gewonnen ? "🏅" : WESEN[leiter].bild}</div>
-          <h2 className="mt-2 text-2xl font-black text-amber-300">
-            {gewonnen ? "Orden gewonnen!" : "Knapp daneben"}
-          </h2>
-          <p className="mt-2 text-emerald-200">
-            {treffer} von {KAMPF_FRAGEN} Rechnungen getroffen · {schaden} Schaden
+      <div className="mx-auto max-w-md p-4">
+        <Kopf
+          titel="Tricks beibringen"
+          unter={habePunkte + " ⚡ übrig · ein Trick kostet " + TRICK_KOSTEN}
+          onZurueck={onEnde}
+        />
+        {gelehrt.length > 0 && (
+          <div className="a-auftauchen mb-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3">
+            {gelehrt.map((g, k) => (
+              <p key={k} className="text-center font-black text-amber-200">
+                {WESEN[g.nr].bild} {WESEN[g.nr].name} kann jetzt {g.trick.bild}{" "}
+                {g.trick.name}!
+              </p>
+            ))}
+          </div>
+        )}
+
+        <p className="mb-2 text-sm text-emerald-200">
+          Tricks machen dein Wesen in der Arena stärker: <b>+{PUNKTE_TRICK} Punkte</b>{" "}
+          bei jedem Angriff, für jeden Trick den es kann.
+        </p>
+
+        {bereit.length === 0 && nochNicht.length === 0 ? (
+          <p className="rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200">
+            Beibringen kannst du nur den Wesen, die in diesem Kampf blitzschnell
+            waren. Diesmal war keines dabei — deine ⚡ bleiben dir.
           </p>
-          <p className="mt-2 text-sm text-emerald-300">
+        ) : (
+          <>
+            {bereit.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {bereit.map(({ nr }) => {
+                  const naechster = trickListe(nr)[trickZahl(t, nr)];
+                  const reicht = habePunkte >= TRICK_KOSTEN;
+                  return (
+                    <button
+                      key={nr}
+                      onClick={() => lehren(nr)}
+                      disabled={!reicht}
+                      className={
+                        "kein-blau rounded-2xl p-2 text-center transition " +
+                        (reicht
+                          ? "bg-emerald-800/70 hover:bg-emerald-700 active:translate-y-px"
+                          : "bg-emerald-900/50 opacity-50")
+                      }
+                    >
+                      <div className="text-3xl">{WESEN[nr].bild}</div>
+                      <p className="truncate text-xs font-bold text-emerald-50">
+                        {WESEN[nr].name}
+                      </p>
+                      <p className="mt-1 text-[10px] leading-tight text-amber-300">
+                        lernt {naechster.bild}
+                        <br />
+                        {naechster.name}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {nochNicht.length > 0 && (
+              <div className="mt-4 rounded-2xl bg-emerald-900/60 p-3">
+                <p className="text-xs font-bold uppercase tracking-widest text-emerald-300">
+                  Noch nicht so weit
+                </p>
+                {nochNicht.map(({ nr, bed }) => (
+                  <p key={nr} className="mt-1 text-sm text-emerald-200">
+                    <span className="text-lg">{WESEN[nr].bild}</span>{" "}
+                    <b>{WESEN[nr].name}</b> — {bed.was}
+                  </p>
+                ))}
+                <p className="mt-2 text-xs text-emerald-400">
+                  Das holst du auf dem Streifzug. Ein Trick will verdient sein.
+                </p>
+              </div>
+            )}
+          </>
+        )}
+        <div className="mt-5">
+          <Knopf onClick={onEnde}>Fertig</Knopf>
+        </div>
+      </div>
+    );
+  }
+
+  /* -------------------- Ende -------------------- */
+  if (phase === "ende") {
+    const gewonnen = punkte >= ORDEN_PUNKTE;
+    const neuerRekord = punkte > vorherRekord;
+    const verdient = schnelle.length;
+    const kannLehren =
+      trickPunkte(t) >= TRICK_KOSTEN &&
+      schnelle.some((nr) => WESEN[nr] && kannNochLernen(t, nr) && trickBedingung(t, welt, nr).ok);
+    const liste = Object.entries(beitrag).sort((a, b) => b[1] - a[1]);
+    return (
+      <div className="mx-auto max-w-md p-4 text-center">
+        <div className="a-auftauchen rounded-3xl bg-emerald-900/70 p-5">
+          <div className="text-6xl">{gewonnen ? "🏅" : WESEN[leiterNr].bild}</div>
+          <p className="mt-2 text-5xl font-black text-amber-300">{punkte}</p>
+          <p className="text-xs uppercase tracking-widest text-emerald-300">Punkte</p>
+          <h2 className="mt-2 text-xl font-black text-emerald-50">
             {gewonnen
-              ? WESEN[leiter].name + " verbeugt sich. Die " + arena.name + " gehört dir."
-              : schaden + " von " + LEITER_LEBEN +
-                " Schaden. Bring deinen Wesen in der Blitzrunde Tricks bei — dann schlagen sie härter."}
+              ? vorherOrden
+                ? "Orden verteidigt!"
+                : "Orden gewonnen!"
+              : "Knapp daneben"}
+          </h2>
+          <p className="mt-1 text-sm text-emerald-300">
+            {treffer} von {fragen.length} richtig
+            {gewonnen ? "" : " · " + (ORDEN_PUNKTE - punkte) + " Punkte fehlten"}
           </p>
-          <div className="mt-5">
-            <Knopf onClick={onEnde}>Zurück</Knopf>
+          {neuerRekord && (
+            <p className="a-funkeln mt-2 font-black text-amber-200">
+              ✨ Neuer Rekord!{vorherRekord > 0 ? " Vorher " + vorherRekord : ""}
+            </p>
+          )}
+          {!neuerRekord && vorherRekord > 0 && (
+            <p className="mt-2 text-sm text-emerald-400">Dein Rekord hier: {vorherRekord}</p>
+          )}
+
+          {liste.length > 0 && (
+            <div className="mt-4 rounded-2xl bg-emerald-950/50 p-3 text-left">
+              <p className="text-center text-xs font-bold uppercase tracking-widest text-emerald-300">
+                Wer wie viel geholt hat
+              </p>
+              <div className="mt-2 space-y-1">
+                {liste.map(([nr, p2]) => (
+                  <div key={nr} className="flex items-center gap-2 text-sm">
+                    <span className="text-xl">{WESEN[nr] ? WESEN[nr].bild : "✨"}</span>
+                    <span className="flex-1 truncate text-emerald-100">
+                      {WESEN[nr] ? WESEN[nr].name : "Nr. " + nr}
+                      {trickZahl(t, Number(nr)) > 0 && (
+                        <span className="text-amber-300">
+                          {" "}
+                          {"✨".repeat(trickZahl(t, Number(nr)))}
+                        </span>
+                      )}
+                    </span>
+                    <span className="font-black text-amber-300">{p2}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-3 rounded-2xl bg-emerald-950/50 p-3">
+            <p className="text-2xl font-black text-amber-300">+{verdient} ⚡</p>
+            <p className="text-xs text-emerald-300">
+              je blitzschnelle Antwort eine · macht {trickPunkte(t)} ⚡
+            </p>
+          </div>
+
+          <div className="mt-4 space-y-2">
+            {kannLehren && (
+              <Knopf onClick={() => setPhase("lehren")}>Trick beibringen ✨</Knopf>
+            )}
+            <Knopf art={kannLehren ? "ruhig" : "haupt"} onClick={onEnde}>
+              Zurück
+            </Knopf>
           </div>
         </div>
       </div>
     );
   }
 
-  const frage = fragen[i];
-  const leben = Math.max(0, LEITER_LEBEN - schaden);
+  /* -------------------- Kampf -------------------- */
+  const offen = phase === "kurz" && letzte !== "schnell" && letzte !== "richtig";
   return (
     <div className="mx-auto max-w-md p-4">
-      <div className="flex items-center gap-3 rounded-2xl bg-emerald-900/60 p-3">
-        <div className={"text-4xl " + (letzte === true && phase === "kurz" ? "a-zittern" : "a-pochen")}>
-          {WESEN[leiter].bild}
-        </div>
-        <div className="flex-1">
-          <p className="text-sm font-black text-amber-300">{WESEN[leiter].name}</p>
-          <div className="mt-1 h-3 overflow-hidden rounded-full bg-emerald-950">
-            <div
-              className="h-full bg-rose-400 transition-all"
-              style={{ width: (leben / LEITER_LEBEN) * 100 + "%" }}
-            />
-          </div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onEnde}
+          className="kein-blau rounded-xl border-2 border-emerald-500/50 px-3 py-1 text-emerald-100"
+        >
+          ‹
+        </button>
+        <div className="flex-1 text-center">
+          <p className="text-sm font-black text-amber-300">{arena.name}</p>
+          <p className="text-[11px] text-emerald-300">
+            gegen {WESEN[leiterNr].name} · Orden ab {ORDEN_PUNKTE}
+          </p>
         </div>
         <span className="text-xs font-bold text-emerald-300">
           {i + 1}/{fragen.length}
         </span>
       </div>
 
-      {/* Zeitbalken */}
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-emerald-900">
+      {/* Punktestand */}
+      <div className="mt-2 flex items-end justify-center gap-3">
+        <p className="text-3xl font-black text-amber-300">{punkte}</p>
+        {kombo >= KOMBO_LAENGE - 1 && phase === "kampf" && (
+          <p className="pb-1 text-xs font-bold text-emerald-300">
+            {kombo % KOMBO_LAENGE === KOMBO_LAENGE - 1 ? "nächste gibt Kombo!" : "Kombo " + kombo}
+          </p>
+        )}
+      </div>
+      <div className="mt-1 h-2 overflow-hidden rounded-full bg-emerald-900">
         <div
-          className={"h-full transition-all " + (zeit < 3 ? "bg-rose-400" : "bg-amber-400")}
-          style={{ width: (zeit / KAMPF_ZEIT) * 100 + "%" }}
+          className="h-full bg-amber-400 transition-all"
+          style={{ width: Math.min(100, (punkte / ORDEN_PUNKTE) * 100) + "%" }}
+        />
+      </div>
+
+      {/* Die Bank */}
+      <div className="mt-3">
+        <ArenaBank t={t} arena={arena} aktiv={phase === "kurz" && angriff ? angriff.nr : null} />
+      </div>
+
+      {/* Zeit */}
+      <div className="mt-2 h-3 overflow-hidden rounded-full bg-emerald-900">
+        <div
+          className={
+            "h-full transition-all " +
+            (pause ? "bg-sky-300" : zeit > dauer / 2 ? "bg-amber-400" : "bg-rose-400")
+          }
+          style={{ width: (zeit / dauer) * 100 + "%" }}
         />
       </div>
 
       <div className="mt-3 rounded-3xl bg-gradient-to-b from-emerald-50 to-white p-6 text-center shadow-2xl">
         <p className="text-4xl font-black text-emerald-950 sm:text-5xl">
-          {frage.text} = {phase === "kurz" && letzte === false ? frage.antwort : eingabe === "" ? "?" : eingabe}
+          {frage.text} = {offen ? frage.antwort : eingabe === "" ? "?" : eingabe}
         </p>
+        {pause && phase === "kampf" && (
+          <p className="a-rutschen mt-2 text-sm font-black text-sky-700">
+            Uhr angehalten — lass dir Zeit.
+          </p>
+        )}
         {phase === "kurz" && (
-          <div className="a-rutschen mt-2">
-            {letzte && angriff ? (
-              <p className="font-black text-emerald-700">
-                <span className="text-2xl">{WESEN[angriff.nr] ? WESEN[angriff.nr].bild : "✨"}</span>{" "}
-                {WESEN[angriff.nr] ? WESEN[angriff.nr].name : "Treffer"}
-                {angriff.trick
-                  ? " setzt " + angriff.trick.bild + " " + angriff.trick.name + " ein!"
-                  : " greift an!"}{" "}
-                <span className="text-rose-600">−{angriff.wucht}</span>
-              </p>
+          <div className="a-rutschen mt-3">
+            {angriff ? (
+              <>
+                <p className="font-black text-emerald-700">
+                  <span className="text-2xl">{WESEN[angriff.nr] ? WESEN[angriff.nr].bild : "✨"}</span>{" "}
+                  {WESEN[angriff.nr] ? WESEN[angriff.nr].name : "Treffer"}
+                  {angriff.trick
+                    ? " setzt " + angriff.trick.bild + " " + angriff.trick.name + " ein!"
+                    : " greift an!"}
+                </p>
+                <p className="mt-1 text-lg font-black text-amber-600">
+                  +{angriff.punkte}
+                  {angriff.kombo > 0 && (
+                    <span className="text-sm text-emerald-700"> · Kombo {angriff.kombo}!</span>
+                  )}
+                </p>
+              </>
             ) : (
               <p className="font-black text-rose-700">
-                Daneben — {frage.text} = {frage.antwort}
+                {letzte === "langsam" ? "Zu langsam — " : "Daneben — "}
+                {frage.text} = {frage.antwort}
               </p>
             )}
           </div>
@@ -2514,9 +2735,22 @@ function ArenaKampf({ t, arena, speichern, onEnde }) {
       <div className="mt-4">
         <Ziffernblock wert={eingabe} setWert={setEingabe} onOk={pruefen} gesperrt={phase !== "kampf"} />
       </div>
-      <button onClick={onEnde} className="mt-3 w-full text-center text-xs text-emerald-500">
-        Kampf abbrechen
+
+      <button
+        onClick={luftHolen}
+        disabled={luft <= 0 || pause || phase !== "kampf"}
+        className={
+          "kein-blau mt-3 w-full rounded-2xl border-2 py-3 text-sm font-black transition " +
+          (luft > 0 && !pause && phase === "kampf"
+            ? "border-sky-400/60 text-sky-200 active:translate-y-px"
+            : "border-emerald-800 text-emerald-700")
+        }
+      >
+        😮‍💨 Luft holen {"●".repeat(luft)}{"○".repeat(LUFT_HOLEN - luft)}
       </button>
+      <p className="mt-2 text-center text-xs text-emerald-400">
+        In der ersten Hälfte der Zeit antworten: +{PUNKTE_TEMPO} Punkte und eine ⚡.
+      </p>
     </div>
   );
 }
@@ -2832,10 +3066,7 @@ function TrainerWahl({ stand, waehle, lege, loesche, zurueck }) {
   );
 }
 
-function Weltwahl({ t, waehle, blitz, zurueck }) {
-  const blitzbereit = ["wiese", "malfeld"].filter(
-    (w) => blitzWesen(t, w).length >= BLITZ_AB_WESEN
-  );
+function Weltwahl({ t, waehle, zurueck }) {
   return (
     <div className="mx-auto max-w-md p-4">
       <Kopf titel="Wohin gehst du?" onZurueck={zurueck} />
@@ -2849,6 +3080,7 @@ function Weltwahl({ t, waehle, blitz, zurueck }) {
           const dran = faelligeZahl(t, w);
           const erf = erforschteZahl(t, w);
           const offen = nochWasZuZeigen(t, w).length;
+          const bereit = bereitFuerTrick(t, w).length;
           return (
             <button
               key={w}
@@ -2882,44 +3114,17 @@ function Weltwahl({ t, waehle, blitz, zurueck }) {
                   ? " · alles erkundet ✨"
                   : ""}
               </p>
+              {bereit > 0 && (
+                <p className="mt-0.5 text-xs font-bold text-amber-300">
+                  ✨ {bereit} {bereit === 1 ? "Wesen ist" : "Wesen sind"} reif für einen
+                  neuen Trick
+                </p>
+              )}
             </button>
           );
         })}
       </div>
 
-      {/* Blitzrunde — erst wenn es genug gefangene Wesen gibt */}
-      <div className="mt-5 rounded-2xl border-2 border-amber-400/40 bg-emerald-900/50 p-3">
-        <p className="text-center text-xs font-bold uppercase tracking-widest text-amber-300">
-          ⚡ Blitzrunde
-        </p>
-        <p className="mt-1 text-center text-sm text-emerald-200">
-          Nur Wesen, die du schon hast. Wenig Zeit, keine Beeren — schwere
-          Rechnungen bekommen mehr Sekunden als leichte.
-        </p>
-        {blitzbereit.length === 0 ? (
-          <p className="mt-2 text-center text-xs text-emerald-400">
-            Ab {BLITZ_AB_WESEN} gefangenen Wesen in einer Gegend geht das los.
-          </p>
-        ) : (
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {["wiese", "malfeld"].map((w) => (
-              <button
-                key={w}
-                disabled={!blitzbereit.includes(w)}
-                onClick={() => blitz(w)}
-                className={
-                  "kein-blau rounded-xl px-3 py-3 text-sm font-black transition " +
-                  (blitzbereit.includes(w)
-                    ? "bg-amber-400 text-emerald-950 active:translate-y-px"
-                    : "bg-emerald-900 text-emerald-600")
-                }
-              >
-                {WELT[w].bild} {WELT[w].name}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
@@ -3032,11 +3237,6 @@ function App() {
             speichereTrainer({ ...t, welt: w });
             setAnsicht("streifzug");
           }}
-          blitz={(w) => {
-            setWelt(w);
-            speichereTrainer({ ...t, welt: w });
-            setAnsicht("blitz");
-          }}
         />
       </>
     );
@@ -3047,20 +3247,6 @@ function App() {
       <>
         <Stile />
         <Streifzug
-          start={t}
-          welt={welt}
-          speichern={speichereTrainer}
-          onEnde={() => setAnsicht("menue")}
-        />
-      </>
-    );
-  }
-
-  if (ansicht === "blitz") {
-    return (
-      <>
-        <Stile />
-        <Blitzrunde
           start={t}
           welt={welt}
           speichern={speichereTrainer}
@@ -3097,7 +3283,7 @@ function App() {
       <>
         <Stile />
         <ArenaKampf
-          t={t}
+          start={t}
           arena={arena}
           speichern={speichereTrainer}
           onEnde={() => setAnsicht("arena")}

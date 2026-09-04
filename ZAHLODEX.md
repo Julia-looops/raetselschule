@@ -60,12 +60,28 @@ Sichtbar ist ein Sammelspiel. Darunter arbeitet ein Karteikasten (Leitner):
 * **Behalten** = Wiedersehen nach 10 Minuten, 1 Tag, 3 Tagen, 1 Woche, 3 Wochen —
   **wie schnell es geht, entscheidet das Tempo:**
 
+  Und **nicht jedes Wesen reift gleich schnell.** 3 · 4 ist in zwei Wochen
+  verankert, 7 · 8 nicht. Schweres soll aber *öfter* drankommen und *später* als
+  gereift gelten — beides über längere Abstände zu regeln ginge nach hinten los.
+  Also drei Leitern:
+
+  | | Abstände | Stufen | durchgereift nach |
+  |---|---|---|---|
+  | leicht | 10 Min · 1 Tag · 3 Tage · 10 Tage | 4 | ~2 Wochen |
+  | mittel | 10 Min · 1 Tag · 3 Tage · 7 Tage · 21 Tage | 5 | ~4 Wochen |
+  | schwer | 10 Min · 12 Std · 2 Tage · 5 Tage · 12 Tage · 28 Tage | 6 | ~7 Wochen |
+
+  Die schwere Leiter fängt enger an und ist länger. Eingestuft wird nach dem
+  *leichtesten* Weg zu einer Zahl — im Malfeld fallen so genau die neun
+  legendären Wesen in "schwer", dieselben neun, die auch im Album selten sind.
+
   | Antwort | Folge |
   |---|---|
-  | blitzschnell (unter 4 s) | zwei Stufen weiter — nach zwei Wiedersehen drei Wochen Ruhe |
+  | blitzschnell (unter 4 s) | zwei Stufen weiter |
   | normal | eine Stufe weiter |
   | langsam (über 10 s) oder mit Beere | Stufe bleibt, kommt aber binnen eines Tages wieder |
   | falsch | eine Stufe zurück |
+  | aus der obersten Stufe bestanden | **durchgereift** — Bedingung für den dritten Trick |
 
   Damit räumen sich die leichten Reihen von selbst ab, während die schweren
   Kerne im Umlauf bleiben. Wer beim Fangen schon dreimal blitzschnell war,
@@ -112,14 +128,61 @@ Zaubersprüche in der Rätselschule:
 Wer eine Beere nimmt, fängt das Wesen trotzdem — nur die Freundschaftsstufe
 steigt beim Wiedersehen nicht. Auch das merkt das Kind nicht.
 
+## Zwei Modi, klare Rollen
+
+Es gab einmal drei — Streifzug, Blitzrunde und Arenakampf — und zwei davon
+fühlten sich gleich an: beides "zehn Rechnungen gegen die Uhr". Jetzt sind es
+zwei:
+
+> **🌿 Streifzug — üben.** Fangen, wiedersehen, entdecken. Beeren erlaubt, keine
+> Uhr. Hier reifen die Wesen.
+>
+> **🏅 Arena — zeigen, was sitzt.** Zwölf Rechnungen gegen die Uhr, Punkte,
+> Orden, Rekord. Hier gibt es die ⚡.
+
+Beide braucht es: **Der Kampf verdient die ⚡. Der Streifzug macht die Wesen
+würdig, sie zu bekommen.** Ohne Streifzug bleiben die Wesen bei einem Trick
+stehen, egal wie gut gekämpft wird.
+
+## Der Kampf
+
+Die Zahl der Rechnungen ist **fest — zwölf**. Tricks machen den Kampf nicht
+kürzer, sondern wertvoller; in einem Lernspiel darf Können nicht mit weniger
+Übung belohnt werden.
+
+| je richtige Antwort | Punkte |
+|---|---|
+| Grundwert | 10 |
+| in der ersten Hälfte der Zeit | +5 und **eine ⚡** |
+| je Trick des angreifenden Wesens | +5 |
+| jede dritte richtige in Folge | +10 Kombo |
+
+Das angreifende Wesen **ist die Antwort**: `8 · 7 = 56 → Rexi setzt Achtsturm
+ein`. Oben läuft die Bank mit allen Wesen der Reihe, am Ende steht, wer wie viel
+geholt hat.
+
+**Der Orden fällt bei 110 Punkten** — zwölf richtige ohne alles sind 120, reines
+Können genügt also immer. Danach geht es um den **Rekord**: ohne Tricks sind
+höchstens 180 Punkte drin, mit voll ausgebildetem Team 360. Deshalb lohnt sich
+jeder Trick dauerhaft.
+
 ## Tricks — Florentinas Idee
 
 Wer blitzschnell rechnet, kann seinen Wesen etwas beibringen. Nicht
 freischalten: **beibringen**.
 
-* Jede blitzschnelle Antwort in der Blitzrunde gibt **ein ⚡**. Fünf davon sind
-  ein Trick.
-* Nach der Runde entscheidet das Kind selbst, **wem** es etwas beibringt.
+* Jede blitzschnelle Antwort im Kampf gibt **ein ⚡**. Fünf davon sind ein Trick.
+* Nach dem Kampf entscheidet das Kind selbst, **wem** es etwas beibringt.
+* Und ein Trick will verdient sein — jeder steht für einen anderen Zeithorizont:
+
+  | Trick | Bedingung | dauert |
+  |---|---|---|
+  | 1 | war im Kampf blitzschnell | sofort |
+  | 2 | vollständig erforscht **und** Stufe 3 | Tage |
+  | 3 | ein Wiedersehen **nach der langen Pause** bestanden | Wochen |
+
+  Der dritte ist nicht abzukürzen: die Zeit selbst ist die Hürde. Gelernte
+  Tricks bleiben, auch wenn ein Wesen später zurückfällt.
 * Welcher Trick es wird, sagt der Typ des Wesens: ein 8er-Wesen lernt den
   Achtsturm 🌪️, ein 9er das Neunfeuer 🔥, ein 7er die Glücksklaue 🍀. Drei pro
   Wesen.

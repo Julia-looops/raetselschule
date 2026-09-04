@@ -111,13 +111,21 @@ von dort genommen — ab dann baut es auch ohne Internet.
   einer Sitzung gleichzeitig wieder ansteht.
 - **Lernreihenfolge**: `ORDNUNG` — was zuerst drankommt. `REVIER` legt fest, wie
   viele wilde Wesen gleichzeitig gejagt werden (Vorgabe 3).
-- **Tempo**: `BLITZ_MS` (unter 4 Sekunden = Blitz), `KAMPF_ZEIT` und
-  `KAMPF_FRAGEN` für die Arenen, `BLITZ_FRAGEN` / `BLITZ_AB_WESEN` /
-  `LUFT_HOLEN` für die Blitzrunde. Wie viel Zeit eine einzelne Rechnung dort
-  bekommt, rechnet `blitzZeit` aus (4, 6 oder 8 Sekunden je nach Schwierigkeit).
+- **Der Kampf** (`ArenaKampf`) ist der einzige Modus mit Uhr — die frühere
+  Blitzrunde steckt darin. `KAMPF_FRAGEN` (12), `ORDEN_PUNKTE` (110),
+  `PUNKTE_GRUND` / `PUNKTE_TEMPO` / `PUNKTE_TRICK` / `PUNKTE_KOMBO`,
+  `LUFT_HOLEN`. Wie viel Zeit eine Rechnung bekommt, rechnet `blitzZeit` aus
+  (4, 6 oder 8 Sekunden je nach Schwierigkeit); wer in der ersten Hälfte
+  antwortet, bekommt Tempobonus und eine ⚡.
 - **Tricks**: `TRICK_KOSTEN` (⚡ je Trick), `MAX_TRICKS` pro Wesen, Namen und
-  Bilder in `TRICK_REIHE`. In der Arena schlägt ein Wesen mit Trick doppelt so
-  hart; `LEITER_LEBEN` sagt, wie viel der Arenaleiter aushält.
+  Bilder in `TRICK_REIHE`. Wer wann lernen darf, entscheidet `trickBedingung`:
+  erster Trick sofort, zweiter bei voller Erforschung und Stufe 3, dritter erst
+  wenn `dauer` gesetzt ist — also ein Wiedersehen nach der längsten Pause
+  bestanden wurde.
+- **Reifen**: `LEITER` enthält drei Abstandsleitern (leicht/mittel/schwer),
+  `reifeArt` stuft ein Wesen nach seinem leichtesten Rechenweg ein. Schwere
+  Wesen kommen früher wieder, haben aber mehr Stufen — sie kommen also öfter
+  dran und gelten später als gereift.
 - **Umkehraufgaben** ("6 · ? = 42"): `UMKEHR_ANTEIL` legt fest, wie oft sie
   vorkommen, `UMKEHR_AB_STUFE`, ab wann. Gefragt ist immer die zweite Zahl.
 - **Abwechslung**: Die Runde wird über `mischen` so gemischt, dass kein Wesen
