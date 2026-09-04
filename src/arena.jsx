@@ -748,6 +748,9 @@ function beeren(fakt) {
    unberührt. Jedes Kind hat eine eigene Trainerkarte, damit
    Florentina und ihre Freunde dasselbe Gerät benutzen können.
    ============================================================ */
+/* wird beim Bauen ersetzt, siehe tools/build.mjs */
+const FASSUNG = "__FASSUNG__";
+
 const SPEICHER = "florentina-zahlodex";
 const TRAINER_BILDER = ["🐾", "🧢", "🎒", "🪄", "🛼", "🦄", "🚀", "🍀"];
 
@@ -3206,9 +3209,11 @@ function App() {
         </a>
 
         <p className="mt-4 text-center text-xs leading-relaxed text-emerald-500">
-          Gefangene Wesen melden sich nach 10 Minuten, einem Tag, drei Tagen, einer
-          Woche und drei Wochen wieder. Wer sie da wiedererkennt, kann die Rechnung
-          wirklich.
+          Gefangene Wesen melden sich wieder — wer eine Rechnung aus dem Stand
+          weiß, sieht sie lange nicht, wer überlegen muss, schon bald.
+        </p>
+        <p className="mt-3 text-center text-[11px] text-emerald-500">
+          Zahlodex · Fassung {FASSUNG}
         </p>
       </div>
     </>

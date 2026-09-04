@@ -6,6 +6,9 @@ const { useState, useEffect, useRef } = React;
    Hogwarts + Pikachu · 3. Klasse VS · Zahlenraum bis 100
    ============================================================ */
 
+/* wird beim Bauen ersetzt, siehe tools/build.mjs */
+const FASSUNG = "__FASSUNG__";
+
 const KAPITEL = [
   { id: 1, titel: "Der Brief aus Hogwarts", emoji: "🦉" },
   { id: 2, titel: "Die Schokofrosch-Kammer", emoji: "🐸" },
@@ -1206,6 +1209,10 @@ function Raetselschule() {
               wer rechnet, fängt es.
             </p>
           </a>
+
+          <p className="mt-4 text-center text-[11px] text-yellow-500/60">
+            Rätselschule · Fassung {FASSUNG}
+          </p>
         </div>
       </div>
     );

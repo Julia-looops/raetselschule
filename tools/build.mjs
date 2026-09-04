@@ -18,6 +18,7 @@
    Einmalig vorher:   npm install
    ============================================================ */
 import { transformSync } from "@babel/core";
+import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -51,8 +52,27 @@ const SEITEN = [
   { quelle: "arena.jsx", ziel: "arena.html", titel: "Zahlodex - Die Rechen-Arena", kurz: "Zahlodex" },
 ];
 
+/* Laufende Nummer und Datum, damit man von aussen sehen kann, ob ein
+   Update tatsaechlich angekommen ist. Die Nummer ist die Anzahl der
+   Commits plus eins — also die Fassung, die dieser Build wird. Steht
+   im Quellcode als Platzhalter __FASSUNG__ und wird hier ersetzt. */
+function fassung() {
+  let nummer = "?";
+  try {
+    const zahl = execSync("git rev-list --count HEAD", { cwd: wurzel }).toString().trim();
+    nummer = String(Number(zahl) + 1);
+  } catch (e) {
+    /* kein Git zur Hand — dann eben ohne Nummer */
+  }
+  const d = new Date();
+  const datum = d.getDate() + "." + (d.getMonth() + 1) + "." + d.getFullYear();
+  return nummer + " \u00b7 " + datum;
+}
+
+const FASSUNG = fassung();
+
 function kompiliere(datei) {
-  const src = readFileSync(join(wurzel, "src", datei), "utf8");
+  const src = readFileSync(join(wurzel, "src", datei), "utf8").replaceAll("__FASSUNG__", FASSUNG);
   const out = transformSync(src, {
     presets: [["@babel/preset-react", { runtime: "classic" }]],
     compact: false,
@@ -105,6 +125,7 @@ function setzeZusammen(spielCode, seite) {
   );
 }
 
+console.log("Fassung:", FASSUNG);
 console.log("Bibliotheken:");
 await holeLibs();
 for (const seite of SEITEN) {

@@ -53,6 +53,17 @@ git add -A && git commit -m "Beschreibung" && git push
 
 GitHub Pages baut danach automatisch, das dauert rund eine Minute.
 
+## Fassungsnummer
+
+Beide Seiten zeigen unten klein ihre Fassung, z. B. `Fassung 12 · 4.9.2026`.
+Damit lässt sich am Gerät prüfen, ob ein Update wirklich angekommen ist — der
+Browser oder die Seite auf dem Home-Bildschirm hält gern die alte Fassung.
+
+Die Nummer setzt `tools/build.mjs` selbst: sie ist die Anzahl der Commits plus
+eins, also die Fassung, die dieser Build wird. Im Quellcode steht nur der
+Platzhalter `__FASSUNG__`, nichts muss von Hand hochgezählt werden. Beim Bauen
+wird die Fassung auch ausgegeben.
+
 ## Wo was steckt
 
 | Datei | Inhalt |
@@ -60,7 +71,7 @@ GitHub Pages baut danach automatisch, das dauert rund eine Minute.
 | `src/game.jsx` | Rätselschule. Hier wird gearbeitet. |
 | `src/arena.jsx` | Zahlodex. Hier wird gearbeitet. |
 | `src/vorlage.html` | Das HTML-Gerüst (Kopf, Styles, Speicher-Shim). Ändert man selten. |
-| `tools/build.mjs` | Der Bauvorgang: Bibliotheken holen, JSX kompilieren, zusammensetzen. Welche Seiten gebaut werden, steht in `SEITEN`. |
+| `tools/build.mjs` | Der Bauvorgang: Bibliotheken holen, JSX kompilieren, zusammensetzen. Welche Seiten gebaut werden, steht in `SEITEN`. Setzt auch die Fassungsnummer. |
 | `index.html`, `arena.html` | **Erzeugt.** Nicht bearbeiten. |
 | `sw.js` | Service Worker für den Offline-Betrieb. Neue Seiten dort eintragen und `CACHE` hochzählen. |
 | `robots.txt` | Hält Suchmaschinen fern. |

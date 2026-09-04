@@ -408,6 +408,8 @@ const {
    Hogwarts + Pikachu · 3. Klasse VS · Zahlenraum bis 100
    ============================================================ */
 
+/* wird beim Bauen ersetzt, siehe tools/build.mjs */
+const FASSUNG = "12 · 4.9.2026";
 const KAPITEL = [{
   id: 1,
   titel: "Der Brief aus Hogwarts",
@@ -1536,7 +1538,9 @@ function Raetselschule() {
       className: "mt-1 text-center text-lg font-black text-emerald-200"
     }, "\uD83D\uDC09 Zahlodex \u2014 die Rechen-Arena"), /*#__PURE__*/React.createElement("p", {
       className: "mt-1 text-center text-sm text-emerald-100/80"
-    }, "Einmaleins und Plus/Minus bis 20. Jedes Ergebnis ist ein Wesen \u2014 wer rechnet, f\xE4ngt es."))));
+    }, "Einmaleins und Plus/Minus bis 20. Jedes Ergebnis ist ein Wesen \u2014 wer rechnet, f\xE4ngt es.")), /*#__PURE__*/React.createElement("p", {
+      className: "mt-4 text-center text-[11px] text-yellow-500/60"
+    }, "R\xE4tselschule \xB7 Fassung ", FASSUNG)));
   }
 
   /* ============================ KARTE / MAP ============================ */

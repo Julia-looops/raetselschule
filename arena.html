@@ -1215,6 +1215,8 @@ function beeren(fakt) {
    unberührt. Jedes Kind hat eine eigene Trainerkarte, damit
    Florentina und ihre Freunde dasselbe Gerät benutzen können.
    ============================================================ */
+/* wird beim Bauen ersetzt, siehe tools/build.mjs */
+const FASSUNG = "12 · 4.9.2026";
 const SPEICHER = "florentina-zahlodex";
 const TRAINER_BILDER = ["🐾", "🧢", "🎒", "🪄", "🛼", "🦄", "🚀", "🍀"];
 function leererTrainer(bild) {
@@ -3489,7 +3491,9 @@ function App() {
     className: "mt-6 block rounded-2xl border-2 border-emerald-700 p-3 text-center text-sm text-emerald-300"
   }, "\uD83E\uDD89 Zur\xFCck zu Florentinas R\xE4tselschule"), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-center text-xs leading-relaxed text-emerald-500"
-  }, "Gefangene Wesen melden sich nach 10 Minuten, einem Tag, drei Tagen, einer Woche und drei Wochen wieder. Wer sie da wiedererkennt, kann die Rechnung wirklich.")));
+  }, "Gefangene Wesen melden sich wieder \u2014 wer eine Rechnung aus dem Stand wei\xDF, sieht sie lange nicht, wer \xFCberlegen muss, schon bald."), /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 text-center text-[11px] text-emerald-500"
+  }, "Zahlodex \xB7 Fassung ", FASSUNG)));
 }
 ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));
 </script>
