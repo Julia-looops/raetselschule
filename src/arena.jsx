@@ -2377,6 +2377,12 @@ function KampfErklaerung({ onWeiter, zurueck }) {
           Sei schnell! Wer in der ersten Hälfte der Zeit antwortet, bekommt eine
           ⚡ dazu. Damit bringst du deinen Wesen neue Tricks bei.
         </p>
+        <p className="mt-2 text-emerald-300">
+          Und wenn du irgendwo feststeckst: Du hast {BEERE_KAMPF === 1 ? "eine" : BEERE_KAMPF}{" "}
+          🫐 Beere dabei. Sie hält die Uhr an und zeigt dir den Weg. Die
+          Rechnung zählt dann {PUNKTE_BEERE} statt {PUNKTE_GRUND} Punkte —
+          raten bringt gar nichts.
+        </p>
         <div className="mt-5">
           <Knopf onClick={onWeiter}>{zurueck ? "Alles klar" : "Los geht's! ⚔️"}</Knopf>
         </div>
@@ -2494,6 +2500,13 @@ const PUNKTE_TEMPO = 5;    // unter der halben Zeit
 const PUNKTE_TRICK = 5;    // je Trick des angreifenden Wesens
 const PUNKTE_KOMBO = 10;   // je dritte richtige in Folge
 const KOMBO_LAENGE = 3;
+/* Im Streifzug gibt es die Beeren umsonst — im Kampf gab es gar keine
+   Hilfe. Wer bei 7 · 8 hängenblieb, sass da und schaute der Uhr zu und
+   riet dann. Raten lernt nichts. Also: eine Beere pro Kampf. Sie hält
+   die Uhr an, zeigt den Weg, und die Rechnung zählt danach als
+   richtig — aber nur halb, ohne Blitz und ohne Kombo. */
+const BEERE_KAMPF = 1;      // so viele Beeren pro Kampf
+const PUNKTE_BEERE = 5;     // Punkte für eine Rechnung mit Beere
 const ORDEN_PUNKTE = 110;  // zwölf richtige ohne alles sind 120
 const MEISTER_PUNKTE = 200;
 
@@ -2582,6 +2595,9 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   const [luft, setLuft] = useState(LUFT_HOLEN);
   const [pause, setPause] = useState(false);
   const [geschnauft, setGeschnauft] = useState(false);
+  const [beerenRest, setBeerenRest] = useState(BEERE_KAMPF);
+  const [geholfen, setGeholfen] = useState(false);  // Beere in dieser Rechnung
+  const [tipp, setTipp] = useState(0);              // welche Beere gerade offen ist
   /* Vor dem allerersten Kampf einmal erklären, worum es geht. */
   const [phase, setPhase] = useState(() =>
     start.gesehen && start.gesehen.kampf ? "kampf" : "intro"
@@ -2605,6 +2621,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
 
   const frage = fragen[Math.min(i, fragen.length - 1)];
   const dauer = blitzZeit(frage);
+  const tipps = beeren(frage);
   const leiterNr = arenaLeiter(arena);
 
   useEffect(() => {
@@ -2615,6 +2632,8 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
     setZeit(dauer);
     setGeschnauft(false);
     setPause(false);
+    setGeholfen(false);
+    setTipp(0);
   }, [i]);
 
   useEffect(() => {
@@ -2654,15 +2673,21 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
     let neueKombo = kombo;
     if (richtig) {
       const tricks = wesen ? gelernteTricks(t, nr).length : 0;
-      neueKombo = kombo + 1;
-      dazu = PUNKTE_GRUND + (schnell ? PUNKTE_TEMPO : 0) + tricks * PUNKTE_TRICK;
-      if (neueKombo % KOMBO_LAENGE === 0) dazu += PUNKTE_KOMBO;
+      /* Mit Beere bleibt die Kombo stehen, wo sie ist: sie reisst nicht
+         ab, wächst aber auch nicht. Die Hilfe soll den Lauf nicht
+         zerstören und trotzdem nicht belohnt werden. */
+      neueKombo = geholfen ? kombo : kombo + 1;
+      dazu = geholfen
+        ? PUNKTE_BEERE
+        : PUNKTE_GRUND + (schnell ? PUNKTE_TEMPO : 0) + tricks * PUNKTE_TRICK;
+      if (!geholfen && neueKombo % KOMBO_LAENGE === 0) dazu += PUNKTE_KOMBO;
       setAngriff({
         nr,
-        trick: tricks > 0 ? gelernteTricks(t, nr)[0] : null,
+        trick: !geholfen && tricks > 0 ? gelernteTricks(t, nr)[0] : null,
         punkte: dazu,
         tricks,
-        kombo: neueKombo % KOMBO_LAENGE === 0 ? neueKombo : 0,
+        mitBeere: geholfen,
+        kombo: !geholfen && neueKombo % KOMBO_LAENGE === 0 ? neueKombo : 0,
       });
       setTreffer((x) => x + 1);
       setPunkte((x) => x + dazu);
@@ -2686,7 +2711,8 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
     if (f && f.s >= 1) {
       let n = { ...f, l: frage.id };
       if (richtig) n = merkeFakt(n, frage);
-      if (art === "schnell" && n.f <= Date.now()) n = nachWiedersehen(n, "blitz", welt, nr);
+      if (richtig && geholfen) n = nachWiedersehen(n, "hilfe", welt, nr);
+      else if (art === "schnell" && n.f <= Date.now()) n = nachWiedersehen(n, "blitz", welt, nr);
       else if (art === "richtig" && n.f <= Date.now()) n = nachWiedersehen(n, "normal", welt, nr);
       else if (!richtig || art === "langsam") {
         /* gezögert oder daneben: bald wiedersehen, Stufe bleibt bzw.
@@ -2733,7 +2759,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
     const richtig = Number(eingabe) === frage.antwort;
     if (!richtig) return bewerten("falsch", zeit);
     /* blitzschnell = in der ersten Hälfte der Zeit und ohne Luft holen */
-    const schnell = !geschnauft && zeit > dauer / 2;
+    const schnell = !geschnauft && !geholfen && zeit > dauer / 2;
     bewerten(schnell ? "schnell" : "richtig", zeit);
   }
 
@@ -2742,6 +2768,15 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
     setLuft(luft - 1);
     setGeschnauft(true);
     setPause(true);
+    Ton.tippen();
+  }
+
+  function beereNehmen() {
+    if (beerenRest <= 0 || geholfen || phase !== "kampf") return;
+    setBeerenRest(beerenRest - 1);
+    setGeholfen(true);
+    setTipp(0);
+    setPause(true);   // in Ruhe lesen — sonst hilft die Hilfe nicht
     Ton.tippen();
   }
 
@@ -3054,6 +3089,41 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
             Uhr angehalten — lass dir Zeit.
           </p>
         )}
+        {/* Die Beere zeigt den Weg, direkt unter der Rechnung. */}
+        {geholfen && phase === "kampf" && (
+          <div className="a-rutschen mt-3 rounded-2xl bg-emerald-100 p-3 text-left">
+            <div className="flex flex-wrap gap-1">
+              {tipps.map((b2, k) => (
+                <button
+                  key={k}
+                  onClick={() => { setTipp(k); Ton.tippen(); }}
+                  className={
+                    "kein-blau rounded-xl border-2 px-2 py-1 text-[11px] font-bold transition " +
+                    (tipp === k
+                      ? "border-amber-500 bg-amber-300/50 text-emerald-900"
+                      : "border-emerald-300 text-emerald-700")
+                  }
+                >
+                  {b2.bild} {b2.name}
+                </button>
+              ))}
+            </div>
+            {tipps[tipp] && (
+              <>
+                <p className="mt-2 text-sm font-bold leading-snug text-emerald-900">
+                  {tipps[tipp].text}
+                </p>
+                {/* Das Punktefeld ist die stärkste Hilfe von allen —
+                    im Streifzug gibt es sie, hier darf sie nicht fehlen. */}
+                {tipps[tipp].bild2 && (
+                  <div className="mt-2 flex justify-center">
+                    <Rechenbild fakt={frage} />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
         {phase === "kurz" && (
           <div className="a-rutschen mt-3">
             {angriff ? (
@@ -3061,7 +3131,9 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
                 <p className="font-black text-emerald-700">
                   <span className="text-2xl">{WESEN[angriff.nr] ? WESEN[angriff.nr].bild : "✨"}</span>{" "}
                   {WESEN[angriff.nr] ? WESEN[angriff.nr].name : "Treffer"}
-                  {angriff.trick
+                  {angriff.mitBeere
+                    ? " greift an — mit Beere!"
+                    : angriff.trick
                     ? " setzt " + angriff.trick.bild + " " + angriff.trick.name + " ein!"
                     : " greift an!"}
                 </p>
@@ -3085,22 +3157,38 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
         <Ziffernblock wert={eingabe} setWert={setEingabe} onOk={pruefen} gesperrt={phase !== "kampf"} />
       </div>
 
-      <button
-        onClick={luftHolen}
-        disabled={luft <= 0 || pause || phase !== "kampf"}
-        className={
-          "kein-blau mt-3 w-full rounded-2xl border-2 py-3 text-sm font-black transition " +
-          (luft > 0 && !pause && phase === "kampf"
-            ? "border-sky-400/60 text-sky-200 active:translate-y-px"
-            : "border-emerald-800 text-emerald-700")
-        }
-      >
-        😮‍💨 Luft holen {"●".repeat(luft)}{"○".repeat(LUFT_HOLEN - luft)}
-      </button>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button
+          onClick={luftHolen}
+          disabled={luft <= 0 || pause || phase !== "kampf"}
+          className={
+            "kein-blau rounded-2xl border-2 py-3 text-sm font-black transition " +
+            (luft > 0 && !pause && phase === "kampf"
+              ? "border-sky-400/60 text-sky-200 active:translate-y-px"
+              : "border-emerald-800 text-emerald-700")
+          }
+        >
+          😮‍💨 Luft holen {"●".repeat(luft)}{"○".repeat(LUFT_HOLEN - luft)}
+        </button>
+        <button
+          onClick={beereNehmen}
+          disabled={beerenRest <= 0 || geholfen || phase !== "kampf"}
+          className={
+            "kein-blau rounded-2xl border-2 py-3 text-sm font-black transition " +
+            (beerenRest > 0 && !geholfen && phase === "kampf"
+              ? "border-amber-400/60 text-amber-200 active:translate-y-px"
+              : "border-emerald-800 text-emerald-700")
+          }
+        >
+          🫐 Beere {"●".repeat(beerenRest)}{"○".repeat(BEERE_KAMPF - beerenRest)}
+        </button>
+      </div>
       <p className="mt-2 text-center text-xs text-emerald-400">
         Schnell sein lohnt sich: In der ersten Hälfte der Zeit gibt es
         +{PUNKTE_TEMPO} Punkte und eine ⚡. Luft holen stoppt die Uhr — dann
-        zählt die Rechnung, aber nicht als blitzschnell.
+        zählt die Rechnung, aber nicht als blitzschnell. Die Beere zeigt dir
+        den Weg: {PUNKTE_BEERE} Punkte statt {PUNKTE_GRUND}, dafür weißt du
+        es beim nächsten Mal selber.
       </p>
     </div>
   );
@@ -3556,9 +3644,242 @@ function SpielErklaerung({ onWeiter, zurueck }) {
   );
 }
 
-function TrainerWahl({ stand, waehle, lege, loesche, zurueck }) {
+/* ============================================================
+   SICHERUNG
+
+   Der ganze Fortschritt lebt in genau einem Browser auf genau einem
+   Gerät. Safari räumt Website-Daten nach längerer Nichtbenutzung von
+   selbst weg, ein neues Handy tut dasselbe. Monate Arbeit sind dann
+   fort, und das übersteht kein Kind zweimal.
+
+   Also: ein Code, der alles enthält. Als Datei zum Ablegen oder zum
+   Kopieren in eine Notiz. Kein Server, kein Konto — die Sicherung
+   liegt dort, wo man sie selbst hinlegt.
+   ============================================================ */
+const CODE_KOPF = "ZAHLODEX1:";
+
+function alsCode(stand) {
+  const roh = JSON.stringify({ ...stand, gesichert: Date.now() });
+  const bytes = new TextEncoder().encode(roh);
+  let binaer = "";
+  bytes.forEach((b) => (binaer += String.fromCharCode(b)));
+  return CODE_KOPF + btoa(binaer);
+}
+
+/* Nimmt auch eine ganze Datei mit Kopfzeilen entgegen — gesucht wird
+   nur der Teil ab dem Kennwort. */
+function ausCode(text) {
+  const ab = String(text || "").indexOf(CODE_KOPF);
+  if (ab < 0) throw new Error("Da ist kein Zahlodex-Code drin.");
+  const rein = String(text).slice(ab + CODE_KOPF.length).replace(/\s/g, "");
+  let stand;
+  try {
+    const roh = atob(rein);
+    const bytes = Uint8Array.from(roh, (c) => c.charCodeAt(0));
+    stand = JSON.parse(new TextDecoder().decode(bytes));
+  } catch (e) {
+    throw new Error("Der Code ist unvollständig oder beschädigt.");
+  }
+  if (!stand || !stand.trainer || Object.keys(stand.trainer).length === 0)
+    throw new Error("In dieser Sicherung ist kein Trainer drin.");
+  return stand;
+}
+
+function datumKurz(ms) {
+  const d = new Date(ms);
+  return d.getDate() + "." + (d.getMonth() + 1) + "." + d.getFullYear();
+}
+
+function tageSeit(ms) {
+  return Math.floor((Date.now() - ms) / 86400000);
+}
+
+/* Wie dringend ist eine Sicherung? Entscheidet über den Hinweis im
+   Hauptmenü — mahnen soll er nur, wenn wirklich etwas zu verlieren ist. */
+function sicherungsStand(stand) {
+  const wesen = Object.values(stand.trainer).reduce(
+    (n, t2) => n + anzahlGefangen(t2), 0
+  );
+  if (!stand.gesichert)
+    return { nie: true, dringend: wesen >= 10, text: "Noch nie gesichert" };
+  const tage = tageSeit(stand.gesichert);
+  return {
+    nie: false,
+    tage,
+    dringend: tage >= 30,
+    text: tage <= 0 ? "Heute gesichert" : "Gesichert vor " + tage + (tage === 1 ? " Tag" : " Tagen"),
+  };
+}
+
+function Sicherung({ stand, setStand, onZurueck }) {
+  const [code] = useState(() => alsCode(stand));
+  const [kopiert, setKopiert] = useState(false);
+  const [eingabe, setEingabe] = useState("");
+  const [vorschau, setVorschau] = useState(null);
+  const [fehler, setFehler] = useState(null);
+  const [fertig, setFertig] = useState(false);
+  const st = sicherungsStand(stand);
+
+  function speichereDatei() {
+    const kopf =
+      "Zahlodex - Sicherung vom " + datumKurz(Date.now()) + "\n" +
+      "Diese Datei in der Rechen-Arena unter \"Sicherung\" wieder einlesen.\n\n";
+    const blob = new Blob([kopf + code], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "zahlodex-" + datumKurz(Date.now()).replaceAll(".", "-") + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    setStand((s) => ({ ...s, gesichert: Date.now() }));
+  }
+
+  async function kopiere() {
+    try {
+      await navigator.clipboard.writeText(code);
+      setKopiert(true);
+      setStand((s) => ({ ...s, gesichert: Date.now() }));
+      setTimeout(() => setKopiert(false), 2500);
+    } catch (e) {
+      setFehler("Kopieren ging nicht — markier den Code im Feld und kopier ihn von Hand.");
+    }
+  }
+
+  function pruefe(text) {
+    setFehler(null);
+    try {
+      setVorschau(ausCode(text));
+    } catch (e) {
+      setVorschau(null);
+      setFehler(e.message);
+    }
+  }
+
+  async function ausDatei(ev) {
+    const datei = ev.target.files && ev.target.files[0];
+    if (!datei) return;
+    try {
+      pruefe(await datei.text());
+    } catch (e) {
+      setFehler("Die Datei liess sich nicht lesen.");
+    }
+  }
+
+  function spieleEin() {
+    if (!vorschau) return;
+    const neu = { ...vorschau };
+    if (!neu.aktiv || !neu.trainer[neu.aktiv]) neu.aktiv = Object.keys(neu.trainer)[0];
+    setStand(neu);
+    setFertig(true);
+  }
+
+  if (fertig) {
+    return (
+      <div className="mx-auto max-w-md p-4 text-center">
+        <div className="a-auftauchen rounded-3xl bg-emerald-900/70 p-6">
+          <div className="text-6xl">🎒</div>
+          <h2 className="mt-2 text-2xl font-black text-amber-300">Alles wieder da!</h2>
+          <p className="mt-1 text-sm text-emerald-300">
+            {Object.keys(vorschau.trainer).join(", ")} — dein Stand ist zurück.
+          </p>
+          <div className="mt-4">
+            <Knopf onClick={onZurueck}>Weiterspielen</Knopf>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-md p-4">
+      <Kopf titel="Sicherung" unter={st.text} onZurueck={onZurueck} />
+
+      <div className="rounded-2xl bg-emerald-900/60 p-4">
+        <p className="text-sm font-black text-amber-300">Deinen Stand sichern</p>
+        <p className="mt-1 text-xs leading-relaxed text-emerald-300">
+          Alles, was du gesammelt hast, liegt nur in diesem Browser. Leg dir
+          eine Sicherung an — als Datei oder als Code in einer Notiz. Damit
+          holst du deinen Zahlodex auf jedes Gerät zurück.
+        </p>
+        <div className="mt-3 space-y-2">
+          <Knopf onClick={speichereDatei}>Als Datei speichern 💾</Knopf>
+          <Knopf art="ruhig" onClick={kopiere}>
+            {kopiert ? "Kopiert! ✓" : "Code kopieren 📋"}
+          </Knopf>
+        </div>
+        <textarea
+          readOnly
+          value={code}
+          onFocus={(e) => e.target.select()}
+          className="mt-2 h-20 w-full rounded-xl bg-emerald-950/70 p-2 font-mono text-[10px] leading-tight text-emerald-400"
+        />
+      </div>
+
+      <div className="mt-3 rounded-2xl border-2 border-emerald-700 p-4">
+        <p className="text-sm font-black text-emerald-100">Sicherung zurückholen</p>
+        <p className="mt-1 text-xs leading-relaxed text-emerald-400">
+          Datei auswählen oder den Code hier einsetzen. Du siehst vorher, was
+          drin ist.
+        </p>
+        <input
+          type="file"
+          accept=".txt,text/plain"
+          onChange={ausDatei}
+          className="mt-2 w-full text-xs text-emerald-300 file:mr-2 file:rounded-xl file:border-0 file:bg-emerald-700 file:px-3 file:py-2 file:text-xs file:font-bold file:text-emerald-50"
+        />
+        <textarea
+          value={eingabe}
+          placeholder={CODE_KOPF + "…"}
+          onChange={(e) => { setEingabe(e.target.value); if (e.target.value.trim()) pruefe(e.target.value); }}
+          className="mt-2 h-16 w-full rounded-xl bg-emerald-950/70 p-2 font-mono text-[10px] text-emerald-200 placeholder-emerald-700"
+        />
+        {fehler && <p className="mt-2 text-xs font-bold text-rose-300">{fehler}</p>}
+        {vorschau && (
+          <div className="a-rutschen mt-3 rounded-2xl bg-emerald-950/60 p-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+              Das ist drin
+            </p>
+            {Object.entries(vorschau.trainer).map(([n, t2]) => (
+              <p key={n} className="mt-1 text-sm text-emerald-100">
+                {t2.bild} <b>{n}</b>{" "}
+                <span className="text-emerald-400">
+                  — {anzahlGefangen(t2)} Wesen · {sterneGesamt(t2)} Sterne ·{" "}
+                  {tricksGesamt(t2)} Tricks
+                </span>
+              </p>
+            ))}
+            {vorschau.gesichert && (
+              <p className="mt-1 text-[11px] text-emerald-500">
+                gesichert am {datumKurz(vorschau.gesichert)}
+              </p>
+            )}
+            <p className="mt-2 text-xs font-bold text-amber-200">
+              Achtung: Dein jetziger Stand wird dadurch ersetzt.
+            </p>
+            <div className="mt-2">
+              <Knopf art="gruen" onClick={spieleEin}>Jetzt einspielen</Knopf>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <p className="mt-3 text-center text-[11px] leading-relaxed text-emerald-500">
+        Nichts davon verlässt dein Gerät. Die Sicherung liegt genau dort, wo du
+        sie hinlegst.
+      </p>
+    </div>
+  );
+}
+
+function TrainerWahl({ stand, waehle, lege, loesche, zurueck, onSicherung }) {
   const [neu, setNeu] = useState("");
   const [bild, setBild] = useState(TRAINER_BILDER[0]);
+  /* Ein Tipper auf das ✕ hat vorher wortlos monatelangen Fortschritt
+     gelöscht. Auf einem Gerät, das sich zwei Kinder teilen, passiert
+     das irgendwann sicher. */
+  const [weg, setWeg] = useState(null);
   const namen = Object.keys(stand.trainer);
   return (
     <div className="mx-auto max-w-md p-4">
@@ -3577,7 +3898,7 @@ function TrainerWahl({ stand, waehle, lege, loesche, zurueck }) {
               </span>
             </button>
             <button
-              onClick={() => loesche(n)}
+              onClick={() => setWeg(weg === n ? null : n)}
               className="kein-blau rounded-xl border-2 border-rose-500/40 px-3 py-3 text-xs text-rose-300"
             >
               ✕
@@ -3585,6 +3906,38 @@ function TrainerWahl({ stand, waehle, lege, loesche, zurueck }) {
           </div>
         ))}
       </div>
+
+      {weg && (
+        <div className="a-rutschen mt-3 rounded-2xl border-2 border-rose-400/60 bg-rose-950/40 p-4">
+          <p className="text-sm font-black text-rose-200">
+            {weg} wirklich löschen?
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-rose-200/80">
+            {anzahlGefangen(stand.trainer[weg])} Wesen,{" "}
+            {sterneGesamt(stand.trainer[weg])} Sterne und{" "}
+            {tricksGesamt(stand.trainer[weg])} Tricks sind dann weg. Das lässt
+            sich nicht rückgängig machen — es sei denn, du hast eine Sicherung.
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Knopf klein art="ruhig" onClick={() => setWeg(null)}>
+              Doch nicht
+            </Knopf>
+            <button
+              onClick={() => { loesche(weg); setWeg(null); }}
+              className="kein-blau w-full rounded-2xl bg-rose-500 px-4 py-2 text-sm font-black text-rose-950 shadow-lg active:translate-y-px"
+            >
+              Ja, löschen
+            </button>
+          </div>
+        </div>
+      )}
+
+      <button
+        onClick={onSicherung}
+        className="kein-blau mt-3 w-full rounded-2xl border-2 border-emerald-700 p-3 text-center text-sm font-bold text-emerald-300"
+      >
+        🔐 Sicherung anlegen oder zurückholen
+      </button>
 
       <div className="mt-5 rounded-2xl bg-emerald-900/60 p-3">
         <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
@@ -3768,6 +4121,7 @@ function App() {
         <TrainerWahl
           stand={stand}
           zurueck={() => setAnsicht("menue")}
+          onSicherung={() => setAnsicht("sicherung")}
           waehle={(n) => {
             setStand((s) => ({ ...s, aktiv: n }));
             setWelt(stand.trainer[n].welt || "wiese");
@@ -3786,6 +4140,15 @@ function App() {
             })
           }
         />
+      </>
+    );
+  }
+
+  if (ansicht === "sicherung") {
+    return (
+      <>
+        <Stile />
+        <Sicherung stand={stand} setStand={setStand} onZurueck={() => setAnsicht("menue")} />
       </>
     );
   }
@@ -3877,6 +4240,7 @@ function App() {
   const stand2 = fortschritt(t);
   const offeneRechnungen = stand2.rechnungen[1] - stand2.rechnungen[0];
   const wartend = wartenAufTrick(t).bereit.length;
+  const sicherung = sicherungsStand(stand);
 
   if (erklaerung || !(t.gesehen && t.gesehen.start)) {
     return (
@@ -4025,9 +4389,24 @@ function App() {
           </div>
         </div>
 
+        {/* Der Fortschritt lebt in genau einem Browser. Der Hinweis
+            mahnt erst, wenn wirklich etwas zu verlieren ist. */}
+        <button
+          onClick={() => setAnsicht("sicherung")}
+          className={
+            "kein-blau mt-3 w-full rounded-2xl border-2 p-2 text-center text-xs font-bold transition " +
+            (sicherung.dringend
+              ? "a-funkeln border-amber-400/60 bg-amber-400/15 text-amber-200"
+              : "border-emerald-800 text-emerald-500")
+          }
+        >
+          🔐 {sicherung.text}
+          {sicherung.dringend && " — jetzt sichern"}
+        </button>
+
         <a
           href="./index.html"
-          className="mt-6 block rounded-2xl border-2 border-emerald-700 p-3 text-center text-sm text-emerald-300"
+          className="mt-3 block rounded-2xl border-2 border-emerald-700 p-3 text-center text-sm text-emerald-300"
         >
           🦉 Zurück zu Florentinas Rätselschule
         </a>
