@@ -161,10 +161,27 @@ Das angreifende Wesen **ist die Antwort**: `8 · 7 = 56 → Rexi setzt Achtsturm
 ein`. Oben läuft die Bank mit allen Wesen der Reihe, am Ende steht, wer wie viel
 geholt hat.
 
-**Der Orden fällt bei 110 Punkten** — zwölf richtige ohne alles sind 120, reines
-Können genügt also immer. Danach geht es um den **Rekord**: ohne Tricks sind
-höchstens 180 Punkte drin, mit voll ausgebildetem Team 360. Deshalb lohnt sich
-jeder Trick dauerhaft.
+### Drei Sterne je Arena
+
+Mit nur einem Orden war eine Reihe irgendwann "erledigt" und es gab keinen Grund
+mehr hineinzugehen. Drei Sterne machen aus *geschafft* ein *wie gut*:
+
+| ★ | Orden | ab 110 Punkten |
+| ★★ | Meister | ab 200 Punkten |
+| ★★★ | Perfekt | alle zwölf richtig **und** alle blitzschnell |
+
+Zwölf richtige ohne alles sind 120 — der erste Stern ist also mit reinem Können
+immer zu holen. Der dritte dagegen ist mit Tricks nicht zu kaufen: er verlangt,
+dass jede einzelne Rechnung aus dem Stand sitzt. Die Sterne stehen in der
+Arenaliste und als Summe auf der Trainerkarte, damit man sieht, dass keine Arena
+je fertig ist.
+
+### Die Liga
+
+Sind alle elf Orden geholt, öffnet sich der Endkampf: **die sechzehn schwersten
+Rechnungen des kleinen Einmaleins, 6·6 bis 9·9**, nichts anderes. Darauf laufen
+die Orden die ganze Zeit hinaus. Auch sie hat drei Sterne (★ ab 150, ★★ ab 260,
+★★★ für alle sechzehn richtig und blitzschnell) und einen eigenen Rekord.
 
 ## Tricks — Florentinas Idee
 

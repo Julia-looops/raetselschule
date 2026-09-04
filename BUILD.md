@@ -117,6 +117,11 @@ von dort genommen — ab dann baut es auch ohne Internet.
   `LUFT_HOLEN`. Wie viel Zeit eine Rechnung bekommt, rechnet `blitzZeit` aus
   (4, 6 oder 8 Sekunden je nach Schwierigkeit); wer in der ersten Hälfte
   antwortet, bekommt Tempobonus und eine ⚡.
+- **Sterne und Liga**: `sterneFuer` vergibt je Kampf 0-3 Sterne, `ordenPunkte`
+  und `meisterPunkte` leiten die Schwellen aus `kampfFragen` ab (12 Fragen in
+  einer Arena, 16 in der Liga). Die Liga steht als eigener Eintrag in `ARENEN`
+  und öffnet, wenn alle Orden aus `ARENEN_OHNE_LIGA` hängen; ihre Fragen kommen
+  aus `ligaFakten` (6·6 bis 9·9).
 - **Tricks**: `TRICK_KOSTEN` (⚡ je Trick), `MAX_TRICKS` pro Wesen, Namen und
   Bilder in `TRICK_REIHE`. Wer wann lernen darf, entscheidet `trickBedingung`:
   erster Trick sofort, zweiter bei voller Erforschung und Stufe 3, dritter erst

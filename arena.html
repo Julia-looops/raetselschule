@@ -1323,7 +1323,7 @@ function beeren(fakt) {
    Florentina und ihre Freunde dasselbe Gerät benutzen können.
    ============================================================ */
 /* wird beim Bauen ersetzt, siehe tools/build.mjs */
-const FASSUNG = "13 · 4.9.2026";
+const FASSUNG = "14 · 4.9.2026";
 const SPEICHER = "florentina-zahlodex";
 const TRAINER_BILDER = ["🐾", "🧢", "🎒", "🪄", "🛼", "🦄", "🚀", "🍀"];
 function leererTrainer(bild) {
@@ -2453,13 +2453,43 @@ const ARENEN = [{
   op: "−",
   name: "Abstieg-Arena",
   leiterNr: 10
+},
+/* Der Endkampf. Öffnet erst, wenn alle elf Orden hängen — und
+   besteht aus genau den sechzehn schwersten Rechnungen des kleinen
+   Einmaleins: 6·6 bis 9·9, nichts anderes. */
+{
+  id: "liga",
+  art: "liga",
+  name: "Die Liga",
+  leiterNr: 100
 }];
+const ARENEN_OHNE_LIGA = ARENEN.filter(a => a.art !== "liga");
 function arenaLeiter(a) {
   return a.art === "reihe" ? a.reihe * a.reihe : a.leiterNr;
 }
 
+/* Wie viele Rechnungen und wie viele Punkte je Stern? Die Liga ist
+   länger, also müssen auch ihre Schwellen mitwachsen. */
+function kampfFragen(a) {
+  return a.art === "liga" ? 16 : 12;
+}
+function ordenPunkte(a) {
+  return kampfFragen(a) * 10 - 10; // alle richtig minus eine
+}
+function meisterPunkte(a) {
+  return Math.round(kampfFragen(a) * 16.5 / 10) * 10;
+}
+
 /* Wie viele Wesen der Reihe hat das Kind schon? */
 function arenaReif(t, a) {
+  if (a.art === "liga") {
+    const hab = ARENEN_OHNE_LIGA.filter(x => t.orden.includes(x.id)).length;
+    return {
+      hab,
+      noetig: ARENEN_OHNE_LIGA.length,
+      dazu: ARENEN_OHNE_LIGA.length
+    };
+  }
   if (a.art === "reihe") {
     const dazu = NR_MALFELD.filter(n => typen(n).includes(a.reihe));
     const hab = dazu.filter(n => {
@@ -2485,7 +2515,21 @@ function arenaReif(t, a) {
 
 /* Wie viele Tricks kennen die Wesen, die in dieser Arena antreten?
    Das sind genau die, die als Ergebnis vorkommen können. */
+/* die sechzehn schwersten Rechnungen: 6·6 bis 9·9 */
+function ligaFakten() {
+  const aus = [];
+  for (let a = 6; a <= 9; a++) for (let b = 6; b <= 9; b++) aus.push({
+    id: "m" + a + "x" + b,
+    text: a + " · " + b,
+    antwort: a * b,
+    a,
+    b,
+    op: "·"
+  });
+  return aus;
+}
 function arenaTeam(a) {
+  if (a.art === "liga") return [...new Set(ligaFakten().map(x => x.antwort))];
   if (a.art === "reihe") {
     const aus = [];
     for (let b = 1; b <= 10; b++) aus.push(a.reihe * b);
@@ -2500,6 +2544,9 @@ function teamTricks(t, a) {
 /* Die Aufgaben eines Arenakampfs */
 function arenaAufgaben(a, anzahl) {
   const pool = [];
+  if (a.art === "liga") {
+    return ligaFakten().sort(() => Math.random() - 0.5).slice(0, anzahl);
+  }
   if (a.art === "reihe") {
     for (let b = 1; b <= 10; b++) {
       pool.push({
@@ -2559,7 +2606,7 @@ function ArenaListe({
     className: "mx-auto max-w-md p-4"
   }, /*#__PURE__*/React.createElement(Kopf, {
     titel: "Arenen",
-    unter: t.orden.length + " von " + ARENEN.length + " Orden",
+    unter: sterneGesamt(t) + " von " + ARENEN.length * 3 + " Sternen · " + ARENEN_OHNE_LIGA.filter(x => t.orden.includes(x.id)).length + " von " + ARENEN_OHNE_LIGA.length + " Orden",
     onZurueck: onZurueck
   }), /*#__PURE__*/React.createElement("div", {
     className: "space-y-2"
@@ -2568,25 +2615,30 @@ function ArenaListe({
     const hat = t.orden.includes(a.id);
     const offen = reif.hab >= reif.noetig;
     const rekord = (t.rekord || {})[a.id] || 0;
+    const st = sterne(t, a.id);
     const leiter = arenaLeiter(a);
     return /*#__PURE__*/React.createElement("button", {
       key: a.id,
       disabled: !offen,
       onClick: () => onKampf(a),
-      className: "kein-blau flex w-full items-center gap-3 rounded-2xl p-3 text-left transition " + (hat ? "bg-amber-400/20 ring-2 ring-amber-400" : offen ? "bg-emerald-800/70 hover:bg-emerald-700" : "bg-emerald-900/50 opacity-60")
+      className: "kein-blau flex w-full items-center gap-3 rounded-2xl p-3 text-left transition " + (a.art === "liga" ? offen ? "bg-gradient-to-r from-amber-500/30 to-fuchsia-500/20 ring-2 ring-amber-300" : "bg-emerald-900/50 opacity-60" : hat ? "bg-amber-400/20 ring-2 ring-amber-400" : offen ? "bg-emerald-800/70 hover:bg-emerald-700" : "bg-emerald-900/50 opacity-60")
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-4xl"
-    }, offen ? WESEN[leiter].bild : "🔒"), /*#__PURE__*/React.createElement("div", {
+    }, offen ? a.art === "liga" ? "🏆" : WESEN[leiter].bild : "🔒"), /*#__PURE__*/React.createElement("div", {
       className: "min-w-0 flex-1"
     }, /*#__PURE__*/React.createElement("p", {
       className: "font-black text-emerald-50"
     }, a.name), /*#__PURE__*/React.createElement("p", {
       className: "text-xs text-emerald-300"
-    }, offen ? "Arenaleiter: " + WESEN[leiter].name + (a.art === "reihe" ? " (" + a.reihe + " · " + a.reihe + ")" : "") : "Fang erst " + reif.noetig + " Wesen (" + reif.hab + "/" + reif.noetig + ")"), offen && /*#__PURE__*/React.createElement("p", {
+    }, a.art === "liga" ? offen ? "Die sechzehn schwersten Rechnungen: 6·6 bis 9·9" : "Erst alle Orden holen (" + reif.hab + "/" + reif.noetig + ")" : offen ? "Arenaleiter: " + WESEN[leiter].name + (a.art === "reihe" ? " (" + a.reihe + " · " + a.reihe + ")" : "") : "Fang erst " + reif.noetig + " Wesen (" + reif.hab + "/" + reif.noetig + ")"), offen && /*#__PURE__*/React.createElement("p", {
       className: "text-xs text-amber-300"
-    }, rekord > 0 ? "Rekord " + rekord + " · " : "", teamTricks(t, a) > 0 ? teamTricks(t, a) + (teamTricks(t, a) === 1 ? " Trick" : " Tricks") + " im Team" : "noch keine Tricks im Team")), hat && /*#__PURE__*/React.createElement("div", {
-      className: "text-2xl"
-    }, "\uD83C\uDFC5"));
+    }, rekord > 0 ? "Rekord " + rekord + " · " : "", teamTricks(t, a) > 0 ? teamTricks(t, a) + (teamTricks(t, a) === 1 ? " Trick" : " Tricks") + " im Team" : "noch keine Tricks im Team")), offen && /*#__PURE__*/React.createElement("div", {
+      className: "text-right text-sm leading-tight"
+    }, /*#__PURE__*/React.createElement(Sterne3, {
+      n: st
+    }), hat && /*#__PURE__*/React.createElement("div", {
+      className: "text-lg"
+    }, "\uD83C\uDFC5")));
   })), /*#__PURE__*/React.createElement("div", {
     className: "mt-4 rounded-2xl bg-emerald-900/50 p-3 text-sm text-emerald-200"
   }, /*#__PURE__*/React.createElement("p", {
@@ -2595,7 +2647,7 @@ function ArenaListe({
     className: "mt-1"
   }, "Zw\xF6lf Rechnungen gegen die Uhr, schwere bekommen mehr Zeit. Jede richtige Antwort ruft das Wesen, das die Antwort ", /*#__PURE__*/React.createElement("i", null, "ist"), " \u2014 und je mehr Tricks es kann, desto mehr Punkte bringt sein Angriff."), /*#__PURE__*/React.createElement("p", {
     className: "mt-1"
-  }, /*#__PURE__*/React.createElement("b", null, "Ab ", ORDEN_PUNKTE, " Punkten gibt es den Orden."), " Zw\xF6lf richtige sind", " ", 12 * PUNKTE_GRUND, " \u2014 K\xF6nnen allein gen\xFCgt also immer. Danach geht es um den Rekord."), /*#__PURE__*/React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("b", null, "\u2605 ab ", ORDEN_PUNKTE, " Punkten"), " gibt es den Orden \u2014 zw\xF6lf richtige sind ", 12 * PUNKTE_GRUND, ", reines K\xF6nnen gen\xFCgt also immer.", " ", /*#__PURE__*/React.createElement("b", null, "\u2605\u2605 ab ", MEISTER_PUNKTE), ", und ", /*#__PURE__*/React.createElement("b", null, "\u2605\u2605\u2605"), ", wenn alle zw\xF6lf richtig", /*#__PURE__*/React.createElement("i", null, " und"), " alle blitzschnell waren. Eine Arena ist damit nie fertig."), /*#__PURE__*/React.createElement("p", {
     className: "mt-1 text-emerald-300"
   }, "Jede blitzschnelle Antwort bringt eine \u26A1 f\xFCr neue Tricks.")));
 }
@@ -2622,9 +2674,50 @@ const PUNKTE_TRICK = 5; // je Trick des angreifenden Wesens
 const PUNKTE_KOMBO = 10; // je dritte richtige in Folge
 const KOMBO_LAENGE = 3;
 const ORDEN_PUNKTE = 110; // zwölf richtige ohne alles sind 120
+const MEISTER_PUNKTE = 200;
 
+/* ============================================================
+   STERNE — ein Orden ist der Anfang, nicht das Ende
+
+   Mit nur einem Orden je Arena war eine Reihe irgendwann "erledigt"
+   und es gab keinen Grund mehr hineinzugehen. Drei Sterne machen aus
+   "geschafft" ein "wie gut":
+
+     ★    Orden    ab 110 Punkten
+     ★★   Meister  ab 200 Punkten
+     ★★★  Perfekt  alle zwölf richtig UND alle blitzschnell
+
+   Der dritte Stern ist mit Tricks nicht zu kaufen — er verlangt, dass
+   jede einzelne Rechnung aus dem Stand sitzt.
+   ============================================================ */
+function sterneFuer(punkte, treffer, schnell, fragen, arena) {
+  if (treffer >= fragen && schnell >= fragen) return 3;
+  if (punkte >= meisterPunkte(arena)) return 2;
+  if (punkte >= ordenPunkte(arena)) return 1;
+  return 0;
+}
+
+/* Alte Spielstände kennen nur Orden — die zählen als erster Stern. */
+function sterne(t, id) {
+  const gespeichert = (t.sterne || {})[id] || 0;
+  return Math.max(gespeichert, t.orden.includes(id) ? 1 : 0);
+}
+function sterneGesamt(t) {
+  return ARENEN.reduce((n, a) => n + sterne(t, a.id), 0);
+}
+function Sterne3({
+  n
+}) {
+  return /*#__PURE__*/React.createElement("span", {
+    className: "tracking-tight"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-amber-300"
+  }, "★".repeat(n)), /*#__PURE__*/React.createElement("span", {
+    className: "text-emerald-700"
+  }, "☆".repeat(3 - n)));
+}
 function arenaWelt(a) {
-  return a.art === "reihe" ? "malfeld" : "wiese";
+  return a.art === "wiese" ? "wiese" : "malfeld";
 }
 
 /* Die Bank: die Wesen der Reihe, die im Kampf auftreten können. */
@@ -2657,7 +2750,7 @@ function ArenaKampf({
 }) {
   const welt = arenaWelt(arena);
   const [t, setT] = useState(start);
-  const [fragen] = useState(() => arenaAufgaben(arena, KAMPF_FRAGEN));
+  const [fragen] = useState(() => arenaAufgaben(arena, kampfFragen(arena)));
   const [i, setI] = useState(0);
   const [eingabe, setEingabe] = useState("");
   const [zeit, setZeit] = useState(() => blitzZeit(fragen[0]));
@@ -2670,6 +2763,7 @@ function ArenaKampf({
   const [treffer, setTreffer] = useState(0);
   const [kombo, setKombo] = useState(0);
   const [schnelle, setSchnelle] = useState([]);
+  const [schnellZahl, setSchnellZahl] = useState(0);
   const [beitrag, setBeitrag] = useState({});
   const [angriff, setAngriff] = useState(null);
   const [gelehrt, setGelehrt] = useState([]);
@@ -2679,6 +2773,7 @@ function ArenaKampf({
      gewonnen wurde. */
   const [vorherOrden] = useState(() => start.orden.includes(arena.id));
   const [vorherRekord] = useState(() => (start.rekord || {})[arena.id] || 0);
+  const [vorherSterne] = useState(() => sterne(start, arena.id));
   const frage = fragen[Math.min(i, fragen.length - 1)];
   const dauer = blitzZeit(frage);
   const leiterNr = arenaLeiter(arena);
@@ -2735,7 +2830,10 @@ function ArenaKampf({
         ...b,
         [nr]: (b[nr] || 0) + dazu
       }));
-      if (schnell) setSchnelle(s2 => [...new Set([...s2, nr])]);
+      if (schnell) {
+        setSchnelle(s2 => [...new Set([...s2, nr])]);
+        setSchnellZahl(x => x + 1);
+      }
       schnell ? Ton.blitz() : Ton.richtig();
     } else {
       setAngriff(null);
@@ -2830,16 +2928,21 @@ function ArenaKampf({
   /* Am Ende: Orden und Rekord festhalten */
   useEffect(() => {
     if (phase !== "ende") return;
-    const gewonnen = punkte >= ORDEN_PUNKTE;
+    const gewonnen = punkte >= ordenPunkte(arena);
+    const neu2 = sterneFuer(punkte, treffer, schnellZahl, fragen.length, arena);
     const neuerRekord = punkte > vorherRekord;
-    if (gewonnen || neuerRekord) {
-      if (gewonnen && !vorherOrden) Ton.orden();
+    if (gewonnen || neuerRekord || neu2 > vorherSterne) {
+      if (neu2 > vorherSterne) Ton.orden();
       setT(alt => ({
         ...alt,
         orden: gewonnen && !alt.orden.includes(arena.id) ? [...alt.orden, arena.id] : alt.orden,
         rekord: {
           ...(alt.rekord || {}),
           [arena.id]: Math.max(vorherRekord, punkte)
+        },
+        sterne: {
+          ...(alt.sterne || {}),
+          [arena.id]: Math.max(vorherSterne, neu2)
         }
       }));
     }
@@ -2911,9 +3014,10 @@ function ArenaKampf({
 
   /* -------------------- Ende -------------------- */
   if (phase === "ende") {
-    const gewonnen = punkte >= ORDEN_PUNKTE;
+    const gewonnen = punkte >= ordenPunkte(arena);
     const neuerRekord = punkte > vorherRekord;
-    const verdient = schnelle.length;
+    const jetztSterne = sterneFuer(punkte, treffer, schnellZahl, fragen.length, arena);
+    const verdient = schnellZahl;
     const kannLehren = trickPunkte(t) >= TRICK_KOSTEN && schnelle.some(nr => WESEN[nr] && kannNochLernen(t, nr) && trickBedingung(t, welt, nr).ok);
     const liste = Object.entries(beitrag).sort((a, b) => b[1] - a[1]);
     return /*#__PURE__*/React.createElement("div", {
@@ -2926,11 +3030,17 @@ function ArenaKampf({
       className: "mt-2 text-5xl font-black text-amber-300"
     }, punkte), /*#__PURE__*/React.createElement("p", {
       className: "text-xs uppercase tracking-widest text-emerald-300"
-    }, "Punkte"), /*#__PURE__*/React.createElement("h2", {
-      className: "mt-2 text-xl font-black text-emerald-50"
-    }, gewonnen ? vorherOrden ? "Orden verteidigt!" : "Orden gewonnen!" : "Knapp daneben"), /*#__PURE__*/React.createElement("p", {
+    }, "Punkte"), /*#__PURE__*/React.createElement("div", {
+      className: "mt-1 text-3xl"
+    }, /*#__PURE__*/React.createElement(Sterne3, {
+      n: Math.max(vorherSterne, jetztSterne)
+    })), /*#__PURE__*/React.createElement("h2", {
+      className: "mt-1 text-xl font-black text-emerald-50"
+    }, jetztSterne > vorherSterne ? jetztSterne === 3 ? "Perfekt! Dritter Stern!" : jetztSterne === 2 ? "Meister! Zweiter Stern!" : "Orden gewonnen!" : gewonnen ? "Orden verteidigt!" : "Knapp daneben"), /*#__PURE__*/React.createElement("p", {
       className: "mt-1 text-sm text-emerald-300"
-    }, treffer, " von ", fragen.length, " richtig", gewonnen ? "" : " · " + (ORDEN_PUNKTE - punkte) + " Punkte fehlten"), neuerRekord && /*#__PURE__*/React.createElement("p", {
+    }, treffer, " von ", fragen.length, " richtig \xB7 ", schnellZahl, " blitzschnell"), Math.max(vorherSterne, jetztSterne) < 3 && /*#__PURE__*/React.createElement("p", {
+      className: "mt-1 text-xs text-amber-200"
+    }, Math.max(vorherSterne, jetztSterne) === 0 ? "★ ab " + ordenPunkte(arena) + " Punkten — dir fehlten " + (ordenPunkte(arena) - punkte) : Math.max(vorherSterne, jetztSterne) === 1 ? "★★ ab " + meisterPunkte(arena) + " Punkten" + (punkte < meisterPunkte(arena) ? " — dir fehlten " + (meisterPunkte(arena) - punkte) : "") : "★★★ für alle " + fragen.length + " richtig und alle blitzschnell"), neuerRekord && /*#__PURE__*/React.createElement("p", {
       className: "a-funkeln mt-2 font-black text-amber-200"
     }, "\u2728 Neuer Rekord!", vorherRekord > 0 ? " Vorher " + vorherRekord : ""), !neuerRekord && vorherRekord > 0 && /*#__PURE__*/React.createElement("p", {
       className: "mt-2 text-sm text-emerald-400"
@@ -2982,7 +3092,7 @@ function ArenaKampf({
     className: "text-sm font-black text-amber-300"
   }, arena.name), /*#__PURE__*/React.createElement("p", {
     className: "text-[11px] text-emerald-300"
-  }, "gegen ", WESEN[leiterNr].name, " \xB7 Orden ab ", ORDEN_PUNKTE)), /*#__PURE__*/React.createElement("span", {
+  }, "gegen ", WESEN[leiterNr].name, " \xB7 Orden ab ", ordenPunkte(arena))), /*#__PURE__*/React.createElement("span", {
     className: "text-xs font-bold text-emerald-300"
   }, i + 1, "/", fragen.length)), /*#__PURE__*/React.createElement("div", {
     className: "mt-2 flex items-end justify-center gap-3"
@@ -2995,7 +3105,7 @@ function ArenaKampf({
   }, /*#__PURE__*/React.createElement("div", {
     className: "h-full bg-amber-400 transition-all",
     style: {
-      width: Math.min(100, punkte / ORDEN_PUNKTE * 100) + "%"
+      width: Math.min(100, punkte / ordenPunkte(arena) * 100) + "%"
     }
   })), /*#__PURE__*/React.createElement("div", {
     className: "mt-3"
@@ -3240,12 +3350,46 @@ function DuellLauf({
 /* ============================================================
    TRAINERKARTE UND HAUPTMENÜ
    ============================================================ */
+/* Wie weit ist das Kind insgesamt? Vier Zahlen, die alle vier offenen
+   Wege zeigen — beim Öffnen der App soll sichtbar sein, dass es
+   weitergeht, nicht nur, was schon geschafft ist. */
+function fortschritt(t) {
+  let rechnungenHab = 0;
+  let rechnungenZiel = 0;
+  ["wiese", "malfeld"].forEach(w => {
+    WELT[w].nrs.forEach(nr => {
+      const a = abdeckung(t, w, nr);
+      rechnungenHab += a.hab;
+      rechnungenZiel += a.ziel;
+    });
+  });
+  return {
+    wesen: [anzahlGefangen(t), ALLE_NR.length],
+    rechnungen: [rechnungenHab, rechnungenZiel],
+    tricks: [tricksGesamt(t), ALLE_NR.reduce((n, nr) => n + trickListe(nr).length, 0)],
+    sterne: [sterneGesamt(t), ARENEN.length * 3]
+  };
+}
+function Kachel({
+  oben,
+  unten,
+  hell
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "rounded-xl bg-emerald-950/50 p-2"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-base font-black " + (hell ? "text-amber-300" : "text-emerald-100")
+  }, oben), /*#__PURE__*/React.createElement("p", {
+    className: "text-[10px] text-emerald-400"
+  }, unten));
+}
 function Trainerkarte({
   name,
   t,
   onBild
 }) {
   const gefangen = anzahlGefangen(t);
+  const f = fortschritt(t);
   return /*#__PURE__*/React.createElement("div", {
     className: "rounded-3xl border-2 border-amber-400/60 bg-gradient-to-br from-emerald-800 to-emerald-900 p-4"
   }, /*#__PURE__*/React.createElement("div", {
@@ -3267,32 +3411,21 @@ function Trainerkarte({
   }, gefangen), /*#__PURE__*/React.createElement("p", {
     className: "text-[10px] text-emerald-300"
   }, "von ", ALLE_NR.length))), /*#__PURE__*/React.createElement("div", {
-    className: "mt-3 grid grid-cols-4 gap-1.5 text-center text-[11px]"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "rounded-xl bg-emerald-950/50 p-2"
-  }, /*#__PURE__*/React.createElement("p", {
-    className: "text-lg font-black text-emerald-100"
-  }, t.orden.length), /*#__PURE__*/React.createElement("p", {
-    className: "text-emerald-400"
-  }, "Orden \uD83C\uDFC5")), /*#__PURE__*/React.createElement("div", {
-    className: "rounded-xl bg-emerald-950/50 p-2"
-  }, /*#__PURE__*/React.createElement("p", {
-    className: "text-lg font-black text-amber-300"
-  }, trickPunkte(t)), /*#__PURE__*/React.createElement("p", {
-    className: "text-emerald-400"
-  }, "\u26A1 \xFCbrig")), /*#__PURE__*/React.createElement("div", {
-    className: "rounded-xl bg-emerald-950/50 p-2"
-  }, /*#__PURE__*/React.createElement("p", {
-    className: "text-lg font-black text-emerald-100"
-  }, tricksGesamt(t)), /*#__PURE__*/React.createElement("p", {
-    className: "text-emerald-400"
-  }, "Tricks \u2728")), /*#__PURE__*/React.createElement("div", {
-    className: "rounded-xl bg-emerald-950/50 p-2"
-  }, /*#__PURE__*/React.createElement("p", {
-    className: "text-lg font-black text-emerald-100"
-  }, t.stat.richtig), /*#__PURE__*/React.createElement("p", {
-    className: "text-emerald-400"
-  }, "richtig"))));
+    className: "mt-3 grid grid-cols-4 gap-1.5 text-center"
+  }, /*#__PURE__*/React.createElement(Kachel, {
+    oben: f.sterne[0] + "/" + f.sterne[1],
+    unten: "Sterne \u2605"
+  }), /*#__PURE__*/React.createElement(Kachel, {
+    oben: f.rechnungen[0] + "/" + f.rechnungen[1],
+    unten: "Rechnungen"
+  }), /*#__PURE__*/React.createElement(Kachel, {
+    oben: f.tricks[0] + "/" + f.tricks[1],
+    unten: "Tricks \u2728"
+  }), /*#__PURE__*/React.createElement(Kachel, {
+    oben: trickPunkte(t),
+    unten: "\u26A1 \xFCbrig",
+    hell: true
+  })));
 }
 function TrainerWahl({
   stand,

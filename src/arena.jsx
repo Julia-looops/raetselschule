@@ -2072,14 +2072,36 @@ const ARENEN = [
   { id: "r9", art: "reihe", reihe: 9, name: "Neuner-Arena" },
   { id: "plus", art: "wiese", op: "+", name: "Brücken-Arena", leiterNr: 20 },
   { id: "minus", art: "wiese", op: "−", name: "Abstieg-Arena", leiterNr: 10 },
+  /* Der Endkampf. Öffnet erst, wenn alle elf Orden hängen — und
+     besteht aus genau den sechzehn schwersten Rechnungen des kleinen
+     Einmaleins: 6·6 bis 9·9, nichts anderes. */
+  { id: "liga", art: "liga", name: "Die Liga", leiterNr: 100 },
 ];
+
+const ARENEN_OHNE_LIGA = ARENEN.filter((a) => a.art !== "liga");
 
 function arenaLeiter(a) {
   return a.art === "reihe" ? a.reihe * a.reihe : a.leiterNr;
 }
 
+/* Wie viele Rechnungen und wie viele Punkte je Stern? Die Liga ist
+   länger, also müssen auch ihre Schwellen mitwachsen. */
+function kampfFragen(a) {
+  return a.art === "liga" ? 16 : 12;
+}
+function ordenPunkte(a) {
+  return kampfFragen(a) * 10 - 10; // alle richtig minus eine
+}
+function meisterPunkte(a) {
+  return Math.round((kampfFragen(a) * 16.5) / 10) * 10;
+}
+
 /* Wie viele Wesen der Reihe hat das Kind schon? */
 function arenaReif(t, a) {
+  if (a.art === "liga") {
+    const hab = ARENEN_OHNE_LIGA.filter((x) => t.orden.includes(x.id)).length;
+    return { hab, noetig: ARENEN_OHNE_LIGA.length, dazu: ARENEN_OHNE_LIGA.length };
+  }
   if (a.art === "reihe") {
     const dazu = NR_MALFELD.filter((n) => typen(n).includes(a.reihe));
     const hab = dazu.filter((n) => {
@@ -2097,7 +2119,17 @@ function arenaReif(t, a) {
 
 /* Wie viele Tricks kennen die Wesen, die in dieser Arena antreten?
    Das sind genau die, die als Ergebnis vorkommen können. */
+/* die sechzehn schwersten Rechnungen: 6·6 bis 9·9 */
+function ligaFakten() {
+  const aus = [];
+  for (let a = 6; a <= 9; a++)
+    for (let b = 6; b <= 9; b++)
+      aus.push({ id: "m" + a + "x" + b, text: a + " · " + b, antwort: a * b, a, b, op: "·" });
+  return aus;
+}
+
 function arenaTeam(a) {
+  if (a.art === "liga") return [...new Set(ligaFakten().map((x) => x.antwort))];
   if (a.art === "reihe") {
     const aus = [];
     for (let b = 1; b <= 10; b++) aus.push(a.reihe * b);
@@ -2113,6 +2145,9 @@ function teamTricks(t, a) {
 /* Die Aufgaben eines Arenakampfs */
 function arenaAufgaben(a, anzahl) {
   const pool = [];
+  if (a.art === "liga") {
+    return ligaFakten().sort(() => Math.random() - 0.5).slice(0, anzahl);
+  }
   if (a.art === "reihe") {
     for (let b = 1; b <= 10; b++) {
       pool.push({ id: "m" + a.reihe + "x" + b, text: a.reihe + " · " + b, antwort: a.reihe * b, a: a.reihe, b, op: "·" });
@@ -2149,7 +2184,9 @@ function ArenaListe({ t, onKampf, onZurueck }) {
     <div className="mx-auto max-w-md p-4">
       <Kopf
         titel="Arenen"
-        unter={t.orden.length + " von " + ARENEN.length + " Orden"}
+        unter={sterneGesamt(t) + " von " + ARENEN.length * 3 + " Sternen · " +
+          ARENEN_OHNE_LIGA.filter((x) => t.orden.includes(x.id)).length +
+          " von " + ARENEN_OHNE_LIGA.length + " Orden"}
         onZurueck={onZurueck}
       />
       <div className="space-y-2">
@@ -2158,6 +2195,7 @@ function ArenaListe({ t, onKampf, onZurueck }) {
           const hat = t.orden.includes(a.id);
           const offen = reif.hab >= reif.noetig;
           const rekord = (t.rekord || {})[a.id] || 0;
+          const st = sterne(t, a.id);
           const leiter = arenaLeiter(a);
           return (
             <button
@@ -2166,18 +2204,28 @@ function ArenaListe({ t, onKampf, onZurueck }) {
               onClick={() => onKampf(a)}
               className={
                 "kein-blau flex w-full items-center gap-3 rounded-2xl p-3 text-left transition " +
-                (hat
+                (a.art === "liga"
+                  ? offen
+                    ? "bg-gradient-to-r from-amber-500/30 to-fuchsia-500/20 ring-2 ring-amber-300"
+                    : "bg-emerald-900/50 opacity-60"
+                  : hat
                   ? "bg-amber-400/20 ring-2 ring-amber-400"
                   : offen
                   ? "bg-emerald-800/70 hover:bg-emerald-700"
                   : "bg-emerald-900/50 opacity-60")
               }
             >
-              <div className="text-4xl">{offen ? WESEN[leiter].bild : "🔒"}</div>
+              <div className="text-4xl">
+                {offen ? (a.art === "liga" ? "🏆" : WESEN[leiter].bild) : "🔒"}
+              </div>
               <div className="min-w-0 flex-1">
                 <p className="font-black text-emerald-50">{a.name}</p>
                 <p className="text-xs text-emerald-300">
-                  {offen
+                  {a.art === "liga"
+                    ? offen
+                      ? "Die sechzehn schwersten Rechnungen: 6·6 bis 9·9"
+                      : "Erst alle Orden holen (" + reif.hab + "/" + reif.noetig + ")"
+                    : offen
                     ? "Arenaleiter: " + WESEN[leiter].name +
                       (a.art === "reihe" ? " (" + a.reihe + " · " + a.reihe + ")" : "")
                     : "Fang erst " + reif.noetig + " Wesen (" + reif.hab + "/" + reif.noetig + ")"}
@@ -2191,7 +2239,12 @@ function ArenaListe({ t, onKampf, onZurueck }) {
                   </p>
                 )}
               </div>
-              {hat && <div className="text-2xl">🏅</div>}
+              {offen && (
+                <div className="text-right text-sm leading-tight">
+                  <Sterne3 n={st} />
+                  {hat && <div className="text-lg">🏅</div>}
+                </div>
+              )}
             </button>
           );
         })}
@@ -2204,9 +2257,10 @@ function ArenaListe({ t, onKampf, onZurueck }) {
           mehr Tricks es kann, desto mehr Punkte bringt sein Angriff.
         </p>
         <p className="mt-1">
-          <b>Ab {ORDEN_PUNKTE} Punkten gibt es den Orden.</b> Zwölf richtige sind
-          {" "}{12 * PUNKTE_GRUND} — Können allein genügt also immer. Danach geht
-          es um den Rekord.
+          <b>★ ab {ORDEN_PUNKTE} Punkten</b> gibt es den Orden — zwölf richtige
+          sind {12 * PUNKTE_GRUND}, reines Können genügt also immer.{" "}
+          <b>★★ ab {MEISTER_PUNKTE}</b>, und <b>★★★</b>, wenn alle zwölf richtig
+          <i> und</i> alle blitzschnell waren. Eine Arena ist damit nie fertig.
         </p>
         <p className="mt-1 text-emerald-300">
           Jede blitzschnelle Antwort bringt eine ⚡ für neue Tricks.
@@ -2238,9 +2292,50 @@ const PUNKTE_TRICK = 5;    // je Trick des angreifenden Wesens
 const PUNKTE_KOMBO = 10;   // je dritte richtige in Folge
 const KOMBO_LAENGE = 3;
 const ORDEN_PUNKTE = 110;  // zwölf richtige ohne alles sind 120
+const MEISTER_PUNKTE = 200;
+
+/* ============================================================
+   STERNE — ein Orden ist der Anfang, nicht das Ende
+
+   Mit nur einem Orden je Arena war eine Reihe irgendwann "erledigt"
+   und es gab keinen Grund mehr hineinzugehen. Drei Sterne machen aus
+   "geschafft" ein "wie gut":
+
+     ★    Orden    ab 110 Punkten
+     ★★   Meister  ab 200 Punkten
+     ★★★  Perfekt  alle zwölf richtig UND alle blitzschnell
+
+   Der dritte Stern ist mit Tricks nicht zu kaufen — er verlangt, dass
+   jede einzelne Rechnung aus dem Stand sitzt.
+   ============================================================ */
+function sterneFuer(punkte, treffer, schnell, fragen, arena) {
+  if (treffer >= fragen && schnell >= fragen) return 3;
+  if (punkte >= meisterPunkte(arena)) return 2;
+  if (punkte >= ordenPunkte(arena)) return 1;
+  return 0;
+}
+
+/* Alte Spielstände kennen nur Orden — die zählen als erster Stern. */
+function sterne(t, id) {
+  const gespeichert = (t.sterne || {})[id] || 0;
+  return Math.max(gespeichert, t.orden.includes(id) ? 1 : 0);
+}
+
+function sterneGesamt(t) {
+  return ARENEN.reduce((n, a) => n + sterne(t, a.id), 0);
+}
+
+function Sterne3({ n }) {
+  return (
+    <span className="tracking-tight">
+      <span className="text-amber-300">{"★".repeat(n)}</span>
+      <span className="text-emerald-700">{"☆".repeat(3 - n)}</span>
+    </span>
+  );
+}
 
 function arenaWelt(a) {
-  return a.art === "reihe" ? "malfeld" : "wiese";
+  return a.art === "wiese" ? "wiese" : "malfeld";
 }
 
 /* Die Bank: die Wesen der Reihe, die im Kampf auftreten können. */
@@ -2277,7 +2372,7 @@ function ArenaBank({ t, arena, aktiv }) {
 function ArenaKampf({ start, arena, speichern, onEnde }) {
   const welt = arenaWelt(arena);
   const [t, setT] = useState(start);
-  const [fragen] = useState(() => arenaAufgaben(arena, KAMPF_FRAGEN));
+  const [fragen] = useState(() => arenaAufgaben(arena, kampfFragen(arena)));
   const [i, setI] = useState(0);
   const [eingabe, setEingabe] = useState("");
   const [zeit, setZeit] = useState(() => blitzZeit(fragen[0]));
@@ -2290,6 +2385,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   const [treffer, setTreffer] = useState(0);
   const [kombo, setKombo] = useState(0);
   const [schnelle, setSchnelle] = useState([]);
+  const [schnellZahl, setSchnellZahl] = useState(0);
   const [beitrag, setBeitrag] = useState({});
   const [angriff, setAngriff] = useState(null);
   const [gelehrt, setGelehrt] = useState([]);
@@ -2299,6 +2395,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
      gewonnen wurde. */
   const [vorherOrden] = useState(() => start.orden.includes(arena.id));
   const [vorherRekord] = useState(() => (start.rekord || {})[arena.id] || 0);
+  const [vorherSterne] = useState(() => sterne(start, arena.id));
 
   const frage = fragen[Math.min(i, fragen.length - 1)];
   const dauer = blitzZeit(frage);
@@ -2364,7 +2461,10 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
       setTreffer((x) => x + 1);
       setPunkte((x) => x + dazu);
       setBeitrag((b) => ({ ...b, [nr]: (b[nr] || 0) + dazu }));
-      if (schnell) setSchnelle((s2) => [...new Set([...s2, nr])]);
+      if (schnell) {
+        setSchnelle((s2) => [...new Set([...s2, nr])]);
+        setSchnellZahl((x) => x + 1);
+      }
       schnell ? Ton.blitz() : Ton.richtig();
     } else {
       setAngriff(null);
@@ -2454,14 +2554,16 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   /* Am Ende: Orden und Rekord festhalten */
   useEffect(() => {
     if (phase !== "ende") return;
-    const gewonnen = punkte >= ORDEN_PUNKTE;
+    const gewonnen = punkte >= ordenPunkte(arena);
+    const neu2 = sterneFuer(punkte, treffer, schnellZahl, fragen.length, arena);
     const neuerRekord = punkte > vorherRekord;
-    if (gewonnen || neuerRekord) {
-      if (gewonnen && !vorherOrden) Ton.orden();
+    if (gewonnen || neuerRekord || neu2 > vorherSterne) {
+      if (neu2 > vorherSterne) Ton.orden();
       setT((alt) => ({
         ...alt,
         orden: gewonnen && !alt.orden.includes(arena.id) ? [...alt.orden, arena.id] : alt.orden,
         rekord: { ...(alt.rekord || {}), [arena.id]: Math.max(vorherRekord, punkte) },
+        sterne: { ...(alt.sterne || {}), [arena.id]: Math.max(vorherSterne, neu2) },
       }));
     }
   }, [phase]);
@@ -2563,9 +2665,10 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
 
   /* -------------------- Ende -------------------- */
   if (phase === "ende") {
-    const gewonnen = punkte >= ORDEN_PUNKTE;
+    const gewonnen = punkte >= ordenPunkte(arena);
     const neuerRekord = punkte > vorherRekord;
-    const verdient = schnelle.length;
+    const jetztSterne = sterneFuer(punkte, treffer, schnellZahl, fragen.length, arena);
+    const verdient = schnellZahl;
     const kannLehren =
       trickPunkte(t) >= TRICK_KOSTEN &&
       schnelle.some((nr) => WESEN[nr] && kannNochLernen(t, nr) && trickBedingung(t, welt, nr).ok);
@@ -2576,17 +2679,34 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
           <div className="text-6xl">{gewonnen ? "🏅" : WESEN[leiterNr].bild}</div>
           <p className="mt-2 text-5xl font-black text-amber-300">{punkte}</p>
           <p className="text-xs uppercase tracking-widest text-emerald-300">Punkte</p>
-          <h2 className="mt-2 text-xl font-black text-emerald-50">
-            {gewonnen
-              ? vorherOrden
-                ? "Orden verteidigt!"
+          <div className="mt-1 text-3xl">
+            <Sterne3 n={Math.max(vorherSterne, jetztSterne)} />
+          </div>
+          <h2 className="mt-1 text-xl font-black text-emerald-50">
+            {jetztSterne > vorherSterne
+              ? jetztSterne === 3
+                ? "Perfekt! Dritter Stern!"
+                : jetztSterne === 2
+                ? "Meister! Zweiter Stern!"
                 : "Orden gewonnen!"
+              : gewonnen
+              ? "Orden verteidigt!"
               : "Knapp daneben"}
           </h2>
           <p className="mt-1 text-sm text-emerald-300">
-            {treffer} von {fragen.length} richtig
-            {gewonnen ? "" : " · " + (ORDEN_PUNKTE - punkte) + " Punkte fehlten"}
+            {treffer} von {fragen.length} richtig · {schnellZahl} blitzschnell
           </p>
+          {/* Was fehlt zum nächsten Stern? */}
+          {Math.max(vorherSterne, jetztSterne) < 3 && (
+            <p className="mt-1 text-xs text-amber-200">
+              {Math.max(vorherSterne, jetztSterne) === 0
+                ? "★ ab " + ordenPunkte(arena) + " Punkten — dir fehlten " + (ordenPunkte(arena) - punkte)
+                : Math.max(vorherSterne, jetztSterne) === 1
+                ? "★★ ab " + meisterPunkte(arena) + " Punkten" +
+                  (punkte < meisterPunkte(arena) ? " — dir fehlten " + (meisterPunkte(arena) - punkte) : "")
+                : "★★★ für alle " + fragen.length + " richtig und alle blitzschnell"}
+            </p>
+          )}
           {neuerRekord && (
             <p className="a-funkeln mt-2 font-black text-amber-200">
               ✨ Neuer Rekord!{vorherRekord > 0 ? " Vorher " + vorherRekord : ""}
@@ -2655,7 +2775,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
         <div className="flex-1 text-center">
           <p className="text-sm font-black text-amber-300">{arena.name}</p>
           <p className="text-[11px] text-emerald-300">
-            gegen {WESEN[leiterNr].name} · Orden ab {ORDEN_PUNKTE}
+            gegen {WESEN[leiterNr].name} · Orden ab {ordenPunkte(arena)}
           </p>
         </div>
         <span className="text-xs font-bold text-emerald-300">
@@ -2675,7 +2795,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
       <div className="mt-1 h-2 overflow-hidden rounded-full bg-emerald-900">
         <div
           className="h-full bg-amber-400 transition-all"
-          style={{ width: Math.min(100, (punkte / ORDEN_PUNKTE) * 100) + "%" }}
+          style={{ width: Math.min(100, (punkte / ordenPunkte(arena)) * 100) + "%" }}
         />
       </div>
 
@@ -2948,8 +3068,41 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
 /* ============================================================
    TRAINERKARTE UND HAUPTMENÜ
    ============================================================ */
+/* Wie weit ist das Kind insgesamt? Vier Zahlen, die alle vier offenen
+   Wege zeigen — beim Öffnen der App soll sichtbar sein, dass es
+   weitergeht, nicht nur, was schon geschafft ist. */
+function fortschritt(t) {
+  let rechnungenHab = 0;
+  let rechnungenZiel = 0;
+  ["wiese", "malfeld"].forEach((w) => {
+    WELT[w].nrs.forEach((nr) => {
+      const a = abdeckung(t, w, nr);
+      rechnungenHab += a.hab;
+      rechnungenZiel += a.ziel;
+    });
+  });
+  return {
+    wesen: [anzahlGefangen(t), ALLE_NR.length],
+    rechnungen: [rechnungenHab, rechnungenZiel],
+    tricks: [tricksGesamt(t), ALLE_NR.reduce((n, nr) => n + trickListe(nr).length, 0)],
+    sterne: [sterneGesamt(t), ARENEN.length * 3],
+  };
+}
+
+function Kachel({ oben, unten, hell }) {
+  return (
+    <div className="rounded-xl bg-emerald-950/50 p-2">
+      <p className={"text-base font-black " + (hell ? "text-amber-300" : "text-emerald-100")}>
+        {oben}
+      </p>
+      <p className="text-[10px] text-emerald-400">{unten}</p>
+    </div>
+  );
+}
+
 function Trainerkarte({ name, t, onBild }) {
   const gefangen = anzahlGefangen(t);
+  const f = fortschritt(t);
   return (
     <div className="rounded-3xl border-2 border-amber-400/60 bg-gradient-to-br from-emerald-800 to-emerald-900 p-4">
       <div className="flex items-center gap-3">
@@ -2971,23 +3124,11 @@ function Trainerkarte({ name, t, onBild }) {
           <p className="text-[10px] text-emerald-300">von {ALLE_NR.length}</p>
         </div>
       </div>
-      <div className="mt-3 grid grid-cols-4 gap-1.5 text-center text-[11px]">
-        <div className="rounded-xl bg-emerald-950/50 p-2">
-          <p className="text-lg font-black text-emerald-100">{t.orden.length}</p>
-          <p className="text-emerald-400">Orden 🏅</p>
-        </div>
-        <div className="rounded-xl bg-emerald-950/50 p-2">
-          <p className="text-lg font-black text-amber-300">{trickPunkte(t)}</p>
-          <p className="text-emerald-400">⚡ übrig</p>
-        </div>
-        <div className="rounded-xl bg-emerald-950/50 p-2">
-          <p className="text-lg font-black text-emerald-100">{tricksGesamt(t)}</p>
-          <p className="text-emerald-400">Tricks ✨</p>
-        </div>
-        <div className="rounded-xl bg-emerald-950/50 p-2">
-          <p className="text-lg font-black text-emerald-100">{t.stat.richtig}</p>
-          <p className="text-emerald-400">richtig</p>
-        </div>
+      <div className="mt-3 grid grid-cols-4 gap-1.5 text-center">
+        <Kachel oben={f.sterne[0] + "/" + f.sterne[1]} unten="Sterne ★" />
+        <Kachel oben={f.rechnungen[0] + "/" + f.rechnungen[1]} unten="Rechnungen" />
+        <Kachel oben={f.tricks[0] + "/" + f.tricks[1]} unten="Tricks ✨" />
+        <Kachel oben={trickPunkte(t)} unten="⚡ übrig" hell />
       </div>
     </div>
   );
