@@ -1257,6 +1257,28 @@ function WesenKarte({ nr, gross, t }) {
 }
 
 
+/* Bei einer falschen Antwort muss die eigene Zahl stehen bleiben.
+   Wer 41 statt 14 tippt, hat die Ziffern gedreht — das sieht man nur,
+   wenn beide Zahlen nebeneinander stehen. Steht dort nur die Lösung,
+   bleibt unklar, was überhaupt falsch war. */
+function Loesung({ text, getippt, richtig }) {
+  const hatGetippt = getippt !== undefined && getippt !== null && getippt !== "";
+  return (
+    <>
+      {text} ={" "}
+      {hatGetippt && (
+        <>
+          <span className="text-rose-500 line-through decoration-rose-500 decoration-4">
+            {getippt}
+          </span>
+          <span className="mx-1 text-emerald-600">→</span>
+        </>
+      )}
+      <span className="text-emerald-700">{richtig}</span>
+    </>
+  );
+}
+
 /* Fangball */
 function Ball({ klasse }) {
   return (
@@ -1702,14 +1724,26 @@ function Streifzug({ start, welt, speichern, onEnde }) {
           {fakt.umkehr ? (
             <>
               {fakt.a} {fakt.op}{" "}
-              <span className="rounded-xl bg-amber-200 px-2">
-                {phase === "falsch" ? fakt.antwort : anzeige}
-              </span>{" "}
+              {phase === "falsch" ? (
+                <>
+                  <span className="text-rose-500 line-through decoration-rose-500 decoration-4">
+                    {eingabe}
+                  </span>
+                  <span className="mx-1 text-emerald-600">→</span>
+                  <span className="rounded-xl bg-amber-200 px-2 text-emerald-700">
+                    {fakt.antwort}
+                  </span>
+                </>
+              ) : (
+                <span className="rounded-xl bg-amber-200 px-2">{anzeige}</span>
+              )}{" "}
               = {fakt.ergebnis}
             </>
+          ) : phase === "falsch" ? (
+            <Loesung text={fakt.text} getippt={eingabe} richtig={fakt.antwort} />
           ) : (
             <>
-              {fakt.text} = {phase === "falsch" ? fakt.antwort : anzeige}
+              {fakt.text} = {anzeige}
             </>
           )}
         </p>
@@ -2181,7 +2215,41 @@ function arenaAufgaben(a, anzahl) {
 }
 
 
+/* Wird einmal vor dem ersten Kampf eingeblendet — als Fussnote unter
+   der Arenaliste hat es niemand gelesen. Später wieder aufrufbar über
+   das Fragezeichen in der Arenaliste. */
+function KampfErklaerung({ onWeiter, zurueck }) {
+  return (
+    <div className="mx-auto max-w-md p-4">
+      <div className="a-auftauchen rounded-3xl border-2 border-amber-400/60 bg-emerald-900/80 p-5 text-emerald-100">
+        <div className="text-center text-5xl">⚔️</div>
+        <p className="mt-2 text-center text-2xl font-black text-amber-300">
+          Bereit für einen Kampf?
+        </p>
+        <p className="mt-1">
+          Zwölf Rechnungen, und die Uhr läuft. Für jede richtige Antwort stürmt
+          ein Wesen los — und zwar genau das, das die Antwort <i>ist</i>. Steht
+          da 8 · 7 = 56, dann kommt Rexi. Wesen mit Tricks hauen fester zu.
+        </p>
+        <p className="mt-2 font-bold text-amber-200">Dafür gibt es Sterne:</p>
+        <p>★ {ORDEN_PUNKTE} Punkte — der Orden gehört dir</p>
+        <p>★★ {MEISTER_PUNKTE} Punkte — Meister</p>
+        <p>★★★ alles richtig und alles blitzschnell</p>
+        <p className="mt-2 text-emerald-300">
+          Sei schnell! Wer in der ersten Hälfte der Zeit antwortet, bekommt eine
+          ⚡ dazu. Damit bringst du deinen Wesen neue Tricks bei.
+        </p>
+        <div className="mt-5">
+          <Knopf onClick={onWeiter}>{zurueck ? "Alles klar" : "Los geht's! ⚔️"}</Knopf>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ArenaListe({ t, onKampf, onZurueck }) {
+  const [erklaert, setErklaert] = useState(false);
+  if (erklaert) return <KampfErklaerung zurueck onWeiter={() => setErklaert(false)} />;
   return (
     <div className="mx-auto max-w-md p-4">
       <Kopf
@@ -2190,6 +2258,14 @@ function ArenaListe({ t, onKampf, onZurueck }) {
           ARENEN_OHNE_LIGA.filter((x) => t.orden.includes(x.id)).length +
           " von " + ARENEN_OHNE_LIGA.length + " Orden"}
         onZurueck={onZurueck}
+        rechts={
+          <button
+            onClick={() => setErklaert(true)}
+            className="kein-blau rounded-xl border-2 border-emerald-500/50 px-3 py-2 text-emerald-100"
+          >
+            ?
+          </button>
+        }
       />
       <div className="space-y-2">
         {ARENEN.map((a) => {
@@ -2254,22 +2330,6 @@ function ArenaListe({ t, onKampf, onZurueck }) {
             </button>
           );
         })}
-      </div>
-      <div className="mt-4 rounded-2xl bg-emerald-900/50 p-3 text-sm text-emerald-200">
-        <p className="font-black text-amber-300">Bereit für einen Kampf?</p>
-        <p className="mt-1">
-          Zwölf Rechnungen, und die Uhr läuft. Für jede richtige Antwort stürmt
-          ein Wesen los — und zwar genau das, das die Antwort <i>ist</i>. Steht
-          da 8 · 7 = 56, dann kommt Rexi. Wesen mit Tricks hauen fester zu.
-        </p>
-        <p className="mt-2 font-bold text-amber-200">Dafür gibt es Sterne:</p>
-        <p>★ {ORDEN_PUNKTE} Punkte — der Orden gehört dir</p>
-        <p>★★ {MEISTER_PUNKTE} Punkte — Meister</p>
-        <p>★★★ alles richtig und alles blitzschnell</p>
-        <p className="mt-2 text-emerald-300">
-          Sei schnell! Wer in der ersten Hälfte der Zeit antwortet, bekommt eine
-          ⚡ dazu. Damit bringst du deinen Wesen neue Tricks bei.
-        </p>
       </div>
     </div>
   );
@@ -2384,7 +2444,10 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   const [luft, setLuft] = useState(LUFT_HOLEN);
   const [pause, setPause] = useState(false);
   const [geschnauft, setGeschnauft] = useState(false);
-  const [phase, setPhase] = useState("kampf"); // kampf | kurz | ende | lehren
+  /* Vor dem allerersten Kampf einmal erklären, worum es geht. */
+  const [phase, setPhase] = useState(() =>
+    start.gesehen && start.gesehen.kampf ? "kampf" : "intro"
+  ); // intro | kampf | kurz | ende | lehren
   const [letzte, setLetzte] = useState(null);  // "schnell" | "richtig" | "langsam" | "falsch"
   const [punkte, setPunkte] = useState(0);
   const [treffer, setTreffer] = useState(0);
@@ -2572,6 +2635,19 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
       }));
     }
   }, [phase]);
+
+  /* -------------------- Einblendung vor dem ersten Kampf -------------------- */
+  if (phase === "intro") {
+    return (
+      <KampfErklaerung
+        onWeiter={() => {
+          setT((alt2) => ({ ...alt2, gesehen: { ...(alt2.gesehen || {}), kampf: true } }));
+          setZeit(dauer);
+          setPhase("kampf");
+        }}
+      />
+    );
+  }
 
   /* -------------------- Tricks beibringen -------------------- */
   if (phase === "lehren") {
@@ -2822,7 +2898,13 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
 
       <div className="mt-3 rounded-3xl bg-gradient-to-b from-emerald-50 to-white p-6 text-center shadow-2xl">
         <p className="text-4xl font-black text-emerald-950 sm:text-5xl">
-          {frage.text} = {offen ? frage.antwort : eingabe === "" ? "?" : eingabe}
+          {offen ? (
+            <Loesung text={frage.text} getippt={eingabe} richtig={frage.antwort} />
+          ) : (
+            <>
+              {frage.text} = {eingabe === "" ? "?" : eingabe}
+            </>
+          )}
         </p>
         {pause && phase === "kampf" && (
           <p className="a-rutschen mt-2 text-sm font-black text-sky-700">
@@ -2849,8 +2931,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
               </>
             ) : (
               <p className="font-black text-rose-700">
-                {letzte === "langsam" ? "Zu langsam — " : "Daneben — "}
-                {frage.text} = {frage.antwort}
+                {letzte === "langsam" ? "Zu langsam!" : "Daneben!"}
               </p>
             )}
           </div>
@@ -3050,7 +3131,13 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
       </p>
       <div className="mt-2 rounded-3xl bg-gradient-to-b from-emerald-50 to-white p-6 text-center shadow-2xl">
         <p className="text-4xl font-black text-emerald-950 sm:text-5xl">
-          {fakt.text} = {phase === "kurz" && letzte === 0 ? fakt.antwort : eingabe === "" ? "?" : eingabe}
+          {phase === "kurz" && letzte === 0 ? (
+            <Loesung text={fakt.text} getippt={eingabe} richtig={fakt.antwort} />
+          ) : (
+            <>
+              {fakt.text} = {eingabe === "" ? "?" : eingabe}
+            </>
+          )}
         </p>
         {phase === "kurz" && (
           <p className={"mt-2 font-black " + (letzte ? "text-emerald-700" : "text-rose-700")}>
