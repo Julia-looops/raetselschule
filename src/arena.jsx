@@ -2025,9 +2025,9 @@ function Trickbuch({ t, speichern, onZurueck }) {
   );
 }
 
-function Zahlodex({ t, speichern, onZurueck }) {
+function Zahlodex({ t, speichern, onZurueck, startBuch }) {
   const [gewaehlt, setGewaehlt] = useState(null);
-  const [buch, setBuch] = useState(false);
+  const [buch, setBuch] = useState(!!startBuch);
   const gefangen = anzahlGefangen(t);
   const wartend = wartenAufTrick(t).bereit.length;
 
@@ -3371,6 +3371,191 @@ function Trainerkarte({ name, t, onBild }) {
   );
 }
 
+/* ============================================================
+   WAS IST HEUTE DRAN?
+
+   Die Startseite hat bisher das Fangen verkauft — und hatte nichts
+   mehr zu sagen, sobald alle Wesen gefangen waren. Dabei fängt dort
+   der interessante Teil erst an: über vierhundert Rechnungen, die
+   Wiedersehen, das Reifen, die Tricks.
+
+   Deshalb nennt die Startseite jetzt immer genau eine Sache — die
+   wichtigste — und den Weg dorthin. Nie eine leere Seite.
+   ============================================================ */
+function arenaName(a) {
+  return a.art === "liga" ? "Die Liga" : "Die " + a.name;
+}
+
+function naechsterSchritt(t) {
+  /* 1. Ein Trick liegt bereit. Das ist das Schönste, was es gibt. */
+  const warten = wartenAufTrick(t);
+  if (warten.bereit.length > 0 && trickPunkte(t) >= TRICK_KOSTEN) {
+    const n = warten.bereit.length;
+    return {
+      bild: "✨",
+      text:
+        n === 1
+          ? WESEN[warten.bereit[0].nr].name + " wartet auf einen neuen Trick."
+          : n + " Wesen warten auf einen neuen Trick.",
+      knopf: "Ins Trickbuch 📕",
+      ziel: "trickbuch",
+    };
+  }
+  /* 2. Wiedersehen — der Kern des Ganzen. */
+  const dran = faelligeZahl(t, "wiese") + faelligeZahl(t, "malfeld");
+  if (dran > 0) {
+    return {
+      bild: "🌿",
+      text:
+        dran === 1
+          ? "Ein Wesen kommt dich heute besuchen."
+          : dran + " Wesen kommen dich heute besuchen.",
+      knopf: "Auf Streifzug 🌿",
+      ziel: "welt",
+      art: "wiedersehen",
+    };
+  }
+  /* 3. Es gibt noch Wesen, die sie nie getroffen hat. */
+  const fehlen = ALLE_NR.length - anzahlGefangen(t);
+  if (fehlen > 0) {
+    return {
+      bild: "👀",
+      text:
+        fehlen === 1
+          ? "Ein Wesen hast du noch nie getroffen."
+          : fehlen + " Wesen hast du noch nie getroffen.",
+      knopf: "Auf Streifzug 🌿",
+      ziel: "welt",
+    };
+  }
+  /* 4. Alle gefangen — aber längst nicht alle Rechnungen gesehen.
+     Genau hier hätte die alte Startseite geschwiegen. */
+  for (const w of ["malfeld", "wiese"]) {
+    const offen = nochWasZuZeigen(t, w)
+      .map((nr) => ({ nr, a: abdeckung(t, w, nr) }))
+      .sort((x, y) => y.a.ziel - y.a.hab - (x.a.ziel - x.a.hab));
+    if (offen.length > 0) {
+      const { nr, a } = offen[0];
+      return {
+        bild: WESEN[nr].bild,
+        text: WESEN[nr].name + " kennt erst " + a.hab + " von " + a.ziel + " Rechnungen.",
+        knopf: "Auf Streifzug 🌿",
+        ziel: "welt",
+      };
+    }
+  }
+  /* 5. Eine offene Arena ohne Orden. */
+  const ohneOrden = ARENEN.find((a) => {
+    const r = arenaReif(t, a);
+    return r.hab >= r.noetig && !t.orden.includes(a.id);
+  });
+  if (ohneOrden) {
+    return {
+      bild: "🏅",
+      text: arenaName(ohneOrden) + " hat noch keinen Orden.",
+      knopf: "Zu den Arenen 🏅",
+      ziel: "arena",
+    };
+  }
+  /* 6. Alle Orden — aber noch nicht überall drei Sterne. */
+  const schwach = ARENEN.filter((a) => {
+    const r = arenaReif(t, a);
+    return (r.hab >= r.noetig || t.orden.includes(a.id)) && sterne(t, a.id) < 3;
+  }).sort((a, b) => sterne(t, a.id) - sterne(t, b.id))[0];
+  if (schwach) {
+    return {
+      bild: "⭐",
+      text: arenaName(schwach) + " hat erst " + sterne(t, schwach.id) + " von 3 Sternen.",
+      knopf: "Zu den Arenen 🏅",
+      ziel: "arena",
+    };
+  }
+  /* 7. Wirklich alles. Dann bleibt der Ruhm. */
+  return {
+    bild: "🎉",
+    text: "Du hast alles geschafft. Zeit, jemanden herauszufordern!",
+    knopf: "Duell ⚔️",
+    ziel: "duell",
+  };
+}
+
+/* Ein Weg aus dem Hauptmenü — mit einem Satz dazu, wofür er da ist.
+   Vier nackte Knöpfe haben nicht verraten, was man wo tut. */
+function Weg({ titel, unter, zahl, haupt, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={
+        "kein-blau w-full rounded-2xl px-4 text-left shadow-lg transition active:translate-y-px " +
+        (haupt
+          ? "bg-amber-400 py-3 hover:bg-amber-300"
+          : "border-2 border-emerald-500/50 py-2.5 hover:bg-emerald-800/50")
+      }
+    >
+      <p className={"font-black " + (haupt ? "text-lg text-emerald-950" : "text-sm text-emerald-100")}>
+        {titel}
+      </p>
+      <p className={"text-[11px] leading-snug " + (haupt ? "text-emerald-900/75" : "text-emerald-400")}>
+        {unter}
+      </p>
+      {zahl && (
+        <p className={"text-[11px] font-bold " + (haupt ? "text-emerald-900/60" : "text-amber-300")}>
+          {zahl}
+        </p>
+      )}
+    </button>
+  );
+}
+
+/* Einmal beim allerersten Start, danach über das "?" oben. Erklärt
+   die vier Orte — vor allem, dass der Streifzug der Trainingsplatz
+   ist und die Arena die Bühne. */
+function SpielErklaerung({ onWeiter, zurueck }) {
+  return (
+    <div className="mx-auto max-w-md p-4">
+      <div className="a-auftauchen rounded-3xl border-2 border-amber-400/60 bg-emerald-900/80 p-5 text-emerald-100">
+        <div className="text-center text-5xl">🗺️</div>
+        <p className="mt-2 text-center text-2xl font-black text-amber-300">
+          So läuft das hier
+        </p>
+        <p className="mt-2">
+          Jedes Ergebnis ist ein Wesen. Steht da 7 · 8 = 56, dann ist Rexi
+          gemeint. Wer rechnet, fängt es.
+        </p>
+
+        <p className="mt-4 font-black text-amber-200">🌿 Streifzug</p>
+        <p>
+          Dein Trainingsplatz. Hier fängst du neue Wesen — und hier werden sie
+          stark. Jedes Wesen kennt mehrere Rechnungen und zeigt dir nach und
+          nach alle. Wer eine Weile nicht dran war, kommt von selbst wieder
+          vorbei. <b className="text-amber-200">Gefangen heißt noch nicht
+          gekonnt:</b> stark werden deine Wesen nur hier.
+        </p>
+
+        <p className="mt-3 font-black text-amber-200">🏅 Arenen</p>
+        <p>
+          Die Bühne. Zwölf Rechnungen gegen einen Arenaleiter — für jede
+          richtige stürmt eines deiner Wesen los. Es gibt Orden und bis zu drei
+          Sterne pro Arena. Wer blitzschnell antwortet, sammelt ⚡.
+        </p>
+
+        <p className="mt-3 font-black text-amber-200">📕 Zahlodex</p>
+        <p>
+          Deine Sammlung. Hier siehst du jedes Wesen, seine Tricks und welche
+          Rechnungen ihm noch fehlen. Und hier gibst du ⚡ aus.
+        </p>
+
+        <p className="mt-3 font-black text-amber-200">⚔️ Duell</p>
+        <p>Zu zweit an einem Gerät. Wer weiß es zuerst?</p>
+
+        <div className="mt-5">
+          <Knopf onClick={onWeiter}>{zurueck ? "Alles klar" : "Los geht's! 🌿"}</Knopf>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TrainerWahl({ stand, waehle, lege, loesche, zurueck }) {
   const [neu, setNeu] = useState("");
   const [bild, setBild] = useState(TRAINER_BILDER[0]);
@@ -3518,6 +3703,8 @@ function App() {
   const [arena, setArena] = useState(null);
   const [tonAn, setTonAn] = useState(true);
   const [bildWaehlen, setBildWaehlen] = useState(false);
+  const [erklaerung, setErklaerung] = useState(false);
+  const [dexBuch, setDexBuch] = useState(false);
   const [geladen, setGeladen] = useState(false);
 
   useEffect(() => {
@@ -3638,7 +3825,12 @@ function App() {
     return (
       <>
         <Stile />
-        <Zahlodex t={t} speichern={speichereTrainer} onZurueck={() => setAnsicht("menue")} />
+        <Zahlodex
+          t={t}
+          speichern={speichereTrainer}
+          startBuch={dexBuch}
+          onZurueck={() => setAnsicht("menue")}
+        />
       </>
     );
   }
@@ -3681,6 +3873,27 @@ function App() {
 
   /* ---------- Hauptmenü ---------- */
   const dranGesamt = faelligeZahl(t, "wiese") + faelligeZahl(t, "malfeld");
+  const schritt = naechsterSchritt(t);
+  const stand2 = fortschritt(t);
+  const offeneRechnungen = stand2.rechnungen[1] - stand2.rechnungen[0];
+  const wartend = wartenAufTrick(t).bereit.length;
+
+  if (erklaerung || !(t.gesehen && t.gesehen.start)) {
+    return (
+      <>
+        <Stile />
+        <SpielErklaerung
+          zurueck={erklaerung}
+          onWeiter={() => {
+            setErklaerung(false);
+            if (!(t.gesehen && t.gesehen.start))
+              speichereTrainer({ ...t, gesehen: { ...(t.gesehen || {}), start: true } });
+          }}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <Stile />
@@ -3689,12 +3902,20 @@ function App() {
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-amber-400">
             Zahlodex
           </p>
-          <button
-            onClick={() => setTonAn(!tonAn)}
-            className="kein-blau rounded-xl border-2 border-emerald-600 px-3 py-1 text-sm text-emerald-200"
-          >
-            {tonAn ? "🔊" : "🔇"}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setErklaerung(true)}
+              className="kein-blau rounded-xl border-2 border-emerald-600 px-3 py-1 text-sm text-emerald-200"
+            >
+              ?
+            </button>
+            <button
+              onClick={() => setTonAn(!tonAn)}
+              className="kein-blau rounded-xl border-2 border-emerald-600 px-3 py-1 text-sm text-emerald-200"
+            >
+              {tonAn ? "🔊" : "🔇"}
+            </button>
+          </div>
         </div>
 
         <h1 className="text-3xl font-black leading-tight text-amber-300">
@@ -3730,46 +3951,77 @@ function App() {
           </div>
         )}
 
-        {wartenAufTrick(t).bereit.length > 0 && trickPunkte(t) >= TRICK_KOSTEN && (
-          <p className="a-funkeln mt-3 rounded-2xl bg-amber-400/20 p-3 text-center text-sm font-bold text-amber-200">
-            ✨ {wartenAufTrick(t).bereit.length}{" "}
-            {wartenAufTrick(t).bereit.length === 1 ? "Wesen wartet" : "Wesen warten"} im
-            Trickbuch auf einen Trick!
+        {/* Immer genau eine Sache — die wichtigste — statt drei Banner
+            nebeneinander. Und nie eine leere Startseite. */}
+        <div className="a-rutschen mt-3 flex items-center gap-3 rounded-2xl bg-amber-400/15 p-3">
+          <span className="text-3xl">{schritt.bild}</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400">
+              Heute
+            </p>
+            <p className="text-sm font-bold leading-snug text-amber-100">{schritt.text}</p>
+          </div>
+          <button
+            onClick={() => {
+              setDexBuch(schritt.ziel === "trickbuch");
+              setAnsicht(schritt.ziel === "trickbuch" ? "dex" : schritt.ziel);
+            }}
+            className="kein-blau shrink-0 rounded-xl bg-amber-400 px-3 py-2 text-xs font-black text-emerald-950"
+          >
+            Los
+          </button>
+        </div>
+        {dranGesamt > 5 && schritt.art === "wiedersehen" && (
+          <p className="mt-1 text-center text-[11px] text-emerald-400">
+            Eine Runde nimmt höchstens fünf davon — kein Stress.
           </p>
         )}
 
-        {dranGesamt > 0 && (
-          /* Bewusst ruhig formuliert: "20 Wesen warten auf dich" liest
-             sich wie eine Mahnung. Eine Runde nimmt ohnehin höchstens
-             fünf davon. */
-          <p className="mt-3 rounded-2xl bg-amber-400/15 p-3 text-center text-sm font-bold text-amber-200">
-            {dranGesamt} {dranGesamt === 1 ? "Wesen freut" : "Wesen freuen"} sich auf ein
-            Wiedersehen.
-            {dranGesamt > 5 && (
-              <span className="block text-xs font-normal text-amber-200/70">
-                Eine Runde nimmt höchstens fünf davon — kein Stress.
-              </span>
-            )}
-          </p>
-        )}
-
+        {/* Jeder Weg sagt jetzt, wofür er da ist. */}
         <div className="mt-4 space-y-2">
-          <Knopf onClick={() => setAnsicht("welt")}>Auf Streifzug gehen 🌿</Knopf>
+          <Weg
+            haupt
+            titel="Auf Streifzug gehen 🌿"
+            unter="Hier werden deine Wesen stark. Nur hier."
+            zahl={
+              (dranGesamt > 0 ? dranGesamt + " warten · " : "") +
+              (offeneRechnungen > 1
+                ? offeneRechnungen + " Rechnungen noch unentdeckt"
+                : offeneRechnungen === 1
+                ? "eine Rechnung noch unentdeckt"
+                : "alle Rechnungen entdeckt")
+            }
+            onClick={() => setAnsicht("welt")}
+          />
           <div className="grid grid-cols-2 gap-2">
-            <Knopf art="ruhig" onClick={() => setAnsicht("dex")}>
-              Zahlodex 📕
-            </Knopf>
-            <Knopf art="ruhig" onClick={() => setAnsicht("arena")}>
-              Arenen 🏅
-            </Knopf>
+            <Weg
+              titel="Arenen 🏅"
+              unter="Zeig, was sie können."
+              zahl={"★ " + stand2.sterne[0] + " von " + stand2.sterne[1]}
+              onClick={() => setAnsicht("arena")}
+            />
+            <Weg
+              titel="Zahlodex 📕"
+              unter="Sammlung, Tricks und ⚡."
+              zahl={
+                wartend > 0
+                  ? wartend + (wartend === 1 ? " wartet!" : " warten!")
+                  : trickPunkte(t) + " ⚡ übrig"
+              }
+              onClick={() => { setDexBuch(false); setAnsicht("dex"); }}
+            />
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <Knopf art="ruhig" onClick={() => setAnsicht("duell")}>
-              Duell ⚔️
-            </Knopf>
-            <Knopf art="ruhig" onClick={() => setAnsicht("trainer")}>
-              Trainer wechseln
-            </Knopf>
+            <Weg
+              titel="Duell ⚔️"
+              unter="Zu zweit an einem Gerät."
+              onClick={() => setAnsicht("duell")}
+            />
+            <Weg
+              titel="Trainer wechseln"
+              unter="Jedes Kind hat eigene Wesen."
+              onClick={() => setAnsicht("trainer")}
+            />
           </div>
         </div>
 
@@ -3780,9 +4032,11 @@ function App() {
           🦉 Zurück zu Florentinas Rätselschule
         </a>
 
-        <p className="mt-4 text-center text-xs leading-relaxed text-emerald-500">
-          Deine Wesen besuchen dich wieder. Was du aus dem Stand kannst, kommt
-          lange nicht mehr — wo du überlegen musst, schaut bald jemand vorbei.
+        {/* Der Satz, der die eigentliche Frage beantwortet: warum noch
+            einmal in den Streifzug, wenn alle Wesen längst gefangen sind. */}
+        <p className="mt-4 text-center text-xs leading-relaxed text-emerald-400">
+          <b className="text-amber-300">Gefangen heißt noch nicht gekonnt.</b>{" "}
+          Auf dem Streifzug üben deine Wesen — in der Arena zeigen sie es.
         </p>
         <p className="mt-3 text-center text-[11px] text-emerald-500">
           Zahlodex · Fassung {FASSUNG}

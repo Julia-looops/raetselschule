@@ -1399,7 +1399,7 @@ function beeren(fakt) {
    Florentina und ihre Freunde dasselbe Gerät benutzen können.
    ============================================================ */
 /* wird beim Bauen ersetzt, siehe tools/build.mjs */
-const FASSUNG = "18 · 4.9.2026";
+const FASSUNG = "19 · 4.9.2026";
 const SPEICHER = "florentina-zahlodex";
 const TRAINER_BILDER = ["🐾", "🧢", "🎒", "🪄", "🛼", "🦄", "🚀", "🍀"];
 function leererTrainer(bild) {
@@ -2376,10 +2376,11 @@ function Trickbuch({
 function Zahlodex({
   t,
   speichern,
-  onZurueck
+  onZurueck,
+  startBuch
 }) {
   const [gewaehlt, setGewaehlt] = useState(null);
-  const [buch, setBuch] = useState(false);
+  const [buch, setBuch] = useState(!!startBuch);
   const gefangen = anzahlGefangen(t);
   const wartend = wartenAufTrick(t).bereit.length;
   if (gewaehlt) return /*#__PURE__*/React.createElement(WesenDetail, {
@@ -3646,6 +3647,163 @@ function Trainerkarte({
     hell: true
   })));
 }
+
+/* ============================================================
+   WAS IST HEUTE DRAN?
+
+   Die Startseite hat bisher das Fangen verkauft — und hatte nichts
+   mehr zu sagen, sobald alle Wesen gefangen waren. Dabei fängt dort
+   der interessante Teil erst an: über vierhundert Rechnungen, die
+   Wiedersehen, das Reifen, die Tricks.
+
+   Deshalb nennt die Startseite jetzt immer genau eine Sache — die
+   wichtigste — und den Weg dorthin. Nie eine leere Seite.
+   ============================================================ */
+function arenaName(a) {
+  return a.art === "liga" ? "Die Liga" : "Die " + a.name;
+}
+function naechsterSchritt(t) {
+  /* 1. Ein Trick liegt bereit. Das ist das Schönste, was es gibt. */
+  const warten = wartenAufTrick(t);
+  if (warten.bereit.length > 0 && trickPunkte(t) >= TRICK_KOSTEN) {
+    const n = warten.bereit.length;
+    return {
+      bild: "✨",
+      text: n === 1 ? WESEN[warten.bereit[0].nr].name + " wartet auf einen neuen Trick." : n + " Wesen warten auf einen neuen Trick.",
+      knopf: "Ins Trickbuch 📕",
+      ziel: "trickbuch"
+    };
+  }
+  /* 2. Wiedersehen — der Kern des Ganzen. */
+  const dran = faelligeZahl(t, "wiese") + faelligeZahl(t, "malfeld");
+  if (dran > 0) {
+    return {
+      bild: "🌿",
+      text: dran === 1 ? "Ein Wesen kommt dich heute besuchen." : dran + " Wesen kommen dich heute besuchen.",
+      knopf: "Auf Streifzug 🌿",
+      ziel: "welt",
+      art: "wiedersehen"
+    };
+  }
+  /* 3. Es gibt noch Wesen, die sie nie getroffen hat. */
+  const fehlen = ALLE_NR.length - anzahlGefangen(t);
+  if (fehlen > 0) {
+    return {
+      bild: "👀",
+      text: fehlen === 1 ? "Ein Wesen hast du noch nie getroffen." : fehlen + " Wesen hast du noch nie getroffen.",
+      knopf: "Auf Streifzug 🌿",
+      ziel: "welt"
+    };
+  }
+  /* 4. Alle gefangen — aber längst nicht alle Rechnungen gesehen.
+     Genau hier hätte die alte Startseite geschwiegen. */
+  for (const w of ["malfeld", "wiese"]) {
+    const offen = nochWasZuZeigen(t, w).map(nr => ({
+      nr,
+      a: abdeckung(t, w, nr)
+    })).sort((x, y) => y.a.ziel - y.a.hab - (x.a.ziel - x.a.hab));
+    if (offen.length > 0) {
+      const {
+        nr,
+        a
+      } = offen[0];
+      return {
+        bild: WESEN[nr].bild,
+        text: WESEN[nr].name + " kennt erst " + a.hab + " von " + a.ziel + " Rechnungen.",
+        knopf: "Auf Streifzug 🌿",
+        ziel: "welt"
+      };
+    }
+  }
+  /* 5. Eine offene Arena ohne Orden. */
+  const ohneOrden = ARENEN.find(a => {
+    const r = arenaReif(t, a);
+    return r.hab >= r.noetig && !t.orden.includes(a.id);
+  });
+  if (ohneOrden) {
+    return {
+      bild: "🏅",
+      text: arenaName(ohneOrden) + " hat noch keinen Orden.",
+      knopf: "Zu den Arenen 🏅",
+      ziel: "arena"
+    };
+  }
+  /* 6. Alle Orden — aber noch nicht überall drei Sterne. */
+  const schwach = ARENEN.filter(a => {
+    const r = arenaReif(t, a);
+    return (r.hab >= r.noetig || t.orden.includes(a.id)) && sterne(t, a.id) < 3;
+  }).sort((a, b) => sterne(t, a.id) - sterne(t, b.id))[0];
+  if (schwach) {
+    return {
+      bild: "⭐",
+      text: arenaName(schwach) + " hat erst " + sterne(t, schwach.id) + " von 3 Sternen.",
+      knopf: "Zu den Arenen 🏅",
+      ziel: "arena"
+    };
+  }
+  /* 7. Wirklich alles. Dann bleibt der Ruhm. */
+  return {
+    bild: "🎉",
+    text: "Du hast alles geschafft. Zeit, jemanden herauszufordern!",
+    knopf: "Duell ⚔️",
+    ziel: "duell"
+  };
+}
+
+/* Ein Weg aus dem Hauptmenü — mit einem Satz dazu, wofür er da ist.
+   Vier nackte Knöpfe haben nicht verraten, was man wo tut. */
+function Weg({
+  titel,
+  unter,
+  zahl,
+  haupt,
+  onClick
+}) {
+  return /*#__PURE__*/React.createElement("button", {
+    onClick: onClick,
+    className: "kein-blau w-full rounded-2xl px-4 text-left shadow-lg transition active:translate-y-px " + (haupt ? "bg-amber-400 py-3 hover:bg-amber-300" : "border-2 border-emerald-500/50 py-2.5 hover:bg-emerald-800/50")
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-black " + (haupt ? "text-lg text-emerald-950" : "text-sm text-emerald-100")
+  }, titel), /*#__PURE__*/React.createElement("p", {
+    className: "text-[11px] leading-snug " + (haupt ? "text-emerald-900/75" : "text-emerald-400")
+  }, unter), zahl && /*#__PURE__*/React.createElement("p", {
+    className: "text-[11px] font-bold " + (haupt ? "text-emerald-900/60" : "text-amber-300")
+  }, zahl));
+}
+
+/* Einmal beim allerersten Start, danach über das "?" oben. Erklärt
+   die vier Orte — vor allem, dass der Streifzug der Trainingsplatz
+   ist und die Arena die Bühne. */
+function SpielErklaerung({
+  onWeiter,
+  zurueck
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "mx-auto max-w-md p-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "a-auftauchen rounded-3xl border-2 border-amber-400/60 bg-emerald-900/80 p-5 text-emerald-100"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-center text-5xl"
+  }, "\uD83D\uDDFA\uFE0F"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-center text-2xl font-black text-amber-300"
+  }, "So l\xE4uft das hier"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2"
+  }, "Jedes Ergebnis ist ein Wesen. Steht da 7 \xB7 8 = 56, dann ist Rexi gemeint. Wer rechnet, f\xE4ngt es."), /*#__PURE__*/React.createElement("p", {
+    className: "mt-4 font-black text-amber-200"
+  }, "\uD83C\uDF3F Streifzug"), /*#__PURE__*/React.createElement("p", null, "Dein Trainingsplatz. Hier f\xE4ngst du neue Wesen \u2014 und hier werden sie stark. Jedes Wesen kennt mehrere Rechnungen und zeigt dir nach und nach alle. Wer eine Weile nicht dran war, kommt von selbst wieder vorbei. ", /*#__PURE__*/React.createElement("b", {
+    className: "text-amber-200"
+  }, "Gefangen hei\xDFt noch nicht gekonnt:"), " stark werden deine Wesen nur hier."), /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 font-black text-amber-200"
+  }, "\uD83C\uDFC5 Arenen"), /*#__PURE__*/React.createElement("p", null, "Die B\xFChne. Zw\xF6lf Rechnungen gegen einen Arenaleiter \u2014 f\xFCr jede richtige st\xFCrmt eines deiner Wesen los. Es gibt Orden und bis zu drei Sterne pro Arena. Wer blitzschnell antwortet, sammelt \u26A1."), /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 font-black text-amber-200"
+  }, "\uD83D\uDCD5 Zahlodex"), /*#__PURE__*/React.createElement("p", null, "Deine Sammlung. Hier siehst du jedes Wesen, seine Tricks und welche Rechnungen ihm noch fehlen. Und hier gibst du \u26A1 aus."), /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 font-black text-amber-200"
+  }, "\u2694\uFE0F Duell"), /*#__PURE__*/React.createElement("p", null, "Zu zweit an einem Ger\xE4t. Wer wei\xDF es zuerst?"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-5"
+  }, /*#__PURE__*/React.createElement(Knopf, {
+    onClick: onWeiter
+  }, zurueck ? "Alles klar" : "Los geht's! 🌿"))));
+}
 function TrainerWahl({
   stand,
   waehle,
@@ -3770,6 +3928,8 @@ function App() {
   const [arena, setArena] = useState(null);
   const [tonAn, setTonAn] = useState(true);
   const [bildWaehlen, setBildWaehlen] = useState(false);
+  const [erklaerung, setErklaerung] = useState(false);
+  const [dexBuch, setDexBuch] = useState(false);
   const [geladen, setGeladen] = useState(false);
   useEffect(() => {
     (async () => {
@@ -3904,6 +4064,7 @@ function App() {
     return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Stile, null), /*#__PURE__*/React.createElement(Zahlodex, {
       t: t,
       speichern: speichereTrainer,
+      startBuch: dexBuch,
       onZurueck: () => setAnsicht("menue")
     }));
   }
@@ -3935,16 +4096,40 @@ function App() {
 
   /* ---------- Hauptmenü ---------- */
   const dranGesamt = faelligeZahl(t, "wiese") + faelligeZahl(t, "malfeld");
+  const schritt = naechsterSchritt(t);
+  const stand2 = fortschritt(t);
+  const offeneRechnungen = stand2.rechnungen[1] - stand2.rechnungen[0];
+  const wartend = wartenAufTrick(t).bereit.length;
+  if (erklaerung || !(t.gesehen && t.gesehen.start)) {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Stile, null), /*#__PURE__*/React.createElement(SpielErklaerung, {
+      zurueck: erklaerung,
+      onWeiter: () => {
+        setErklaerung(false);
+        if (!(t.gesehen && t.gesehen.start)) speichereTrainer({
+          ...t,
+          gesehen: {
+            ...(t.gesehen || {}),
+            start: true
+          }
+        });
+      }
+    }));
+  }
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Stile, null), /*#__PURE__*/React.createElement("div", {
     className: "mx-auto max-w-md p-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "mb-3 flex items-center justify-between"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-xs font-bold uppercase tracking-[0.3em] text-amber-400"
-  }, "Zahlodex"), /*#__PURE__*/React.createElement("button", {
+  }, "Zahlodex"), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setErklaerung(true),
+    className: "kein-blau rounded-xl border-2 border-emerald-600 px-3 py-1 text-sm text-emerald-200"
+  }, "?"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setTonAn(!tonAn),
     className: "kein-blau rounded-xl border-2 border-emerald-600 px-3 py-1 text-sm text-emerald-200"
-  }, tonAn ? "🔊" : "🔇")), /*#__PURE__*/React.createElement("h1", {
+  }, tonAn ? "🔊" : "🔇"))), /*#__PURE__*/React.createElement("h1", {
     className: "text-3xl font-black leading-tight text-amber-300"
   }, "Die Rechen-Arena"), /*#__PURE__*/React.createElement("p", {
     className: "mt-1 text-sm text-emerald-300"
@@ -3970,43 +4155,65 @@ function App() {
       setBildWaehlen(false);
     },
     className: "kein-blau rounded-xl px-2 py-1 text-3xl " + (t.bild === b ? "bg-amber-400/30 ring-2 ring-amber-400" : "bg-emerald-800")
-  }, b)))), wartenAufTrick(t).bereit.length > 0 && trickPunkte(t) >= TRICK_KOSTEN && /*#__PURE__*/React.createElement("p", {
-    className: "a-funkeln mt-3 rounded-2xl bg-amber-400/20 p-3 text-center text-sm font-bold text-amber-200"
-  }, "\u2728 ", wartenAufTrick(t).bereit.length, " ", wartenAufTrick(t).bereit.length === 1 ? "Wesen wartet" : "Wesen warten", " im Trickbuch auf einen Trick!"), dranGesamt > 0 &&
-  /*#__PURE__*/
-  /* Bewusst ruhig formuliert: "20 Wesen warten auf dich" liest
-     sich wie eine Mahnung. Eine Runde nimmt ohnehin höchstens
-     fünf davon. */
-  React.createElement("p", {
-    className: "mt-3 rounded-2xl bg-amber-400/15 p-3 text-center text-sm font-bold text-amber-200"
-  }, dranGesamt, " ", dranGesamt === 1 ? "Wesen freut" : "Wesen freuen", " sich auf ein Wiedersehen.", dranGesamt > 5 && /*#__PURE__*/React.createElement("span", {
-    className: "block text-xs font-normal text-amber-200/70"
-  }, "Eine Runde nimmt h\xF6chstens f\xFCnf davon \u2014 kein Stress.")), /*#__PURE__*/React.createElement("div", {
+  }, b)))), /*#__PURE__*/React.createElement("div", {
+    className: "a-rutschen mt-3 flex items-center gap-3 rounded-2xl bg-amber-400/15 p-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-3xl"
+  }, schritt.bild), /*#__PURE__*/React.createElement("div", {
+    className: "min-w-0 flex-1"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-[10px] font-bold uppercase tracking-widest text-amber-400"
+  }, "Heute"), /*#__PURE__*/React.createElement("p", {
+    className: "text-sm font-bold leading-snug text-amber-100"
+  }, schritt.text)), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setDexBuch(schritt.ziel === "trickbuch");
+      setAnsicht(schritt.ziel === "trickbuch" ? "dex" : schritt.ziel);
+    },
+    className: "kein-blau shrink-0 rounded-xl bg-amber-400 px-3 py-2 text-xs font-black text-emerald-950"
+  }, "Los")), dranGesamt > 5 && schritt.art === "wiedersehen" && /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 text-center text-[11px] text-emerald-400"
+  }, "Eine Runde nimmt h\xF6chstens f\xFCnf davon \u2014 kein Stress."), /*#__PURE__*/React.createElement("div", {
     className: "mt-4 space-y-2"
-  }, /*#__PURE__*/React.createElement(Knopf, {
+  }, /*#__PURE__*/React.createElement(Weg, {
+    haupt: true,
+    titel: "Auf Streifzug gehen \uD83C\uDF3F",
+    unter: "Hier werden deine Wesen stark. Nur hier.",
+    zahl: (dranGesamt > 0 ? dranGesamt + " warten · " : "") + (offeneRechnungen > 1 ? offeneRechnungen + " Rechnungen noch unentdeckt" : offeneRechnungen === 1 ? "eine Rechnung noch unentdeckt" : "alle Rechnungen entdeckt"),
     onClick: () => setAnsicht("welt")
-  }, "Auf Streifzug gehen \uD83C\uDF3F"), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 gap-2"
-  }, /*#__PURE__*/React.createElement(Knopf, {
-    art: "ruhig",
-    onClick: () => setAnsicht("dex")
-  }, "Zahlodex \uD83D\uDCD5"), /*#__PURE__*/React.createElement(Knopf, {
-    art: "ruhig",
+  }, /*#__PURE__*/React.createElement(Weg, {
+    titel: "Arenen \uD83C\uDFC5",
+    unter: "Zeig, was sie k\xF6nnen.",
+    zahl: "★ " + stand2.sterne[0] + " von " + stand2.sterne[1],
     onClick: () => setAnsicht("arena")
-  }, "Arenen \uD83C\uDFC5")), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement(Weg, {
+    titel: "Zahlodex \uD83D\uDCD5",
+    unter: "Sammlung, Tricks und \u26A1.",
+    zahl: wartend > 0 ? wartend + (wartend === 1 ? " wartet!" : " warten!") : trickPunkte(t) + " ⚡ übrig",
+    onClick: () => {
+      setDexBuch(false);
+      setAnsicht("dex");
+    }
+  })), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 gap-2"
-  }, /*#__PURE__*/React.createElement(Knopf, {
-    art: "ruhig",
+  }, /*#__PURE__*/React.createElement(Weg, {
+    titel: "Duell \u2694\uFE0F",
+    unter: "Zu zweit an einem Ger\xE4t.",
     onClick: () => setAnsicht("duell")
-  }, "Duell \u2694\uFE0F"), /*#__PURE__*/React.createElement(Knopf, {
-    art: "ruhig",
+  }), /*#__PURE__*/React.createElement(Weg, {
+    titel: "Trainer wechseln",
+    unter: "Jedes Kind hat eigene Wesen.",
     onClick: () => setAnsicht("trainer")
-  }, "Trainer wechseln"))), /*#__PURE__*/React.createElement("a", {
+  }))), /*#__PURE__*/React.createElement("a", {
     href: "./index.html",
     className: "mt-6 block rounded-2xl border-2 border-emerald-700 p-3 text-center text-sm text-emerald-300"
   }, "\uD83E\uDD89 Zur\xFCck zu Florentinas R\xE4tselschule"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-4 text-center text-xs leading-relaxed text-emerald-500"
-  }, "Deine Wesen besuchen dich wieder. Was du aus dem Stand kannst, kommt lange nicht mehr \u2014 wo du \xFCberlegen musst, schaut bald jemand vorbei."), /*#__PURE__*/React.createElement("p", {
+    className: "mt-4 text-center text-xs leading-relaxed text-emerald-400"
+  }, /*#__PURE__*/React.createElement("b", {
+    className: "text-amber-300"
+  }, "Gefangen hei\xDFt noch nicht gekonnt."), " ", "Auf dem Streifzug \xFCben deine Wesen \u2014 in der Arena zeigen sie es."), /*#__PURE__*/React.createElement("p", {
     className: "mt-3 text-center text-[11px] text-emerald-500"
   }, "Zahlodex \xB7 Fassung ", FASSUNG)));
 }
