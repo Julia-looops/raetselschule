@@ -189,7 +189,15 @@ Wer blitzschnell rechnet, kann seinen Wesen etwas beibringen. Nicht
 freischalten: **beibringen**.
 
 * Jede blitzschnelle Antwort im Kampf gibt **ein ⚡**. Fünf davon sind ein Trick.
-* Nach dem Kampf entscheidet das Kind selbst, **wem** es etwas beibringt.
+* Wer im Kampf blitzschnell war, spricht eine **Einladung** aus — und die bleibt.
+  Eingelöst wird sie gleich nach dem Kampf oder später im **Trickbuch**, wann
+  immer genug ⚡ da sind. Nach dem Lernen ist die Einladung aufgebraucht; für den
+  nächsten Trick muss das Wesen wieder einmal schnell sein.
+
+  Das ist die Sperre gegen das Naheliegende: Ohne sie könnte man ⚡ in der
+  Zweier-Arena sammeln und damit seine Siebener-Wesen aufrüsten, ohne je bei
+  7 · 8 schnell gewesen zu sein. Frei ist nur der Zeitpunkt, nicht das Wer.
+* **Wem** das Kind etwas beibringt, entscheidet es selbst.
 * Und ein Trick will verdient sein — jeder steht für einen anderen Zeithorizont:
 
   | Trick | Bedingung | dauert |

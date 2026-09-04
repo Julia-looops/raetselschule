@@ -914,6 +914,82 @@ function bereitFuerTrick(t, welt) {
     return trickBedingung(t, welt, nr).ok;
   });
 }
+
+/* ============================================================
+   DIE EINLADUNG
+
+   Beibringen darf man nur einem Wesen, das im Kampf blitzschnell
+   war — sonst könnte man ⚡ in der Zweier-Arena sammeln und damit
+   seine Siebener-Wesen aufrüsten, ohne je bei 7 · 8 schnell gewesen
+   zu sein.
+
+   Der Zeitpunkt muss deshalb aber nicht festliegen: Wer schnell war,
+   spricht eine Einladung aus, und die bleibt. Eingelöst wird sie
+   später im Trickbuch, wann immer genug ⚡ da sind. Nach dem Lernen
+   ist die Einladung aufgebraucht — für den nächsten Trick muss das
+   Wesen wieder einmal blitzschnell sein.
+
+   Gespeichert wird, aus welcher Gegend die Einladung kam ("w" oder
+   "m"), damit die Bedingung in derselben Gegend geprüft wird.
+   ============================================================ */
+function einladung(t, nr) {
+  const e = t.wesen[nr];
+  return e && e.ein || null;
+}
+function mitEinladung(t, welt, nr) {
+  const e = t.wesen[nr] || {};
+  if (e.ein === KURZ[welt]) return t;
+  return {
+    ...t,
+    wesen: {
+      ...t.wesen,
+      [nr]: {
+        ...e,
+        ein: KURZ[welt]
+      }
+    }
+  };
+}
+
+/* Wesen mit offener Einladung, aufgeteilt nach "kann schon lernen"
+   und "muss erst noch reifen". */
+function wartenAufTrick(t) {
+  const bereit = [];
+  const spaeter = [];
+  ALLE_NR.forEach(nr => {
+    const ein = einladung(t, nr);
+    if (!ein || !kannNochLernen(t, nr)) return;
+    const welt = ein === "w" ? "wiese" : "malfeld";
+    const bed = trickBedingung(t, welt, nr);
+    (bed.ok ? bereit : spaeter).push({
+      nr,
+      welt,
+      bed
+    });
+  });
+  return {
+    bereit,
+    spaeter
+  };
+}
+
+/* einen Trick beibringen — die Einladung ist danach aufgebraucht */
+function lehreTrick(t, nr) {
+  const e = t.wesen[nr] || {};
+  const anzahl = trickZahl(t, nr) + 1;
+  return {
+    ...t,
+    punkte: trickPunkte(t) - TRICK_KOSTEN,
+    wesen: {
+      ...t.wesen,
+      [nr]: {
+        ...e,
+        tr: anzahl,
+        ein: null
+      }
+    }
+  };
+}
 function trickPunkte(t) {
   return t.punkte || 0;
 }
@@ -1323,7 +1399,7 @@ function beeren(fakt) {
    Florentina und ihre Freunde dasselbe Gerät benutzen können.
    ============================================================ */
 /* wird beim Bauen ersetzt, siehe tools/build.mjs */
-const FASSUNG = "16 · 4.9.2026";
+const FASSUNG = "17 · 4.9.2026";
 const SPEICHER = "florentina-zahlodex";
 const TRAINER_BILDER = ["🐾", "🧢", "🎒", "🪄", "🛼", "🦄", "🚀", "🍀"];
 function leererTrainer(bild) {
@@ -2202,20 +2278,80 @@ function Streifzug({
    ============================================================ */
 function Trickbuch({
   t,
+  speichern,
   onZurueck
 }) {
+  const [gelernt, setGelernt] = useState(null);
   const koennen = ALLE_NR.filter(nr => trickZahl(t, nr) > 0);
   const moeglich = ALLE_NR.reduce((n, nr) => n + trickListe(nr).length, 0);
   const habe = tricksGesamt(t);
+  const {
+    bereit,
+    spaeter
+  } = wartenAufTrick(t);
+  const punkte = trickPunkte(t);
+  function lehren(nr) {
+    if (punkte < TRICK_KOSTEN) return;
+    const trick = trickListe(nr)[trickZahl(t, nr)];
+    Ton.orden();
+    speichern(lehreTrick(t, nr));
+    setGelernt({
+      nr,
+      trick
+    });
+  }
   return /*#__PURE__*/React.createElement("div", {
     className: "mx-auto max-w-md p-4"
   }, /*#__PURE__*/React.createElement(Kopf, {
     titel: "Trickbuch",
-    unter: habe + " von " + moeglich + " Tricks beigebracht",
+    unter: habe + " von " + moeglich + " Tricks · " + punkte + " ⚡",
     onZurueck: onZurueck
   }), /*#__PURE__*/React.createElement("p", {
     className: "mb-3 rounded-2xl bg-emerald-900/60 p-3 text-sm text-emerald-200"
-  }, "Jeder Trick macht dein Wesen st\xE4rker: ", /*#__PURE__*/React.createElement("b", null, "+", PUNKTE_TRICK, " Punkte"), " bei jedem Angriff. Die \u26A1 daf\xFCr holst du dir im Kampf \u2014 stark genug zum Lernen werden deine Wesen aber nur, wenn du sie auf dem Streifzug besuchst."), koennen.length === 0 ? /*#__PURE__*/React.createElement("p", {
+  }, "Jeder Trick macht dein Wesen st\xE4rker: ", /*#__PURE__*/React.createElement("b", null, "+", PUNKTE_TRICK, " Punkte"), " bei jedem Angriff. Die \u26A1 daf\xFCr holst du dir im Kampf \u2014 stark genug zum Lernen werden deine Wesen aber nur, wenn du sie auf dem Streifzug besuchst."), gelernt && /*#__PURE__*/React.createElement("div", {
+    className: "a-auftauchen mb-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-center font-black text-amber-200"
+  }, WESEN[gelernt.nr].bild, " ", WESEN[gelernt.nr].name, " kann jetzt", " ", gelernt.trick.bild, " ", gelernt.trick.name, "!")), bereit.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mb-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-center text-xs font-bold uppercase tracking-widest text-amber-300"
+  }, bereit.length === 1 ? "Ein Wesen wartet auf einen Trick" : bereit.length + " Wesen warten auf einen Trick"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-2 grid grid-cols-3 gap-2"
+  }, bereit.map(({
+    nr
+  }) => {
+    const naechster = trickListe(nr)[trickZahl(t, nr)];
+    const reicht = punkte >= TRICK_KOSTEN;
+    return /*#__PURE__*/React.createElement("button", {
+      key: nr,
+      onClick: () => lehren(nr),
+      disabled: !reicht,
+      className: "kein-blau rounded-2xl p-2 text-center transition " + (reicht ? "bg-emerald-800/70 hover:bg-emerald-700 active:translate-y-px" : "bg-emerald-900/50 opacity-50")
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-3xl"
+    }, WESEN[nr].bild), /*#__PURE__*/React.createElement("p", {
+      className: "truncate text-xs font-bold text-emerald-50"
+    }, WESEN[nr].name), /*#__PURE__*/React.createElement("p", {
+      className: "mt-1 text-[10px] leading-tight text-amber-300"
+    }, "lernt ", naechster.bild, /*#__PURE__*/React.createElement("br", null), naechster.name));
+  })), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-center text-xs text-amber-200"
+  }, punkte >= TRICK_KOSTEN ? "Ein Trick kostet " + TRICK_KOSTEN + " ⚡ — du hast " + punkte + "." : "Noch " + (TRICK_KOSTEN - punkte) + " ⚡, dann kannst du.")), spaeter.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mb-3 rounded-2xl bg-emerald-900/60 p-3"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold uppercase tracking-widest text-emerald-300"
+  }, "Die brauchen noch etwas"), spaeter.map(({
+    nr,
+    bed
+  }) => /*#__PURE__*/React.createElement("p", {
+    key: nr,
+    className: "mt-1 text-sm text-emerald-200"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-lg"
+  }, WESEN[nr].bild), " ", /*#__PURE__*/React.createElement("b", null, WESEN[nr].name), " \u2014 ", bed.was)), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-xs text-emerald-400"
+  }, "Nimm sie mit auf den Streifzug. Ein Trick will verdient sein!")), koennen.length === 0 ? /*#__PURE__*/React.createElement("p", {
     className: "rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200"
   }, "Noch kann keines deiner Wesen einen Trick. Hol dir \u26A1 in der Arena \u2014 und bring sie dann einem Wesen bei, das dort blitzschnell war.") : /*#__PURE__*/React.createElement("div", {
     className: "space-y-2"
@@ -2239,11 +2375,13 @@ function Trickbuch({
 }
 function Zahlodex({
   t,
+  speichern,
   onZurueck
 }) {
   const [gewaehlt, setGewaehlt] = useState(null);
   const [buch, setBuch] = useState(false);
   const gefangen = anzahlGefangen(t);
+  const wartend = wartenAufTrick(t).bereit.length;
   if (gewaehlt) return /*#__PURE__*/React.createElement(WesenDetail, {
     t: t,
     nr: gewaehlt,
@@ -2251,6 +2389,7 @@ function Zahlodex({
   });
   if (buch) return /*#__PURE__*/React.createElement(Trickbuch, {
     t: t,
+    speichern: speichern,
     onZurueck: () => setBuch(false)
   });
   const zellen = [];
@@ -2287,10 +2426,10 @@ function Zahlodex({
   }, zellen)), /*#__PURE__*/React.createElement("div", {
     className: "mt-3"
   }, /*#__PURE__*/React.createElement(Knopf, {
-    art: "ruhig",
+    art: wartend > 0 ? "haupt" : "ruhig",
     klein: true,
     onClick: () => setBuch(true)
-  }, "\u2728 Trickbuch \u2014 ", tricksGesamt(t), " Tricks")), /*#__PURE__*/React.createElement("p", {
+  }, "\u2728 Trickbuch \u2014 ", tricksGesamt(t), " Tricks", wartend > 0 ? " · " + wartend + (wartend === 1 ? " wartet!" : " warten!") : "")), /*#__PURE__*/React.createElement("p", {
     className: "mt-3 text-center text-xs text-emerald-400"
   }, "Jedes Feld ist eine Zahl. Auf den dunklen wohnt niemand \u2014 die kommen im Einmaleins gar nicht vor."), /*#__PURE__*/React.createElement("div", {
     className: "mt-4 rounded-2xl bg-emerald-900/50 p-3 text-sm text-emerald-200"
@@ -2893,6 +3032,9 @@ function ArenaKampf({
       if (schnell) {
         setSchnelle(s2 => [...new Set([...s2, nr])]);
         setSchnellZahl(x => x + 1);
+        /* Wer schnell war, ist eingeladen — einlösbar auch später im
+           Trickbuch. */
+        if (WESEN[nr]) setT(alt2 => mitEinladung(alt2, welt, nr));
       }
       schnell ? Ton.blitz() : Ton.richtig();
     } else {
@@ -2964,21 +3106,9 @@ function ArenaKampf({
   function lehren(nr) {
     const bed = trickBedingung(t, welt, nr);
     if (trickPunkte(t) < TRICK_KOSTEN || !bed.ok) return;
-    const e = t.wesen[nr] || {};
-    const anzahl = trickZahl(t, nr) + 1;
-    const trick = trickListe(nr)[anzahl - 1];
+    const trick = trickListe(nr)[trickZahl(t, nr)];
     Ton.orden();
-    setT({
-      ...t,
-      punkte: trickPunkte(t) - TRICK_KOSTEN,
-      wesen: {
-        ...t.wesen,
-        [nr]: {
-          ...e,
-          tr: anzahl
-        }
-      }
-    });
+    setT(lehreTrick(t, nr));
     setGelehrt(g => [...g, {
       nr,
       trick
@@ -3049,7 +3179,7 @@ function ArenaKampf({
       className: "mb-2 text-sm text-emerald-200"
     }, "Ein Trick macht dein Wesen st\xE4rker: ", /*#__PURE__*/React.createElement("b", null, "+", PUNKTE_TRICK, " Punkte"), " bei jedem Angriff. Such dir aus, wer ihn lernen soll!"), bereit.length === 0 && nochNicht.length === 0 ? /*#__PURE__*/React.createElement("p", {
       className: "rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200"
-    }, "Lernen d\xFCrfen nur die Wesen, die in diesem Kampf blitzschnell waren. Diesmal war keines dabei \u2014 deine \u26A1 bleiben dir aber erhalten.") : /*#__PURE__*/React.createElement(React.Fragment, null, bereit.length > 0 && /*#__PURE__*/React.createElement("div", {
+    }, "Lernen d\xFCrfen nur Wesen, die im Kampf blitzschnell waren. Diesmal war keines dabei \u2014 deine \u26A1 bleiben dir aber erhalten.") : /*#__PURE__*/React.createElement(React.Fragment, null, bereit.length > 0 && /*#__PURE__*/React.createElement("div", {
       className: "grid grid-cols-3 gap-2"
     }, bereit.map(({
       nr
@@ -3082,8 +3212,10 @@ function ArenaKampf({
       className: "text-lg"
     }, WESEN[nr].bild), " ", /*#__PURE__*/React.createElement("b", null, WESEN[nr].name), " \u2014 ", bed.was)), /*#__PURE__*/React.createElement("p", {
       className: "mt-2 text-xs text-emerald-400"
-    }, "Nimm sie mit auf den Streifzug. Ein Trick will verdient sein!"))), /*#__PURE__*/React.createElement("div", {
-      className: "mt-5"
+    }, "Nimm sie mit auf den Streifzug. Ein Trick will verdient sein!"))), /*#__PURE__*/React.createElement("p", {
+      className: "mt-4 text-center text-xs text-emerald-400"
+    }, "Du musst dich nicht jetzt entscheiden: Wer hier blitzschnell war, wartet im Trickbuch auf dich, bis du genug \u26A1 hast."), /*#__PURE__*/React.createElement("div", {
+      className: "mt-3"
     }, /*#__PURE__*/React.createElement(Knopf, {
       onClick: onEnde
     }, "Fertig")));
@@ -3769,6 +3901,7 @@ function App() {
   if (ansicht === "dex") {
     return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Stile, null), /*#__PURE__*/React.createElement(Zahlodex, {
       t: t,
+      speichern: speichereTrainer,
       onZurueck: () => setAnsicht("menue")
     }));
   }
@@ -3835,7 +3968,9 @@ function App() {
       setBildWaehlen(false);
     },
     className: "kein-blau rounded-xl px-2 py-1 text-3xl " + (t.bild === b ? "bg-amber-400/30 ring-2 ring-amber-400" : "bg-emerald-800")
-  }, b)))), dranGesamt > 0 &&
+  }, b)))), wartenAufTrick(t).bereit.length > 0 && trickPunkte(t) >= TRICK_KOSTEN && /*#__PURE__*/React.createElement("p", {
+    className: "a-funkeln mt-3 rounded-2xl bg-amber-400/20 p-3 text-center text-sm font-bold text-amber-200"
+  }, "\u2728 ", wartenAufTrick(t).bereit.length, " ", wartenAufTrick(t).bereit.length === 1 ? "Wesen wartet" : "Wesen warten", " im Trickbuch auf einen Trick!"), dranGesamt > 0 &&
   /*#__PURE__*/
   /* Bewusst ruhig formuliert: "20 Wesen warten auf dich" liest
      sich wie eine Mahnung. Eine Runde nimmt ohnehin höchstens

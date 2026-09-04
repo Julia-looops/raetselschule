@@ -486,6 +486,60 @@ function bereitFuerTrick(t, welt) {
   });
 }
 
+/* ============================================================
+   DIE EINLADUNG
+
+   Beibringen darf man nur einem Wesen, das im Kampf blitzschnell
+   war — sonst könnte man ⚡ in der Zweier-Arena sammeln und damit
+   seine Siebener-Wesen aufrüsten, ohne je bei 7 · 8 schnell gewesen
+   zu sein.
+
+   Der Zeitpunkt muss deshalb aber nicht festliegen: Wer schnell war,
+   spricht eine Einladung aus, und die bleibt. Eingelöst wird sie
+   später im Trickbuch, wann immer genug ⚡ da sind. Nach dem Lernen
+   ist die Einladung aufgebraucht — für den nächsten Trick muss das
+   Wesen wieder einmal blitzschnell sein.
+
+   Gespeichert wird, aus welcher Gegend die Einladung kam ("w" oder
+   "m"), damit die Bedingung in derselben Gegend geprüft wird.
+   ============================================================ */
+function einladung(t, nr) {
+  const e = t.wesen[nr];
+  return (e && e.ein) || null;
+}
+
+function mitEinladung(t, welt, nr) {
+  const e = t.wesen[nr] || {};
+  if (e.ein === KURZ[welt]) return t;
+  return { ...t, wesen: { ...t.wesen, [nr]: { ...e, ein: KURZ[welt] } } };
+}
+
+/* Wesen mit offener Einladung, aufgeteilt nach "kann schon lernen"
+   und "muss erst noch reifen". */
+function wartenAufTrick(t) {
+  const bereit = [];
+  const spaeter = [];
+  ALLE_NR.forEach((nr) => {
+    const ein = einladung(t, nr);
+    if (!ein || !kannNochLernen(t, nr)) return;
+    const welt = ein === "w" ? "wiese" : "malfeld";
+    const bed = trickBedingung(t, welt, nr);
+    (bed.ok ? bereit : spaeter).push({ nr, welt, bed });
+  });
+  return { bereit, spaeter };
+}
+
+/* einen Trick beibringen — die Einladung ist danach aufgebraucht */
+function lehreTrick(t, nr) {
+  const e = t.wesen[nr] || {};
+  const anzahl = trickZahl(t, nr) + 1;
+  return {
+    ...t,
+    punkte: trickPunkte(t) - TRICK_KOSTEN,
+    wesen: { ...t.wesen, [nr]: { ...e, tr: anzahl, ein: null } },
+  };
+}
+
 function trickPunkte(t) {
   return t.punkte || 0;
 }
@@ -1833,15 +1887,27 @@ function Streifzug({ start, welt, speichern, onEnde }) {
    Das Album ist die Hundertertafel. Man sieht sofort: welche
    Zahlen im 1×1 vorkommen — und welche noch fehlen.
    ============================================================ */
-function Trickbuch({ t, onZurueck }) {
+function Trickbuch({ t, speichern, onZurueck }) {
+  const [gelernt, setGelernt] = useState(null);
   const koennen = ALLE_NR.filter((nr) => trickZahl(t, nr) > 0);
   const moeglich = ALLE_NR.reduce((n, nr) => n + trickListe(nr).length, 0);
   const habe = tricksGesamt(t);
+  const { bereit, spaeter } = wartenAufTrick(t);
+  const punkte = trickPunkte(t);
+
+  function lehren(nr) {
+    if (punkte < TRICK_KOSTEN) return;
+    const trick = trickListe(nr)[trickZahl(t, nr)];
+    Ton.orden();
+    speichern(lehreTrick(t, nr));
+    setGelernt({ nr, trick });
+  }
+
   return (
     <div className="mx-auto max-w-md p-4">
       <Kopf
         titel="Trickbuch"
-        unter={habe + " von " + moeglich + " Tricks beigebracht"}
+        unter={habe + " von " + moeglich + " Tricks · " + punkte + " ⚡"}
         onZurueck={onZurueck}
       />
       <p className="mb-3 rounded-2xl bg-emerald-900/60 p-3 text-sm text-emerald-200">
@@ -1850,6 +1916,76 @@ function Trickbuch({ t, onZurueck }) {
         Lernen werden deine Wesen aber nur, wenn du sie auf dem Streifzug
         besuchst.
       </p>
+
+      {gelernt && (
+        <div className="a-auftauchen mb-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3">
+          <p className="text-center font-black text-amber-200">
+            {WESEN[gelernt.nr].bild} {WESEN[gelernt.nr].name} kann jetzt{" "}
+            {gelernt.trick.bild} {gelernt.trick.name}!
+          </p>
+        </div>
+      )}
+
+      {bereit.length > 0 && (
+        <div className="mb-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3">
+          <p className="text-center text-xs font-bold uppercase tracking-widest text-amber-300">
+            {bereit.length === 1
+              ? "Ein Wesen wartet auf einen Trick"
+              : bereit.length + " Wesen warten auf einen Trick"}
+          </p>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {bereit.map(({ nr }) => {
+              const naechster = trickListe(nr)[trickZahl(t, nr)];
+              const reicht = punkte >= TRICK_KOSTEN;
+              return (
+                <button
+                  key={nr}
+                  onClick={() => lehren(nr)}
+                  disabled={!reicht}
+                  className={
+                    "kein-blau rounded-2xl p-2 text-center transition " +
+                    (reicht
+                      ? "bg-emerald-800/70 hover:bg-emerald-700 active:translate-y-px"
+                      : "bg-emerald-900/50 opacity-50")
+                  }
+                >
+                  <div className="text-3xl">{WESEN[nr].bild}</div>
+                  <p className="truncate text-xs font-bold text-emerald-50">
+                    {WESEN[nr].name}
+                  </p>
+                  <p className="mt-1 text-[10px] leading-tight text-amber-300">
+                    lernt {naechster.bild}
+                    <br />
+                    {naechster.name}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-center text-xs text-amber-200">
+            {punkte >= TRICK_KOSTEN
+              ? "Ein Trick kostet " + TRICK_KOSTEN + " ⚡ — du hast " + punkte + "."
+              : "Noch " + (TRICK_KOSTEN - punkte) + " ⚡, dann kannst du."}
+          </p>
+        </div>
+      )}
+
+      {spaeter.length > 0 && (
+        <div className="mb-3 rounded-2xl bg-emerald-900/60 p-3">
+          <p className="text-xs font-bold uppercase tracking-widest text-emerald-300">
+            Die brauchen noch etwas
+          </p>
+          {spaeter.map(({ nr, bed }) => (
+            <p key={nr} className="mt-1 text-sm text-emerald-200">
+              <span className="text-lg">{WESEN[nr].bild}</span>{" "}
+              <b>{WESEN[nr].name}</b> — {bed.was}
+            </p>
+          ))}
+          <p className="mt-2 text-xs text-emerald-400">
+            Nimm sie mit auf den Streifzug. Ein Trick will verdient sein!
+          </p>
+        </div>
+      )}
       {koennen.length === 0 ? (
         <p className="rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200">
           Noch kann keines deiner Wesen einen Trick. Hol dir ⚡ in der Arena —
@@ -1889,13 +2025,14 @@ function Trickbuch({ t, onZurueck }) {
   );
 }
 
-function Zahlodex({ t, onZurueck }) {
+function Zahlodex({ t, speichern, onZurueck }) {
   const [gewaehlt, setGewaehlt] = useState(null);
   const [buch, setBuch] = useState(false);
   const gefangen = anzahlGefangen(t);
+  const wartend = wartenAufTrick(t).bereit.length;
 
   if (gewaehlt) return <WesenDetail t={t} nr={gewaehlt} onZurueck={() => setGewaehlt(null)} />;
-  if (buch) return <Trickbuch t={t} onZurueck={() => setBuch(false)} />;
+  if (buch) return <Trickbuch t={t} speichern={speichern} onZurueck={() => setBuch(false)} />;
 
   const zellen = [];
   for (let n = 1; n <= 100; n++) {
@@ -1939,8 +2076,9 @@ function Zahlodex({ t, onZurueck }) {
         <div className="grid grid-cols-10 gap-1">{zellen}</div>
       </div>
       <div className="mt-3">
-        <Knopf art="ruhig" klein onClick={() => setBuch(true)}>
+        <Knopf art={wartend > 0 ? "haupt" : "ruhig"} klein onClick={() => setBuch(true)}>
           ✨ Trickbuch — {tricksGesamt(t)} Tricks
+          {wartend > 0 ? " · " + wartend + (wartend === 1 ? " wartet!" : " warten!") : ""}
         </Knopf>
       </div>
       <p className="mt-3 text-center text-xs text-emerald-400">
@@ -2532,6 +2670,9 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
       if (schnell) {
         setSchnelle((s2) => [...new Set([...s2, nr])]);
         setSchnellZahl((x) => x + 1);
+        /* Wer schnell war, ist eingeladen — einlösbar auch später im
+           Trickbuch. */
+        if (WESEN[nr]) setT((alt2) => mitEinladung(alt2, welt, nr));
       }
       schnell ? Ton.blitz() : Ton.richtig();
     } else {
@@ -2607,15 +2748,9 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   function lehren(nr) {
     const bed = trickBedingung(t, welt, nr);
     if (trickPunkte(t) < TRICK_KOSTEN || !bed.ok) return;
-    const e = t.wesen[nr] || {};
-    const anzahl = trickZahl(t, nr) + 1;
-    const trick = trickListe(nr)[anzahl - 1];
+    const trick = trickListe(nr)[trickZahl(t, nr)];
     Ton.orden();
-    setT({
-      ...t,
-      punkte: trickPunkte(t) - TRICK_KOSTEN,
-      wesen: { ...t.wesen, [nr]: { ...e, tr: anzahl } },
-    });
+    setT(lehreTrick(t, nr));
     setGelehrt((g) => [...g, { nr, trick }]);
   }
 
@@ -2682,8 +2817,8 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
 
         {bereit.length === 0 && nochNicht.length === 0 ? (
           <p className="rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200">
-            Lernen dürfen nur die Wesen, die in diesem Kampf blitzschnell waren.
-            Diesmal war keines dabei — deine ⚡ bleiben dir aber erhalten.
+            Lernen dürfen nur Wesen, die im Kampf blitzschnell waren. Diesmal war
+            keines dabei — deine ⚡ bleiben dir aber erhalten.
           </p>
         ) : (
           <>
@@ -2737,7 +2872,11 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
             )}
           </>
         )}
-        <div className="mt-5">
+        <p className="mt-4 text-center text-xs text-emerald-400">
+          Du musst dich nicht jetzt entscheiden: Wer hier blitzschnell war,
+          wartet im Trickbuch auf dich, bis du genug ⚡ hast.
+        </p>
+        <div className="mt-3">
           <Knopf onClick={onEnde}>Fertig</Knopf>
         </div>
       </div>
@@ -3495,7 +3634,7 @@ function App() {
     return (
       <>
         <Stile />
-        <Zahlodex t={t} onZurueck={() => setAnsicht("menue")} />
+        <Zahlodex t={t} speichern={speichereTrainer} onZurueck={() => setAnsicht("menue")} />
       </>
     );
   }
@@ -3585,6 +3724,14 @@ function App() {
               ))}
             </div>
           </div>
+        )}
+
+        {wartenAufTrick(t).bereit.length > 0 && trickPunkte(t) >= TRICK_KOSTEN && (
+          <p className="a-funkeln mt-3 rounded-2xl bg-amber-400/20 p-3 text-center text-sm font-bold text-amber-200">
+            ✨ {wartenAufTrick(t).bereit.length}{" "}
+            {wartenAufTrick(t).bereit.length === 1 ? "Wesen wartet" : "Wesen warten"} im
+            Trickbuch auf einen Trick!
+          </p>
         )}
 
         {dranGesamt > 0 && (
