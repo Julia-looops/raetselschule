@@ -102,6 +102,9 @@ von dort genommen — ab dann baut es auch ohne Internet.
 - **Die Wesen** stehen in `WESEN_LISTE` (Nummer, Name, Bild). Nummer = Ergebnis.
   Namen und Bilder darf man frei ändern; Typ, Seltenheit und Entwicklung werden
   daraus **gerechnet** und passen sich von selbst an.
+- **Sicherung**: `alsCode` / `ausCode` (`ZAHLODEX1:` + base64 des ganzen
+  Spielstands), `namenAlsCode` / `namenAusCode` (`ZAHLODEXNAMEN1:`, nur die
+  Namen). `sicherungsStand` entscheidet, wann das Hauptmenü mahnt.
 - **Karteikasten**: `FANG_TREFFER` (dreimal richtig = gefangen) und `ABSTAND`
   (Wiedersehen nach 10 Min, 1 Tag, 3 Tagen, 1 Woche, 3 Wochen, in Minuten).
   Wie weit ein Wesen springt, entscheidet `nachWiedersehen` anhand des Tempos
@@ -125,8 +128,22 @@ von dort genommen — ab dann baut es auch ohne Internet.
 - **Tricks**: `TRICK_KOSTEN` (⚡ je Trick), `MAX_TRICKS` pro Wesen, Namen und
   Bilder in `TRICK_REIHE`. Wer wann lernen darf, entscheidet `trickBedingung`:
   erster Trick sofort, zweiter bei voller Erforschung und Stufe 3, dritter erst
-  wenn `dauer` gesetzt ist — also ein Wiedersehen nach der längsten Pause
-  bestanden wurde.
+  nach `DAUER_NOETIG` überstandenen langen Pausen (Vorgabe 2). `dauer` ist ein
+  Zähler; hochgezählt wird nur in `nachWiedersehen` und nur dann, wenn das
+  Wiedersehen wirklich fällig **war** und blitzschnell oder normal beantwortet
+  wurde. Zögern, Beere und ein Aufruf vor der Zeit zählen nicht — sonst lässt
+  sich die Leiter in einer Sitzung durchlaufen.
+- **Der Pokal**: `POKAL` (drei Stufen) und `POKAL_PAUSE` (3/7/21 Tage). Er hängt
+  über den Sternen: drei Sterne starten die Uhr (`mitPokalStart`), danach gibt
+  `pokalStand` frei, wenn die Pause abgelaufen ist. Ein Titelkampf ist ein
+  normaler Kampf mit `arena.titel` und zählt ab `meisterPunkte`; Scheitern
+  kostet nichts, gewartet wird nur zwischen Erfolgen. `meisterkrone`, wenn alle
+  Arenen Gold tragen.
+- **Eigene Namen**: `t.namen[nr] = { name, bild }` und `t.angriffe[nr][i]`
+  liegen als Ebene über `WESEN_LISTE` und `TRICK_REIHE`. Gelesen wird
+  ausschließlich über `wName`, `wBild` und `aName` — wer neue Anzeigen baut,
+  darf `WESEN[nr].name` nicht direkt verwenden. Namen sind reine Deko; welche
+  Rechnung zu welchem Wesen gehört, hängt allein an der Nummer.
 - **Reifen**: `LEITER` enthält drei Abstandsleitern (leicht/mittel/schwer),
   `reifeArt` stuft ein Wesen nach seinem leichtesten Rechenweg ein. Schwere
   Wesen kommen früher wieder, haben aber mehr Stufen — sie kommen also öfter

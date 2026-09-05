@@ -893,14 +893,17 @@ function trickBedingung(t, welt, nr) {
       was: ""
     };
   }
-  if (f && f.dauer) return {
+  /* Der dritte Trick verlangt Ausdauer: das Wesen muss die lange Pause
+     zweimal überstanden haben. Einmal kann Glück sein. */
+  const d = dauerZahl(f);
+  if (d >= DAUER_NOETIG) return {
     ok: true,
     was: ""
   };
   const max = maxStufe(welt, nr);
   return {
     ok: false,
-    was: f && f.s >= max ? "die lange Pause überstehen — es meldet sich von selbst" : "erst Stufe " + max + " erreichen (jetzt " + (f ? f.s : 0) + "), dann die lange Pause"
+    was: d > 0 ? "noch " + (DAUER_NOETIG - d) + "× die lange Pause überstehen (" + d + " von " + DAUER_NOETIG + " geschafft)" : f && f.s >= max ? "die lange Pause überstehen — es meldet sich von selbst (0 von " + DAUER_NOETIG + ")" : "erst Stufe " + max + " erreichen (jetzt " + (f ? f.s : 0) + "), dann die lange Pause"
   };
 }
 
@@ -1034,15 +1037,34 @@ function tempoVon(dauer, mitHilfe, richtig) {
   if (dauer >= LANGSAM_MS) return "langsam";
   return "normal";
 }
+
+/* Wie oft hat dieses Wesen die lange Pause schon überstanden?
+   Früher war das ein Ja/Nein — alte Stände werden als "einmal" gelesen. */
+const DAUER_NOETIG = 2; // so oft für den dritten Trick
+
+function dauerZahl(f) {
+  if (!f || !f.dauer) return 0;
+  return f.dauer === true ? 1 : f.dauer;
+}
 function nachWiedersehen(f, tempo, welt, nr) {
   const n = {
     ...f
   };
   const max = maxStufe(welt, nr);
   /* Kam dieses Wiedersehen aus der obersten Stufe? Dann ist gerade die
-     lange Pause überstanden — das ist der Beweis, dass es wirklich
-     sitzt, und die Bedingung für den dritten Trick. */
-  if (tempo !== "falsch" && f.s >= max) n.dauer = true;
+     lange Pause überstanden — der Beweis, dass es wirklich sitzt.
+      Zwei Bedingungen, die früher fehlten und den dritten Trick in
+     Minuten statt in Wochen erreichbar gemacht haben:
+      1. Die Pause muss tatsächlich abgelaufen sein. Der Arenakampf ruft
+        diese Stelle auch für Wesen auf, die noch gar nicht dran wären —
+        dann ist nichts überstanden.
+     2. Sie muss es richtig gewusst haben, ohne Beere und ohne Zögern.
+        Wer nach drei Wochen erst überlegen muss, hat den Beweis nicht
+        erbracht — nur den nächsten Termin verdient. */
+  const faellig = (f.f || 0) <= Date.now();
+  if (faellig && (tempo === "blitz" || tempo === "normal") && f.s >= max) {
+    n.dauer = dauerZahl(f) + 1;
+  }
   if (tempo === "falsch") {
     n.s = Math.max(1, n.s - 1);
     n.f = faelligIn(welt, nr, 1);
@@ -1399,7 +1421,7 @@ function beeren(fakt) {
    Florentina und ihre Freunde dasselbe Gerät benutzen können.
    ============================================================ */
 /* wird beim Bauen ersetzt, siehe tools/build.mjs */
-const FASSUNG = "20 · 4.9.2026";
+const FASSUNG = "21 · 5.9.2026";
 const SPEICHER = "florentina-zahlodex";
 const TRAINER_BILDER = ["🐾", "🧢", "🎒", "🪄", "🛼", "🦄", "🚀", "🍀"];
 function leererTrainer(bild) {
@@ -1740,7 +1762,7 @@ function TrickReihe({
   }, alle.map((tr, k) => /*#__PURE__*/React.createElement("span", {
     key: k,
     className: "rounded-full px-2 py-0.5 text-xs font-bold " + (k < kann.length ? "bg-amber-300 text-emerald-950" : "bg-emerald-200/60 text-emerald-500")
-  }, k < kann.length ? tr.bild + " " + tr.name : "🔒 " + tr.name)));
+  }, k < kann.length ? tr.bild + " " + aName(t, nr, k, tr) : "🔒 " + tr.name)));
 }
 function WesenKarte({
   nr,
@@ -1756,9 +1778,11 @@ function WesenKarte({
     className: "text-xs font-black uppercase tracking-widest text-emerald-700"
   }, "Nr. ", nr), /*#__PURE__*/React.createElement("div", {
     className: gross ? "text-8xl" : "text-6xl"
-  }, w.bild), /*#__PURE__*/React.createElement("p", {
+  }, wBild(t, nr)), /*#__PURE__*/React.createElement("p", {
     className: "mt-1 text-2xl font-black text-emerald-950"
-  }, w.name), /*#__PURE__*/React.createElement("p", {
+  }, wName(t, nr)), eigenerName(t, nr) && /*#__PURE__*/React.createElement("p", {
+    className: "-mt-0.5 text-[11px] text-emerald-500"
+  }, "eigentlich ", w.name), /*#__PURE__*/React.createElement("p", {
     className: "text-sm font-bold text-emerald-700"
   }, s.text, " ", /*#__PURE__*/React.createElement(Sterne, {
     n: s.sterne
@@ -1809,14 +1833,161 @@ function Ball({
   }));
 }
 
+/* ============================================================
+   EIGENE NAMEN
+
+   Die Fantasienamen sind die Vorgabe, nicht das Gesetz. Wer ein Wesen
+   gefangen hat, darf ihm einen eigenen Namen geben — so wie man einem
+   Pokémon einen Spitznamen gibt. Gespeichert wird das je Trainerkarte;
+   wer nichts ändert, behält Zwanzo.
+
+   Rechnen ändert sich dadurch nie: der Karteikasten kennt nur Zahlen.
+   ============================================================ */
+function wName(t, nr) {
+  const e = t && t.namen && t.namen[nr];
+  if (e && e.name) return e.name;
+  return WESEN[nr] ? WESEN[nr].name : "Nr. " + nr;
+}
+function wBild(t, nr) {
+  const e = t && t.namen && t.namen[nr];
+  if (e && e.bild) return e.bild;
+  return WESEN[nr] ? WESEN[nr].bild : "✨";
+}
+function eigenerName(t, nr) {
+  const e = t && t.namen && t.namen[nr];
+  return !!(e && (e.name || e.bild));
+}
+
+/* Auch die Angriffe darf sie benennen — je Wesen und Trickplatz. */
+function aName(t, nr, i, trick) {
+  const e = t && t.angriffe && t.angriffe[nr];
+  const eigen = e && e[i];
+  return eigen || (trick ? trick.name : "");
+}
+function mitNamen(t, nr, name, bild) {
+  const namen = {
+    ...(t.namen || {})
+  };
+  const sauber = {
+    name: (name || "").trim().slice(0, 16),
+    bild: (bild || "").trim().slice(0, 8)
+  };
+  if (!sauber.name && !sauber.bild) delete namen[nr];else namen[nr] = sauber;
+  return {
+    ...t,
+    namen
+  };
+}
+function mitAngriff(t, nr, i, name) {
+  const alle = {
+    ...(t.angriffe || {})
+  };
+  const eins = {
+    ...(alle[nr] || {})
+  };
+  const sauber = (name || "").trim().slice(0, 20);
+  if (!sauber) delete eins[i];else eins[i] = sauber;
+  if (Object.keys(eins).length === 0) delete alle[nr];else alle[nr] = eins;
+  return {
+    ...t,
+    angriffe: alle
+  };
+}
+
+/* Ein Wesen taufen. Name und Bild — beides freiwillig, beides
+   jederzeit rückgängig. Leer lassen heisst: zurück zur Vorgabe. */
+function Taufe({
+  t,
+  nr,
+  speichern,
+  onFertig,
+  knopf
+}) {
+  const eigen = (t.namen || {})[nr] || {};
+  const [name, setName] = useState(eigen.name || "");
+  const [bild, setBild] = useState(eigen.bild || "");
+  return /*#__PURE__*/React.createElement("div", {
+    className: "rounded-2xl border-2 border-amber-400/60 bg-emerald-900/70 p-3 text-left"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold uppercase tracking-widest text-amber-300"
+  }, "Wie soll es hei\xDFen?"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-2 flex gap-2"
+  }, /*#__PURE__*/React.createElement("input", {
+    value: bild,
+    onChange: e => setBild(e.target.value.slice(0, 8)),
+    placeholder: WESEN[nr] ? WESEN[nr].bild : "✨",
+    className: "w-16 rounded-xl border-2 border-emerald-600 bg-emerald-950 px-2 py-2 text-center text-2xl outline-none focus:border-amber-400"
+  }), /*#__PURE__*/React.createElement("input", {
+    value: name,
+    onChange: e => setName(e.target.value.slice(0, 16)),
+    placeholder: WESEN[nr] ? WESEN[nr].name : "Name",
+    className: "min-w-0 flex-1 rounded-xl border-2 border-emerald-600 bg-emerald-950 px-3 py-2 font-black text-emerald-50 outline-none focus:border-amber-400"
+  })), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 text-[11px] text-emerald-400"
+  }, "Leer lassen = ", WESEN[nr] ? WESEN[nr].bild + " " + WESEN[nr].name : "Vorgabe"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 grid grid-cols-2 gap-2"
+  }, /*#__PURE__*/React.createElement(Knopf, {
+    klein: true,
+    art: "ruhig",
+    onClick: onFertig
+  }, "Abbrechen"), /*#__PURE__*/React.createElement(Knopf, {
+    klein: true,
+    art: "gruen",
+    onClick: () => {
+      speichern(mitNamen(t, nr, name, bild));
+      Ton.tippen();
+      onFertig();
+    }
+  }, knopf || "Speichern")));
+}
+
+/* Dasselbe für einen Angriff. */
+function AngriffTaufe({
+  t,
+  nr,
+  i,
+  trick,
+  speichern,
+  onFertig
+}) {
+  const [name, setName] = useState(aName(t, nr, i, null) || "");
+  return /*#__PURE__*/React.createElement("div", {
+    className: "rounded-2xl border-2 border-amber-400/60 bg-emerald-900/70 p-3 text-left"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold uppercase tracking-widest text-amber-300"
+  }, "Wie soll der Angriff hei\xDFen?"), /*#__PURE__*/React.createElement("input", {
+    value: name,
+    onChange: e => setName(e.target.value.slice(0, 20)),
+    placeholder: trick ? trick.name : "Angriff",
+    className: "mt-2 w-full rounded-xl border-2 border-emerald-600 bg-emerald-950 px-3 py-2 font-black text-emerald-50 outline-none focus:border-amber-400"
+  }), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 text-[11px] text-emerald-400"
+  }, "Leer lassen = ", trick ? trick.bild + " " + trick.name : "Vorgabe"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 grid grid-cols-2 gap-2"
+  }, /*#__PURE__*/React.createElement(Knopf, {
+    klein: true,
+    art: "ruhig",
+    onClick: onFertig
+  }, "Abbrechen"), /*#__PURE__*/React.createElement(Knopf, {
+    klein: true,
+    art: "gruen",
+    onClick: () => {
+      speichern(mitAngriff(t, nr, i, name));
+      Ton.tippen();
+      onFertig();
+    }
+  }, "Speichern")));
+}
+
 /* Schattenriss eines noch nicht gefangenen Wesens */
 function Schatten({
+  t,
   nr,
   gross
 }) {
   return /*#__PURE__*/React.createElement("div", {
     className: (gross ? "text-7xl" : "text-4xl") + " opacity-30 grayscale contrast-0 brightness-0"
-  }, WESEN[nr].bild);
+  }, wBild(t, nr));
 }
 
 /* ============================================================
@@ -1843,6 +2014,7 @@ function Streifzug({
   const [wiederholung, setWiederholung] = useState(false);
   const [wackel, setWackel] = useState(0);
   const [neuGefangen, setNeuGefangen] = useState(null);
+  const [taufeOffen, setTaufeOffen] = useState(false);
   const [fangArt, setFangArt] = useState("neu"); // "neu" oder "seite"
   const [bilanz, setBilanz] = useState({
     richtig: 0,
@@ -2002,6 +2174,7 @@ function Streifzug({
     }));
     if (wurdeGefangen) {
       setNeuGefangen(nr);
+      setTaufeOffen(false);
       setFangArt(warBekannt ? "seite" : "neu");
       /* Bekanntes Wesen: kein Ball, keine Fangszene — es gehört ihr ja
          schon. Nur die Meldung, dass es hier auch etwas kann. */
@@ -2064,9 +2237,9 @@ function Streifzug({
       className: "text-center"
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-4xl"
-    }, WESEN[x].bild), /*#__PURE__*/React.createElement("p", {
+    }, wBild(t, x)), /*#__PURE__*/React.createElement("p", {
       className: "text-xs font-bold text-emerald-100"
-    }, WESEN[x].name))))), bilanz.gefangen.length > 0 && /*#__PURE__*/React.createElement("div", {
+    }, wName(t, x)))))), bilanz.gefangen.length > 0 && /*#__PURE__*/React.createElement("div", {
       className: "mt-4 rounded-2xl border-2 border-amber-400/50 p-3"
     }, /*#__PURE__*/React.createElement("p", {
       className: "text-xs font-bold uppercase tracking-widest text-amber-300"
@@ -2077,15 +2250,15 @@ function Streifzug({
       className: "text-center"
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-4xl"
-    }, WESEN[x].bild), /*#__PURE__*/React.createElement("p", {
+    }, wBild(t, x)), /*#__PURE__*/React.createElement("p", {
       className: "text-xs font-bold text-emerald-100"
-    }, WESEN[x].name))))), neuErforscht.length > 0 && /*#__PURE__*/React.createElement("div", {
+    }, wName(t, x)))))), neuErforscht.length > 0 && /*#__PURE__*/React.createElement("div", {
       className: "mt-4 rounded-2xl border-2 border-emerald-400/40 p-3"
     }, /*#__PURE__*/React.createElement("p", {
       className: "text-xs font-bold uppercase tracking-widest text-emerald-300"
     }, "Vollst\xE4ndig erforscht \u2728"), /*#__PURE__*/React.createElement("p", {
       className: "mt-1 text-sm text-emerald-100"
-    }, neuErforscht.map(x => WESEN[x].name).join(", "), " \u2014 jede Rechnung hat gesessen.")), jetztReif.length > 0 && /*#__PURE__*/React.createElement("div", {
+    }, neuErforscht.map(x => wName(t, x)).join(", "), " \u2014 jede Rechnung hat gesessen.")), jetztReif.length > 0 && /*#__PURE__*/React.createElement("div", {
       className: "mt-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3"
     }, /*#__PURE__*/React.createElement("p", {
       className: "text-xs font-bold uppercase tracking-widest text-amber-300"
@@ -2096,9 +2269,9 @@ function Streifzug({
       className: "text-center"
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-3xl"
-    }, WESEN[x].bild), /*#__PURE__*/React.createElement("p", {
+    }, wBild(t, x)), /*#__PURE__*/React.createElement("p", {
       className: "text-xs font-bold text-emerald-100"
-    }, WESEN[x].name)))), /*#__PURE__*/React.createElement("p", {
+    }, wName(t, x))))), /*#__PURE__*/React.createElement("p", {
       className: "mt-2 text-xs text-amber-200"
     }, "Nimm sie mit in die Arena \u2014 wer dort blitzschnell ist, darf lernen.")), bilanz.falsch > 0 && /*#__PURE__*/React.createElement("p", {
       className: "mt-4 text-sm text-emerald-200"
@@ -2134,7 +2307,7 @@ function Streifzug({
       className: "text-sm font-black uppercase tracking-widest text-amber-300"
     }, fangArt === "seite" ? "Neue Seite!" : "Gefangen!"), fangArt === "seite" && /*#__PURE__*/React.createElement("p", {
       className: "mt-1 text-emerald-200"
-    }, WESEN[neuGefangen].name, " kennt sich auch", " ", welt === "malfeld" ? "im Malfeld" : "auf dem Wiesenweg", " aus."), /*#__PURE__*/React.createElement("div", {
+    }, wName(t, neuGefangen), " kennt sich auch", " ", welt === "malfeld" ? "im Malfeld" : "auf dem Wiesenweg", " aus."), /*#__PURE__*/React.createElement("div", {
       className: "mt-3"
     }, /*#__PURE__*/React.createElement(WesenKarte, {
       nr: neuGefangen,
@@ -2144,11 +2317,22 @@ function Streifzug({
       className: "mt-4 rounded-2xl bg-emerald-900/70 p-3 text-left"
     }, /*#__PURE__*/React.createElement("p", {
       className: "text-xs font-bold uppercase tracking-widest text-emerald-300"
-    }, "Rechnungen, die ", WESEN[neuGefangen].name, " rufen"), /*#__PURE__*/React.createElement(Rechnungen, {
+    }, "Rechnungen, die ", wName(t, neuGefangen), " rufen"), /*#__PURE__*/React.createElement(Rechnungen, {
       liste: fakten(welt, neuGefangen).slice(0, 6).map(x => x.text),
       mehr: fakten(welt, neuGefangen).length > 6
-    })), /*#__PURE__*/React.createElement("div", {
-      className: "mt-4"
+    })), taufeOffen ? /*#__PURE__*/React.createElement("div", {
+      className: "a-rutschen mt-4"
+    }, /*#__PURE__*/React.createElement(Taufe, {
+      t: t,
+      nr: neuGefangen,
+      speichern: setT,
+      knopf: "So hei\xDFt es!",
+      onFertig: () => setTaufeOffen(false)
+    })) : /*#__PURE__*/React.createElement("button", {
+      onClick: () => setTaufeOffen(true),
+      className: "kein-blau mt-4 w-full rounded-2xl border-2 border-amber-400/60 py-2 text-sm font-bold text-amber-200"
+    }, "\u270F\uFE0F Willst du ihm einen Namen geben?"), /*#__PURE__*/React.createElement("div", {
+      className: "mt-3"
     }, /*#__PURE__*/React.createElement(Knopf, {
       onClick: () => {
         setPhase("richtig");
@@ -2178,14 +2362,15 @@ function Streifzug({
   }, pos + 1, "/", liste.length)), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-3 rounded-2xl bg-emerald-900/60 p-3"
   }, wild && !schonBekannt ? /*#__PURE__*/React.createElement(Schatten, {
+    t: t,
     nr: nr
   }) : /*#__PURE__*/React.createElement("div", {
     className: "text-4xl"
-  }, WESEN[nr].bild), /*#__PURE__*/React.createElement("div", {
+  }, wBild(t, nr)), /*#__PURE__*/React.createElement("div", {
     className: "min-w-0 flex-1"
   }, schonBekannt ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
     className: "text-sm font-black text-amber-300"
-  }, WESEN[nr].name), /*#__PURE__*/React.createElement("p", {
+  }, wName(t, nr)), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-emerald-300"
   }, "zeigt dir eine neue Seite \u2014", " ", welt === "malfeld" ? "im Malfeld" : "auf dem Wiesenweg")) : wild ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
     className: "text-sm font-black text-amber-300"
@@ -2193,7 +2378,7 @@ function Streifzug({
     className: "text-xs text-emerald-300"
   }, "Fang es mit ", FANG_TREFFER, " richtigen Rechnungen.")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
     className: "text-sm font-black text-amber-300"
-  }, WESEN[nr].name), /*#__PURE__*/React.createElement("p", {
+  }, wName(t, nr)), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-emerald-300"
   }, neueRechnung ? "zeigt dir eine neue Rechnung ✨" : "❤️".repeat(f.s) + " will dich wiedersehen"))), wild && /*#__PURE__*/React.createElement("div", {
     className: "flex gap-1"
@@ -2282,6 +2467,7 @@ function Trickbuch({
   onZurueck
 }) {
   const [gelernt, setGelernt] = useState(null);
+  const [angriffTaufe, setAngriffTaufe] = useState(false);
   const koennen = ALLE_NR.filter(nr => trickZahl(t, nr) > 0);
   const moeglich = ALLE_NR.reduce((n, nr) => n + trickListe(nr).length, 0);
   const habe = tricksGesamt(t);
@@ -2292,13 +2478,16 @@ function Trickbuch({
   const punkte = trickPunkte(t);
   function lehren(nr) {
     if (punkte < TRICK_KOSTEN) return;
-    const trick = trickListe(nr)[trickZahl(t, nr)];
+    const i = trickZahl(t, nr);
+    const trick = trickListe(nr)[i];
     Ton.orden();
     speichern(lehreTrick(t, nr));
     setGelernt({
       nr,
-      trick
+      trick,
+      i
     });
+    setAngriffTaufe(false);
   }
   return /*#__PURE__*/React.createElement("div", {
     className: "mx-auto max-w-md p-4"
@@ -2312,7 +2501,19 @@ function Trickbuch({
     className: "a-auftauchen mb-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-center font-black text-amber-200"
-  }, WESEN[gelernt.nr].bild, " ", WESEN[gelernt.nr].name, " kann jetzt", " ", gelernt.trick.bild, " ", gelernt.trick.name, "!")), bereit.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, wBild(t, gelernt.nr), " ", wName(t, gelernt.nr), " kann jetzt", " ", gelernt.trick.bild, " ", aName(t, gelernt.nr, gelernt.i, gelernt.trick), "!"), angriffTaufe ? /*#__PURE__*/React.createElement("div", {
+    className: "a-rutschen mt-2"
+  }, /*#__PURE__*/React.createElement(AngriffTaufe, {
+    t: t,
+    nr: gelernt.nr,
+    i: gelernt.i,
+    trick: gelernt.trick,
+    speichern: speichern,
+    onFertig: () => setAngriffTaufe(false)
+  })) : /*#__PURE__*/React.createElement("button", {
+    onClick: () => setAngriffTaufe(true),
+    className: "kein-blau mt-2 w-full rounded-xl border-2 border-amber-400/50 py-1.5 text-xs font-bold text-amber-200"
+  }, "\u270F\uFE0F Angriff umbenennen")), bereit.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "mb-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-center text-xs font-bold uppercase tracking-widest text-amber-300"
@@ -2330,9 +2531,9 @@ function Trickbuch({
       className: "kein-blau rounded-2xl p-2 text-center transition " + (reicht ? "bg-emerald-800/70 hover:bg-emerald-700 active:translate-y-px" : "bg-emerald-900/50 opacity-50")
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-3xl"
-    }, WESEN[nr].bild), /*#__PURE__*/React.createElement("p", {
+    }, wBild(t, nr)), /*#__PURE__*/React.createElement("p", {
       className: "truncate text-xs font-bold text-emerald-50"
-    }, WESEN[nr].name), /*#__PURE__*/React.createElement("p", {
+    }, wName(t, nr)), /*#__PURE__*/React.createElement("p", {
       className: "mt-1 text-[10px] leading-tight text-amber-300"
     }, "lernt ", naechster.bild, /*#__PURE__*/React.createElement("br", null), naechster.name));
   })), /*#__PURE__*/React.createElement("p", {
@@ -2349,7 +2550,7 @@ function Trickbuch({
     className: "mt-1 text-sm text-emerald-200"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-lg"
-  }, WESEN[nr].bild), " ", /*#__PURE__*/React.createElement("b", null, WESEN[nr].name), " \u2014 ", bed.was)), /*#__PURE__*/React.createElement("p", {
+  }, wBild(t, nr)), " ", /*#__PURE__*/React.createElement("b", null, wName(t, nr)), " \u2014 ", bed.was)), /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-xs text-emerald-400"
   }, "Nimm sie mit auf den Streifzug. Ein Trick will verdient sein!")), koennen.length === 0 ? /*#__PURE__*/React.createElement("p", {
     className: "rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200"
@@ -2360,16 +2561,16 @@ function Trickbuch({
     className: "flex items-center gap-3 rounded-2xl bg-emerald-900/60 p-3"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-3xl"
-  }, WESEN[nr].bild), /*#__PURE__*/React.createElement("div", {
+  }, wBild(t, nr)), /*#__PURE__*/React.createElement("div", {
     className: "min-w-0 flex-1"
   }, /*#__PURE__*/React.createElement("p", {
     className: "font-black text-emerald-50"
-  }, WESEN[nr].name), /*#__PURE__*/React.createElement("div", {
+  }, wName(t, nr)), /*#__PURE__*/React.createElement("div", {
     className: "mt-1 flex flex-wrap gap-1"
   }, trickListe(nr).map((tr, k) => /*#__PURE__*/React.createElement("span", {
     key: k,
     className: "rounded-full px-2 py-0.5 text-[11px] font-bold " + (k < trickZahl(t, nr) ? "bg-amber-300 text-emerald-950" : "bg-emerald-800 text-emerald-500")
-  }, k < trickZahl(t, nr) ? tr.bild + " " + tr.name : "🔒 " + tr.name)))), /*#__PURE__*/React.createElement("span", {
+  }, k < trickZahl(t, nr) ? tr.bild + " " + aName(t, nr, k, tr) : "🔒 " + tr.name)))), /*#__PURE__*/React.createElement("span", {
     className: "text-lg font-black text-amber-300"
   }, "+", trickZahl(t, nr) * PUNKTE_TRICK)))));
 }
@@ -2386,6 +2587,7 @@ function Zahlodex({
   if (gewaehlt) return /*#__PURE__*/React.createElement(WesenDetail, {
     t: t,
     nr: gewaehlt,
+    speichern: speichern,
     onZurueck: () => setGewaehlt(null)
   });
   if (buch) return /*#__PURE__*/React.createElement(Trickbuch, {
@@ -2408,7 +2610,7 @@ function Zahlodex({
       key: n,
       onClick: () => setGewaehlt(n),
       className: "kein-blau relative aspect-square rounded-lg text-lg leading-none transition sm:text-xl " + (hab ? "bg-emerald-700/70 hover:bg-emerald-600" : "bg-emerald-900/80")
-    }, hab ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", null, w.bild), trickZahl(t, n) > 0 && /*#__PURE__*/React.createElement("span", {
+    }, hab ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", null, wBild(t, n)), trickZahl(t, n) > 0 && /*#__PURE__*/React.createElement("span", {
       className: "absolute right-0 top-0 text-[8px]"
     }, "\u2728")) : /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] font-bold text-emerald-600"
@@ -2468,8 +2670,10 @@ function TrickZiel({
 function WesenDetail({
   t,
   nr,
+  speichern,
   onZurueck
 }) {
+  const [taufe, setTaufe] = useState(false);
   const l = linie(nr);
   const fw = holF(t, "wiese", nr);
   const fm = holF(t, "malfeld", nr);
@@ -2493,16 +2697,29 @@ function WesenDetail({
   return /*#__PURE__*/React.createElement("div", {
     className: "mx-auto max-w-md p-4"
   }, /*#__PURE__*/React.createElement(Kopf, {
-    titel: hab ? WESEN[nr].name : "Unbekanntes Wesen",
+    titel: hab ? wName(t, nr) : "Unbekanntes Wesen",
     unter: "Nr. " + nr,
     onZurueck: onZurueck
-  }), hab ? /*#__PURE__*/React.createElement(WesenKarte, {
+  }), hab ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(WesenKarte, {
     nr: nr,
     gross: true,
     t: t
-  }) : /*#__PURE__*/React.createElement("div", {
+  }), taufe ? /*#__PURE__*/React.createElement("div", {
+    className: "a-rutschen mt-2"
+  }, /*#__PURE__*/React.createElement(Taufe, {
+    t: t,
+    nr: nr,
+    speichern: speichern,
+    onFertig: () => setTaufe(false)
+  })) : /*#__PURE__*/React.createElement("button", {
+    onClick: () => setTaufe(true),
+    className: "kein-blau mt-2 w-full rounded-2xl border-2 border-emerald-600 py-2 text-sm font-bold text-emerald-200"
+  }, "\u270F\uFE0F Umbenennen", eigenerName(t, nr) && /*#__PURE__*/React.createElement("span", {
+    className: "text-emerald-400"
+  }, " \xB7 hei\xDFt eigentlich ", WESEN[nr].name))) : /*#__PURE__*/React.createElement("div", {
     className: "rounded-3xl border-4 border-emerald-700 bg-emerald-900/60 p-8 text-center"
   }, /*#__PURE__*/React.createElement(Schatten, {
+    t: t,
     nr: nr,
     gross: true
   }), /*#__PURE__*/React.createElement("p", {
@@ -2525,9 +2742,9 @@ function WesenDetail({
     className: "rounded-xl px-2 py-1 text-center " + (x === nr ? "bg-amber-400/20 ring-2 ring-amber-400" : "bg-emerald-800/60")
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-2xl"
-  }, istGefangen(t, x) ? WESEN[x].bild : /*#__PURE__*/React.createElement("span", {
+  }, istGefangen(t, x) ? wBild(t, x) : /*#__PURE__*/React.createElement("span", {
     className: "opacity-30 grayscale brightness-0"
-  }, WESEN[x].bild)), /*#__PURE__*/React.createElement("p", {
+  }, wBild(t, x))), /*#__PURE__*/React.createElement("p", {
     className: "text-[10px] font-bold text-emerald-200"
   }, x))))), l.length === 1 && /*#__PURE__*/React.createElement("p", {
     className: "mt-1 text-xs text-emerald-400"
@@ -2650,6 +2867,111 @@ function meisterPunkte(a) {
 }
 
 /* Wie viele Wesen der Reihe hat das Kind schon? */
+/* ============================================================
+   DER POKAL
+
+   Die drei Sterne messen Können: alles richtig, alles blitzschnell,
+   an einem einzigen Nachmittag holbar. Genau das war das Problem —
+   nach der Hälfte der Arenen war nichts mehr zu holen.
+
+   Der Pokal misst etwas anderes: dass es auch nach Wochen noch sitzt.
+   Er hat drei Stufen, und zwischen ihnen liegt eine Pause, die man
+   nicht abkürzen kann. Die Arena selbst bleibt immer offen — gesperrt
+   ist nur die nächste Pokalstufe, und ein misslungener Titelkampf
+   kostet nichts. Gewartet wird zwischen Erfolgen, nicht zwischen
+   Versuchen.
+   ============================================================ */
+const POKAL = ["🥉", "🥈", "🥇"];
+const POKAL_PAUSE = [3, 7, 21]; // Tage bis zur jeweils nächsten Stufe
+
+function pokalStand(t, id) {
+  const e = (t.pokal || {})[id];
+  if (!e) return {
+    stufe: 0,
+    laeuft: false,
+    offen: false,
+    freiAb: null,
+    fertig: false
+  };
+  const stufe = e.stufe || 0;
+  if (stufe >= POKAL.length) return {
+    stufe,
+    laeuft: true,
+    offen: false,
+    freiAb: null,
+    fertig: true
+  };
+  const freiAb = (e.seit || 0) + POKAL_PAUSE[stufe] * 86400000;
+  return {
+    stufe,
+    laeuft: true,
+    offen: Date.now() >= freiAb,
+    freiAb,
+    fertig: false
+  };
+}
+function tageBis(ms) {
+  return Math.max(1, Math.ceil((ms - Date.now()) / 86400000));
+}
+
+/* Die Uhr fängt an zu laufen, sobald die Arena drei Sterne trägt. */
+function mitPokalStart(t, id) {
+  if ((t.pokal || {})[id]) return t;
+  return {
+    ...t,
+    pokal: {
+      ...(t.pokal || {}),
+      [id]: {
+        stufe: 0,
+        seit: Date.now()
+      }
+    }
+  };
+}
+function mitPokal(t, id) {
+  const e = (t.pokal || {})[id] || {
+    stufe: 0
+  };
+  return {
+    ...t,
+    pokal: {
+      ...(t.pokal || {}),
+      [id]: {
+        stufe: Math.min(POKAL.length, (e.stufe || 0) + 1),
+        seit: Date.now()
+      }
+    }
+  };
+}
+function pokalGesamt(t) {
+  return ARENEN.reduce((n, a) => n + pokalStand(t, a.id).stufe, 0);
+}
+
+/* Wenn alle zwölf Arenen Gold tragen. Das ist das Ende des Spiels. */
+function meisterkrone(t) {
+  return ARENEN.every(a => pokalStand(t, a.id).stufe >= POKAL.length);
+}
+
+/* Für alles, was schon drei Sterne hat, aber noch keinen Pokaleintrag
+   (also alles von vor dieser Fassung): die Frist beginnt heute. */
+function pokalNachtragen(t) {
+  let neu = t;
+  ARENEN.forEach(a => {
+    if (sterne(neu, a.id) >= 3) neu = mitPokalStart(neu, a.id);
+  });
+  return neu;
+}
+function Pokalreihe({
+  stufe,
+  klein
+}) {
+  return /*#__PURE__*/React.createElement("span", {
+    className: klein ? "text-sm" : "text-lg"
+  }, POKAL.map((b, i) => /*#__PURE__*/React.createElement("span", {
+    key: i,
+    className: i < stufe ? "" : "opacity-20 grayscale"
+  }, b)));
+}
 function arenaReif(t, a) {
   if (a.art === "liga") {
     const hab = ARENEN_OHNE_LIGA.filter(x => t.orden.includes(x.id)).length;
@@ -2789,6 +3111,8 @@ function KampfErklaerung({
   }, "Daf\xFCr gibt es Sterne:"), /*#__PURE__*/React.createElement("p", null, "\u2605 ", ORDEN_PUNKTE, " Punkte \u2014 der Orden geh\xF6rt dir"), /*#__PURE__*/React.createElement("p", null, "\u2605\u2605 ", MEISTER_PUNKTE, " Punkte \u2014 Meister"), /*#__PURE__*/React.createElement("p", null, "\u2605\u2605\u2605 alles richtig und alles blitzschnell"), /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-emerald-300"
   }, "Sei schnell! Wer in der ersten H\xE4lfte der Zeit antwortet, bekommt eine \u26A1 dazu. Damit bringst du deinen Wesen neue Tricks bei."), /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 font-bold text-amber-200"
+  }, "Und dann gibt es den Pokal:"), /*#__PURE__*/React.createElement("p", null, "Wer alle drei Sterne hat, darf um den Pokal k\xE4mpfen \u2014 \uD83E\uDD49, dann \uD83E\uDD48, dann \uD83E\uDD47. Dazwischen liegt aber immer eine Pause: ", POKAL_PAUSE[0], ",", " ", POKAL_PAUSE[1], " und ", POKAL_PAUSE[2], " Tage. Denn der Pokal fragt nicht, ob du es heute kannst \u2014 sondern ob du es in drei Wochen noch kannst. K\xE4mpfen darfst du trotzdem jederzeit."), /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-emerald-300"
   }, "Und wenn du irgendwo feststeckst: Du hast ", BEERE_KAMPF === 1 ? "eine" : BEERE_KAMPF, " ", "\uD83E\uDED0 Beere dabei. Sie h\xE4lt die Uhr an und zeigt dir den Weg. Die Rechnung z\xE4hlt dann ", PUNKTE_BEERE, " statt ", PUNKTE_GRUND, " Punkte \u2014 raten bringt gar nichts."), /*#__PURE__*/React.createElement("div", {
     className: "mt-5"
@@ -2810,7 +3134,7 @@ function ArenaListe({
     className: "mx-auto max-w-md p-4"
   }, /*#__PURE__*/React.createElement(Kopf, {
     titel: "Arenen",
-    unter: sterneGesamt(t) + " von " + ARENEN.length * 3 + " Sternen · " + ARENEN_OHNE_LIGA.filter(x => t.orden.includes(x.id)).length + " von " + ARENEN_OHNE_LIGA.length + " Orden",
+    unter: sterneGesamt(t) + " von " + ARENEN.length * 3 + " Sternen · " + pokalGesamt(t) + " von " + ARENEN.length * POKAL.length + " Pokalen",
     onZurueck: onZurueck,
     rechts: /*#__PURE__*/React.createElement("button", {
       onClick: () => setErklaert(true),
@@ -2828,28 +3152,43 @@ function ArenaListe({
     const rekord = (t.rekord || {})[a.id] || 0;
     const st = sterne(t, a.id);
     const leiter = arenaLeiter(a);
-    return /*#__PURE__*/React.createElement("button", {
-      key: a.id,
+    const pk = pokalStand(t, a.id);
+    return /*#__PURE__*/React.createElement("div", {
+      key: a.id
+    }, /*#__PURE__*/React.createElement("button", {
       disabled: !offen,
       onClick: () => onKampf(a),
       className: "kein-blau flex w-full items-center gap-3 rounded-2xl p-3 text-left transition " + (a.art === "liga" ? offen ? "bg-gradient-to-r from-amber-500/30 to-fuchsia-500/20 ring-2 ring-amber-300" : "bg-emerald-900/50 opacity-60" : hat ? "bg-amber-400/20 ring-2 ring-amber-400" : offen ? "bg-emerald-800/70 hover:bg-emerald-700" : "bg-emerald-900/50 opacity-60")
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-4xl"
-    }, offen ? a.art === "liga" ? "🏆" : WESEN[leiter].bild : "🔒"), /*#__PURE__*/React.createElement("div", {
+    }, offen ? a.art === "liga" ? "🏆" : wBild(t, leiter) : "🔒"), /*#__PURE__*/React.createElement("div", {
       className: "min-w-0 flex-1"
     }, /*#__PURE__*/React.createElement("p", {
       className: "font-black text-emerald-50"
     }, a.name), /*#__PURE__*/React.createElement("p", {
       className: "text-xs text-emerald-300"
-    }, a.art === "liga" ? offen ? "Die sechzehn schwersten Rechnungen. 6·6 bis 9·9. Sonst nichts." : "Erst alle " + reif.noetig + " Orden holen (" + reif.hab + "/" + reif.noetig + ")" : offen ? "Arenaleiter: " + WESEN[leiter].name + (a.art === "reihe" ? " (" + a.reihe + " · " + a.reihe + ")" : "") : "Erst " + reif.noetig + " Wesen aus dieser Reihe fangen (" + reif.hab + "/" + reif.noetig + ")"), offen && /*#__PURE__*/React.createElement("p", {
+    }, a.art === "liga" ? offen ? "Die sechzehn schwersten Rechnungen. 6·6 bis 9·9. Sonst nichts." : "Erst alle " + reif.noetig + " Orden holen (" + reif.hab + "/" + reif.noetig + ")" : offen ? "Arenaleiter: " + wName(t, leiter) + (a.art === "reihe" ? " (" + a.reihe + " · " + a.reihe + ")" : "") : "Erst " + reif.noetig + " Wesen aus dieser Reihe fangen (" + reif.hab + "/" + reif.noetig + ")"), offen && /*#__PURE__*/React.createElement("p", {
       className: "text-xs text-amber-300"
     }, rekord > 0 ? "Rekord " + rekord + " · " : "", teamTricks(t, a) > 0 ? teamTricks(t, a) + (teamTricks(t, a) === 1 ? " Trick" : " Tricks") + " im Team" : "noch keine Tricks im Team")), offen && /*#__PURE__*/React.createElement("div", {
       className: "text-right text-sm leading-tight"
     }, /*#__PURE__*/React.createElement(Sterne3, {
       n: st
-    }), hat && /*#__PURE__*/React.createElement("div", {
+    }), pk.laeuft && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Pokalreihe, {
+      stufe: pk.stufe,
+      klein: true
+    })), hat && !pk.laeuft && /*#__PURE__*/React.createElement("div", {
       className: "text-lg"
-    }, "\uD83C\uDFC5")));
+    }, "\uD83C\uDFC5"))), offen && pk.laeuft && !pk.fertig && (pk.offen ? /*#__PURE__*/React.createElement("button", {
+      onClick: () => onKampf({
+        ...a,
+        titel: true
+      }),
+      className: "a-funkeln kein-blau mt-1 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-300 px-3 py-2 text-sm font-black text-emerald-950 shadow-lg active:translate-y-px"
+    }, "\uD83C\uDFC6 Titelkampf um ", POKAL[pk.stufe], " \u2014 jetzt!") : /*#__PURE__*/React.createElement("p", {
+      className: "mt-1 text-center text-[11px] text-emerald-500"
+    }, POKAL[pk.stufe], " Titelkampf in ", tageBis(pk.freiAb), " ", tageBis(pk.freiAb) === 1 ? "Tag" : "Tagen")), offen && pk.fertig && /*#__PURE__*/React.createElement("p", {
+      className: "mt-1 text-center text-[11px] font-bold text-amber-300"
+    }, "\uD83E\uDD47 Gold \u2014 diese Arena geh\xF6rt dir."));
   })));
 }
 
@@ -2945,7 +3284,7 @@ function ArenaBank({
       className: "relative rounded-lg px-1 py-0.5 transition " + (aktiv === nr ? "scale-125 bg-amber-400/30 ring-2 ring-amber-400" : "")
     }, /*#__PURE__*/React.createElement("span", {
       className: "text-lg " + (hab ? "" : "opacity-25 grayscale brightness-0")
-    }, WESEN[nr].bild), tr > 0 && /*#__PURE__*/React.createElement("span", {
+    }, wBild(t, nr)), tr > 0 && /*#__PURE__*/React.createElement("span", {
       className: "absolute -right-0.5 -top-1 text-[9px]"
     }, "✨".repeat(Math.min(tr, 3))));
   }));
@@ -2965,6 +3304,7 @@ function ArenaKampf({
   const [luft, setLuft] = useState(LUFT_HOLEN);
   const [pause, setPause] = useState(false);
   const [geschnauft, setGeschnauft] = useState(false);
+  const [vorherPokal] = useState(() => pokalStand(start, arena.id).stufe);
   const [beerenRest, setBeerenRest] = useState(BEERE_KAMPF);
   const [geholfen, setGeholfen] = useState(false); // Beere in dieser Rechnung
   const [tipp, setTipp] = useState(0); // welche Beere gerade offen ist
@@ -2989,6 +3329,12 @@ function ArenaKampf({
   const frage = fragen[Math.min(i, fragen.length - 1)];
   const dauer = blitzZeit(frage);
   const tipps = beeren(frage);
+  /* Ein Titelkampf zählt ab der Meister-Schwelle — dieselbe wie für
+     den zweiten Stern. Scheitern kostet nichts, nur die Pokalstufe
+     bleibt dann liegen. */
+  const titel = !!arena.titel;
+  const titelSchwelle = meisterPunkte(arena);
+  const titelGewonnen = titel && punkte >= titelSchwelle && vorherPokal < POKAL.length;
   const leiterNr = arenaLeiter(arena);
   useEffect(() => {
     speichern(t);
@@ -3134,12 +3480,14 @@ function ArenaKampf({
   function lehren(nr) {
     const bed = trickBedingung(t, welt, nr);
     if (trickPunkte(t) < TRICK_KOSTEN || !bed.ok) return;
-    const trick = trickListe(nr)[trickZahl(t, nr)];
+    const i = trickZahl(t, nr);
+    const trick = trickListe(nr)[i];
     Ton.orden();
     setT(lehreTrick(t, nr));
     setGelehrt(g => [...g, {
       nr,
-      trick
+      trick,
+      i
     }]);
   }
 
@@ -3163,6 +3511,15 @@ function ArenaKampf({
           [arena.id]: Math.max(vorherSterne, neu2)
         }
       }));
+    }
+    /* Drei Sterne starten die Pokaluhr. Ein gewonnener Titelkampf
+       hebt die Stufe und startet die nächste Pause. */
+    if (Math.max(vorherSterne, neu2) >= 3) {
+      setT(alt => mitPokalStart(alt, arena.id));
+    }
+    if (titelGewonnen) {
+      Ton.orden();
+      setT(alt => mitPokal(alt, arena.id));
     }
   }, [phase]);
 
@@ -3203,7 +3560,7 @@ function ArenaKampf({
     }, gelehrt.map((g, k) => /*#__PURE__*/React.createElement("p", {
       key: k,
       className: "text-center font-black text-amber-200"
-    }, WESEN[g.nr].bild, " ", WESEN[g.nr].name, " kann jetzt ", g.trick.bild, " ", g.trick.name, "!"))), /*#__PURE__*/React.createElement("p", {
+    }, wBild(t, g.nr), " ", wName(t, g.nr), " kann jetzt ", g.trick.bild, " ", aName(t, g.nr, g.i, g.trick), "!"))), /*#__PURE__*/React.createElement("p", {
       className: "mb-2 text-sm text-emerald-200"
     }, "Ein Trick macht dein Wesen st\xE4rker: ", /*#__PURE__*/React.createElement("b", null, "+", PUNKTE_TRICK, " Punkte"), " bei jedem Angriff. Such dir aus, wer ihn lernen soll!"), bereit.length === 0 && nochNicht.length === 0 ? /*#__PURE__*/React.createElement("p", {
       className: "rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200"
@@ -3221,9 +3578,9 @@ function ArenaKampf({
         className: "kein-blau rounded-2xl p-2 text-center transition " + (reicht ? "bg-emerald-800/70 hover:bg-emerald-700 active:translate-y-px" : "bg-emerald-900/50 opacity-50")
       }, /*#__PURE__*/React.createElement("div", {
         className: "text-3xl"
-      }, WESEN[nr].bild), /*#__PURE__*/React.createElement("p", {
+      }, wBild(t, nr)), /*#__PURE__*/React.createElement("p", {
         className: "truncate text-xs font-bold text-emerald-50"
-      }, WESEN[nr].name), /*#__PURE__*/React.createElement("p", {
+      }, wName(t, nr)), /*#__PURE__*/React.createElement("p", {
         className: "mt-1 text-[10px] leading-tight text-amber-300"
       }, "lernt ", naechster.bild, /*#__PURE__*/React.createElement("br", null), naechster.name));
     })), nochNicht.length > 0 && /*#__PURE__*/React.createElement("div", {
@@ -3238,7 +3595,7 @@ function ArenaKampf({
       className: "mt-1 text-sm text-emerald-200"
     }, /*#__PURE__*/React.createElement("span", {
       className: "text-lg"
-    }, WESEN[nr].bild), " ", /*#__PURE__*/React.createElement("b", null, WESEN[nr].name), " \u2014 ", bed.was)), /*#__PURE__*/React.createElement("p", {
+    }, wBild(t, nr)), " ", /*#__PURE__*/React.createElement("b", null, wName(t, nr)), " \u2014 ", bed.was)), /*#__PURE__*/React.createElement("p", {
       className: "mt-2 text-xs text-emerald-400"
     }, "Nimm sie mit auf den Streifzug. Ein Trick will verdient sein!"))), /*#__PURE__*/React.createElement("p", {
       className: "mt-4 text-center text-xs text-emerald-400"
@@ -3263,7 +3620,7 @@ function ArenaKampf({
       className: "a-auftauchen rounded-3xl bg-emerald-900/70 p-5"
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-6xl"
-    }, gewonnen ? "🏅" : WESEN[leiterNr].bild), /*#__PURE__*/React.createElement("p", {
+    }, titelGewonnen ? POKAL[vorherPokal] : gewonnen ? "🏅" : wBild(t, leiterNr)), /*#__PURE__*/React.createElement("p", {
       className: "mt-2 text-5xl font-black text-amber-300"
     }, punkte), /*#__PURE__*/React.createElement("p", {
       className: "text-xs uppercase tracking-widest text-emerald-300"
@@ -3273,7 +3630,13 @@ function ArenaKampf({
       className: "text-3xl"
     }, /*#__PURE__*/React.createElement(Sterne3, {
       n: Math.max(vorherSterne, jetztSterne)
-    })), /*#__PURE__*/React.createElement("h2", {
+    })), titel && /*#__PURE__*/React.createElement("p", {
+      className: "mt-1 text-sm font-black " + (titelGewonnen ? "text-amber-200" : "text-emerald-400")
+    }, titelGewonnen ? "🏆 Titel geholt — " + POKAL[vorherPokal] + " gehört dir!" : "Titelkampf verloren — " + titelSchwelle + " Punkte hätte es gebraucht. Du darfst sofort wieder ran."), titelGewonnen && vorherPokal + 1 < POKAL.length && /*#__PURE__*/React.createElement("p", {
+      className: "text-[11px] text-emerald-400"
+    }, POKAL[vorherPokal + 1], " ist in ", POKAL_PAUSE[vorherPokal + 1], " Tagen dran."), titelGewonnen && vorherPokal + 1 >= POKAL.length && /*#__PURE__*/React.createElement("p", {
+      className: "a-funkeln text-[11px] font-bold text-amber-300"
+    }, "Gold! Diese Arena geh\xF6rt dir f\xFCr immer."), /*#__PURE__*/React.createElement("h2", {
       className: "mt-1 text-xl font-black text-emerald-50"
     }, jetztSterne > vorherSterne ? jetztSterne === 3 ? "Perfekt! Dritter Stern!" : jetztSterne === 2 ? "Meister! Zweiter Stern!" : "Orden gewonnen!" : gewonnen ? "Orden verteidigt!" : "Knapp daneben"), /*#__PURE__*/React.createElement("p", {
       className: "mt-1 text-sm text-emerald-300"
@@ -3294,9 +3657,9 @@ function ArenaKampf({
       className: "flex items-center gap-2 text-sm"
     }, /*#__PURE__*/React.createElement("span", {
       className: "text-xl"
-    }, WESEN[nr] ? WESEN[nr].bild : "✨"), /*#__PURE__*/React.createElement("span", {
+    }, WESEN[nr] ? wBild(t, nr) : "✨"), /*#__PURE__*/React.createElement("span", {
       className: "flex-1 truncate text-emerald-100"
-    }, WESEN[nr] ? WESEN[nr].name : "Nr. " + nr, trickZahl(t, Number(nr)) > 0 && /*#__PURE__*/React.createElement("span", {
+    }, WESEN[nr] ? wName(t, nr) : "Nr. " + nr, trickZahl(t, Number(nr)) > 0 && /*#__PURE__*/React.createElement("span", {
       className: "text-amber-300"
     }, " ", "✨".repeat(trickZahl(t, Number(nr))))), /*#__PURE__*/React.createElement("span", {
       className: "font-black text-amber-300"
@@ -3329,9 +3692,9 @@ function ArenaKampf({
     className: "flex-1 text-center"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-sm font-black text-amber-300"
-  }, arena.name), /*#__PURE__*/React.createElement("p", {
+  }, titel ? "🏆 Titelkampf · " : "", arena.name), /*#__PURE__*/React.createElement("p", {
     className: "text-[11px] text-emerald-300"
-  }, "gegen ", WESEN[leiterNr].name, " \xB7 Orden ab ", ordenPunkte(arena))), /*#__PURE__*/React.createElement("span", {
+  }, titel ? POKAL[vorherPokal] + " ab " + titelSchwelle + " Punkten" : "gegen " + wName(t, leiterNr) + " · Orden ab " + ordenPunkte(arena))), /*#__PURE__*/React.createElement("span", {
     className: "text-xs font-bold text-emerald-300"
   }, i + 1, "/", fragen.length)), /*#__PURE__*/React.createElement("div", {
     className: "mt-2 flex items-end justify-center gap-3"
@@ -3392,7 +3755,7 @@ function ArenaKampf({
     className: "font-black text-emerald-700"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-2xl"
-  }, WESEN[angriff.nr] ? WESEN[angriff.nr].bild : "✨"), " ", WESEN[angriff.nr] ? WESEN[angriff.nr].name : "Treffer", angriff.mitBeere ? " greift an — mit Beere!" : angriff.trick ? " setzt " + angriff.trick.bild + " " + angriff.trick.name + " ein!" : " greift an!"), /*#__PURE__*/React.createElement("p", {
+  }, WESEN[angriff.nr] ? wBild(t, angriff.nr) : "✨"), " ", WESEN[angriff.nr] ? wName(t, angriff.nr) : "Treffer", angriff.mitBeere ? " greift an — mit Beere!" : angriff.trick ? " setzt " + angriff.trick.bild + " " + angriff.trick.name + " ein!" : " greift an!"), /*#__PURE__*/React.createElement("p", {
     className: "mt-1 text-lg font-black text-amber-600"
   }, "+", angriff.punkte, angriff.kombo > 0 && /*#__PURE__*/React.createElement("span", {
     className: "text-sm text-emerald-700"
@@ -3637,7 +4000,8 @@ function fortschritt(t) {
     wesen: [anzahlGefangen(t), ALLE_NR.length],
     rechnungen: [rechnungenHab, rechnungenZiel],
     tricks: [tricksGesamt(t), ALLE_NR.reduce((n, nr) => n + trickListe(nr).length, 0)],
-    sterne: [sterneGesamt(t), ARENEN.length * 3]
+    sterne: [sterneGesamt(t), ARENEN.length * 3],
+    pokale: [pokalGesamt(t), ARENEN.length * POKAL.length]
   };
 }
 function Kachel({
@@ -3648,7 +4012,7 @@ function Kachel({
   return /*#__PURE__*/React.createElement("div", {
     className: "rounded-xl bg-emerald-950/50 p-2"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-base font-black " + (hell ? "text-amber-300" : "text-emerald-100")
+    className: "text-sm font-black " + (hell ? "text-amber-300" : "text-emerald-100")
   }, oben), /*#__PURE__*/React.createElement("p", {
     className: "text-[10px] text-emerald-400"
   }, unten));
@@ -3681,10 +4045,13 @@ function Trainerkarte({
   }, gefangen), /*#__PURE__*/React.createElement("p", {
     className: "text-[10px] text-emerald-300"
   }, "von ", ALLE_NR.length))), /*#__PURE__*/React.createElement("div", {
-    className: "mt-3 grid grid-cols-4 gap-1.5 text-center"
+    className: "mt-3 grid grid-cols-5 gap-1 text-center"
   }, /*#__PURE__*/React.createElement(Kachel, {
     oben: f.sterne[0] + "/" + f.sterne[1],
     unten: "Sterne \u2605"
+  }), /*#__PURE__*/React.createElement(Kachel, {
+    oben: f.pokale[0] + "/" + f.pokale[1],
+    unten: "Pokale \uD83C\uDFC6"
   }), /*#__PURE__*/React.createElement(Kachel, {
     oben: f.rechnungen[0] + "/" + f.rechnungen[1],
     unten: "Rechnungen"
@@ -3695,7 +4062,9 @@ function Trainerkarte({
     oben: trickPunkte(t),
     unten: "\u26A1 \xFCbrig",
     hell: true
-  })));
+  })), meisterkrone(t) && /*#__PURE__*/React.createElement("p", {
+    className: "a-funkeln mt-2 text-center text-sm font-black text-amber-300"
+  }, "\uD83D\uDC51 Meisterkrone \u2014 alle zw\xF6lf Arenen in Gold."));
 }
 
 /* ============================================================
@@ -3735,7 +4104,20 @@ function naechsterSchritt(t) {
       art: "wiedersehen"
     };
   }
-  /* 3. Es gibt noch Wesen, die sie nie getroffen hat. */
+  /* 3. Ein Titelkampf ist frei geworden — der Grund zurückzukommen,
+     den es vor dem Pokal nicht gab. */
+  const titelfrei = ARENEN.filter(a => pokalStand(t, a.id).offen);
+  if (titelfrei.length > 0) {
+    const a = titelfrei[0];
+    return {
+      bild: "🏆",
+      text: arenaName(a) + " ist bereit für den Titelkampf um " + POKAL[pokalStand(t, a.id).stufe] + ".",
+      knopf: "Zu den Arenen 🏅",
+      ziel: "arena"
+    };
+  }
+
+  /* 4. Es gibt noch Wesen, die sie nie getroffen hat. */
   const fehlen = ALLE_NR.length - anzahlGefangen(t);
   if (fehlen > 0) {
     return {
@@ -3758,8 +4140,8 @@ function naechsterSchritt(t) {
         a
       } = offen[0];
       return {
-        bild: WESEN[nr].bild,
-        text: WESEN[nr].name + " kennt erst " + a.hab + " von " + a.ziel + " Rechnungen.",
+        bild: wBild(t, nr),
+        text: wName(t, nr) + " kennt erst " + a.hab + " von " + a.ziel + " Rechnungen.",
         knopf: "Auf Streifzug 🌿",
         ziel: "welt"
       };
@@ -3920,6 +4302,181 @@ function sicherungsStand(stand) {
     dringend: tage >= 30,
     text: tage <= 0 ? "Heute gesichert" : "Gesichert vor " + tage + (tage === 1 ? " Tag" : " Tagen")
   };
+}
+
+/* ============================================================
+   EINSTELLUNGEN
+
+   Der Elternbereich. Hier liegt alles, was man einmal einstellt und
+   dann nie wieder anfasst — vor allem die Namen. Die Namensliste ist
+   ein eigener kleiner Code, unabhängig von der grossen Sicherung:
+   damit kann man am Laptop in Ruhe eine Liste zusammenstellen und sie
+   aufs Gerät des Kindes laden.
+   ============================================================ */
+const NAMEN_KOPF = "ZAHLODEXNAMEN1:";
+function namenAlsCode(t) {
+  const roh = JSON.stringify({
+    namen: t.namen || {},
+    angriffe: t.angriffe || {}
+  });
+  const bytes = new TextEncoder().encode(roh);
+  let binaer = "";
+  bytes.forEach(b => binaer += String.fromCharCode(b));
+  return NAMEN_KOPF + btoa(binaer);
+}
+function namenAusCode(text) {
+  const ab = String(text || "").indexOf(NAMEN_KOPF);
+  if (ab < 0) throw new Error("Das ist keine Zahlodex-Namensliste.");
+  const rein = String(text).slice(ab + NAMEN_KOPF.length).replace(/\s/g, "");
+  let daten;
+  try {
+    const roh = atob(rein);
+    const bytes = Uint8Array.from(roh, c => c.charCodeAt(0));
+    daten = JSON.parse(new TextDecoder().decode(bytes));
+  } catch (e) {
+    throw new Error("Die Liste ist unvollständig oder beschädigt.");
+  }
+  if (!daten || typeof daten !== "object" || !daten.namen) throw new Error("In dieser Liste sind keine Namen drin.");
+  return daten;
+}
+function eigeneNamenZahl(t) {
+  return ALLE_NR.filter(nr => eigenerName(t, nr)).length;
+}
+function eigeneAngriffeZahl(t) {
+  return Object.values(t.angriffe || {}).reduce((n, e) => n + Object.keys(e).length, 0);
+}
+function Einstellungen({
+  t,
+  speichern,
+  onZurueck,
+  onSicherung
+}) {
+  const [eingabe, setEingabe] = useState("");
+  const [fehler, setFehler] = useState(null);
+  const [vorschau, setVorschau] = useState(null);
+  const [kopiert, setKopiert] = useState(false);
+  const [sicherFrage, setSicherFrage] = useState(false);
+  const eigene = eigeneNamenZahl(t);
+  const angriffe = eigeneAngriffeZahl(t);
+  const code = namenAlsCode(t);
+  async function kopiere() {
+    try {
+      await navigator.clipboard.writeText(code);
+      setKopiert(true);
+      setTimeout(() => setKopiert(false), 2500);
+    } catch (e) {
+      setFehler("Kopieren ging nicht — markier den Code im Feld.");
+    }
+  }
+  function pruefe(text) {
+    setFehler(null);
+    try {
+      setVorschau(namenAusCode(text));
+    } catch (e) {
+      setVorschau(null);
+      setFehler(e.message);
+    }
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    className: "mx-auto max-w-md p-4"
+  }, /*#__PURE__*/React.createElement(Kopf, {
+    titel: "Einstellungen",
+    unter: "F\xFCr Eltern \u2014 hier \xE4ndert sich nichts am Rechnen",
+    onZurueck: onZurueck
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "rounded-2xl bg-emerald-900/60 p-4"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-sm font-black text-amber-300"
+  }, "Namen der Wesen"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 text-xs leading-relaxed text-emerald-300"
+  }, "Jedes Wesen hat einen Fantasienamen als Vorgabe. Wer will, gibt ihm im Zahlodex einen eigenen \u2014 Name und Bild, jederzeit \xE4nderbar. Die Vorgabe geht dabei nie verloren."), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-sm font-bold text-emerald-100"
+  }, eigene === 0 ? "Zurzeit alle 46 mit Fantasienamen." : eigene + (eigene === 1 ? " Wesen hat" : " Wesen haben") + " einen eigenen Namen.", angriffe > 0 && " · " + angriffe + (angriffe === 1 ? " Angriff" : " Angriffe") + " umbenannt"), (eigene > 0 || angriffe > 0) && /*#__PURE__*/React.createElement("div", {
+    className: "mt-3"
+  }, sicherFrage ? /*#__PURE__*/React.createElement("div", {
+    className: "a-rutschen rounded-2xl border-2 border-rose-400/60 bg-rose-950/40 p-3"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-sm font-black text-rose-200"
+  }, "Alle eigenen Namen l\xF6schen?"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 text-xs text-rose-200/80"
+  }, "Danach hei\xDFen wieder alle wie in der Vorgabe. Sichere dir vorher die Liste, wenn du sie behalten willst."), /*#__PURE__*/React.createElement("div", {
+    className: "mt-2 grid grid-cols-2 gap-2"
+  }, /*#__PURE__*/React.createElement(Knopf, {
+    klein: true,
+    art: "ruhig",
+    onClick: () => setSicherFrage(false)
+  }, "Doch nicht"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      speichern({
+        ...t,
+        namen: {},
+        angriffe: {}
+      });
+      setSicherFrage(false);
+    },
+    className: "kein-blau w-full rounded-2xl bg-rose-500 px-4 py-2 text-sm font-black text-rose-950"
+  }, "Ja, zur\xFCcksetzen"))) : /*#__PURE__*/React.createElement(Knopf, {
+    klein: true,
+    art: "ruhig",
+    onClick: () => setSicherFrage(true)
+  }, "Alle zur\xFCck auf Fantasienamen"))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 rounded-2xl border-2 border-emerald-700 p-4"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-sm font-black text-emerald-100"
+  }, "Namensliste weitergeben"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 text-xs leading-relaxed text-emerald-400"
+  }, "Nur die Namen, ohne Spielstand. Praktisch, um am Rechner eine Liste zusammenzustellen und sie hier einzusetzen."), /*#__PURE__*/React.createElement("div", {
+    className: "mt-2"
+  }, /*#__PURE__*/React.createElement(Knopf, {
+    klein: true,
+    art: "ruhig",
+    onClick: kopiere
+  }, kopiert ? "Kopiert! ✓" : "Liste kopieren 📋")), /*#__PURE__*/React.createElement("textarea", {
+    readOnly: true,
+    value: code,
+    onFocus: e => e.target.select(),
+    className: "mt-2 h-14 w-full rounded-xl bg-emerald-950/70 p-2 font-mono text-[10px] leading-tight text-emerald-400"
+  }), /*#__PURE__*/React.createElement("textarea", {
+    value: eingabe,
+    placeholder: NAMEN_KOPF + "…",
+    onChange: e => {
+      setEingabe(e.target.value);
+      if (e.target.value.trim()) pruefe(e.target.value);
+    },
+    className: "mt-2 h-14 w-full rounded-xl bg-emerald-950/70 p-2 font-mono text-[10px] text-emerald-200 placeholder-emerald-700"
+  }), fehler && /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-xs font-bold text-rose-300"
+  }, fehler), vorschau && /*#__PURE__*/React.createElement("div", {
+    className: "a-rutschen mt-2 rounded-2xl bg-emerald-950/60 p-3"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold uppercase tracking-widest text-amber-300"
+  }, "Das ist drin"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 text-sm text-emerald-100"
+  }, Object.keys(vorschau.namen).length, " Namen", Object.keys(vorschau.angriffe || {}).length > 0 ? " · " + Object.keys(vorschau.angriffe).length + " Wesen mit eigenen Angriffen" : ""), /*#__PURE__*/React.createElement("div", {
+    className: "mt-1 max-h-24 overflow-y-auto text-[11px] text-emerald-400"
+  }, Object.entries(vorschau.namen).slice(0, 30).map(([nr, e]) => /*#__PURE__*/React.createElement("span", {
+    key: nr,
+    className: "mr-2 inline-block"
+  }, e.bild || "", e.name || ""))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-2"
+  }, /*#__PURE__*/React.createElement(Knopf, {
+    klein: true,
+    art: "gruen",
+    onClick: () => {
+      speichern({
+        ...t,
+        namen: vorschau.namen,
+        angriffe: vorschau.angriffe || {}
+      });
+      setVorschau(null);
+      setEingabe("");
+    }
+  }, "Liste \xFCbernehmen")))), /*#__PURE__*/React.createElement("button", {
+    onClick: onSicherung,
+    className: "kein-blau mt-3 w-full rounded-2xl border-2 border-emerald-700 p-3 text-center text-sm font-bold text-emerald-300"
+  }, "\uD83D\uDD10 Sicherung des ganzen Spielstands"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 text-center text-[11px] leading-relaxed text-emerald-500"
+  }, "Namen sind reine Deko. Welche Rechnung zu welchem Wesen geh\xF6rt, h\xE4ngt allein an der Zahl \u2014 daran \xE4ndert kein Name etwas."));
 }
 function Sicherung({
   stand,
@@ -4259,6 +4816,11 @@ function App() {
           bild: "🐾"
         };
       }
+      /* Arenen, die schon drei Sterne tragen, bekommen ihre Pokaluhr
+         nachträglich — die erste Frist läuft ab heute. */
+      Object.keys(s.trainer).forEach(n => {
+        s.trainer[n] = pokalNachtragen(s.trainer[n]);
+      });
       setStand(s);
       setWelt(s.trainer[s.aktiv].welt || "wiese");
       setGeladen(true);
@@ -4334,6 +4896,14 @@ function App() {
           aktiv: s.aktiv === n ? namen[0] : s.aktiv
         };
       })
+    }));
+  }
+  if (ansicht === "einstellungen") {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Stile, null), /*#__PURE__*/React.createElement(Einstellungen, {
+      t: t,
+      speichern: speichereTrainer,
+      onZurueck: () => setAnsicht("menue"),
+      onSicherung: () => setAnsicht("sicherung")
     }));
   }
   if (ansicht === "sicherung") {
@@ -4433,6 +5003,9 @@ function App() {
     onClick: () => setErklaerung(true),
     className: "kein-blau rounded-xl border-2 border-emerald-600 px-3 py-1 text-sm text-emerald-200"
   }, "?"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setAnsicht("einstellungen"),
+    className: "kein-blau rounded-xl border-2 border-emerald-600 px-3 py-1 text-sm text-emerald-200"
+  }, "\u2699\uFE0F"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setTonAn(!tonAn),
     className: "kein-blau rounded-xl border-2 border-emerald-600 px-3 py-1 text-sm text-emerald-200"
   }, tonAn ? "🔊" : "🔇"))), /*#__PURE__*/React.createElement("h1", {
@@ -4492,7 +5065,7 @@ function App() {
   }, /*#__PURE__*/React.createElement(Weg, {
     titel: "Arenen \uD83C\uDFC5",
     unter: "Zeig, was sie k\xF6nnen.",
-    zahl: "★ " + stand2.sterne[0] + " von " + stand2.sterne[1],
+    zahl: "★ " + stand2.sterne[0] + "/" + stand2.sterne[1] + " · 🏆 " + stand2.pokale[0] + "/" + stand2.pokale[1],
     onClick: () => setAnsicht("arena")
   }), /*#__PURE__*/React.createElement(Weg, {
     titel: "Zahlodex \uD83D\uDCD5",
@@ -4513,9 +5086,9 @@ function App() {
     unter: "Jedes Kind hat eigene Wesen.",
     onClick: () => setAnsicht("trainer")
   }))), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setAnsicht("sicherung"),
+    onClick: () => setAnsicht(sicherung.dringend ? "sicherung" : "einstellungen"),
     className: "kein-blau mt-3 w-full rounded-2xl border-2 p-2 text-center text-xs font-bold transition " + (sicherung.dringend ? "a-funkeln border-amber-400/60 bg-amber-400/15 text-amber-200" : "border-emerald-800 text-emerald-500")
-  }, "\uD83D\uDD10 ", sicherung.text, sicherung.dringend && " — jetzt sichern"), /*#__PURE__*/React.createElement("a", {
+  }, sicherung.dringend ? "🔐 " + sicherung.text + " — jetzt sichern" : "⚙️ Einstellungen · " + sicherung.text), /*#__PURE__*/React.createElement("a", {
     href: "./index.html",
     className: "mt-3 block rounded-2xl border-2 border-emerald-700 p-3 text-center text-sm text-emerald-300"
   }, "\uD83E\uDD89 Zur\xFCck zu Florentinas R\xE4tselschule"), /*#__PURE__*/React.createElement("p", {

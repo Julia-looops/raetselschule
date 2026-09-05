@@ -465,13 +465,21 @@ function trickBedingung(t, welt, nr) {
       return { ok: false, was: "Stufe 3 erreichen (jetzt " + (f ? f.s : 0) + ")" };
     return { ok: true, was: "" };
   }
-  if (f && f.dauer) return { ok: true, was: "" };
+  /* Der dritte Trick verlangt Ausdauer: das Wesen muss die lange Pause
+     zweimal überstanden haben. Einmal kann Glück sein. */
+  const d = dauerZahl(f);
+  if (d >= DAUER_NOETIG) return { ok: true, was: "" };
   const max = maxStufe(welt, nr);
   return {
     ok: false,
-    was: f && f.s >= max
-      ? "die lange Pause überstehen — es meldet sich von selbst"
-      : "erst Stufe " + max + " erreichen (jetzt " + (f ? f.s : 0) + "), dann die lange Pause",
+    was:
+      d > 0
+        ? "noch " + (DAUER_NOETIG - d) + "× die lange Pause überstehen (" +
+          d + " von " + DAUER_NOETIG + " geschafft)"
+        : f && f.s >= max
+        ? "die lange Pause überstehen — es meldet sich von selbst (0 von " +
+          DAUER_NOETIG + ")"
+        : "erst Stufe " + max + " erreichen (jetzt " + (f ? f.s : 0) + "), dann die lange Pause",
   };
 }
 
@@ -586,13 +594,34 @@ function tempoVon(dauer, mitHilfe, richtig) {
   return "normal";
 }
 
+/* Wie oft hat dieses Wesen die lange Pause schon überstanden?
+   Früher war das ein Ja/Nein — alte Stände werden als "einmal" gelesen. */
+const DAUER_NOETIG = 2;   // so oft für den dritten Trick
+
+function dauerZahl(f) {
+  if (!f || !f.dauer) return 0;
+  return f.dauer === true ? 1 : f.dauer;
+}
+
 function nachWiedersehen(f, tempo, welt, nr) {
   const n = { ...f };
   const max = maxStufe(welt, nr);
   /* Kam dieses Wiedersehen aus der obersten Stufe? Dann ist gerade die
-     lange Pause überstanden — das ist der Beweis, dass es wirklich
-     sitzt, und die Bedingung für den dritten Trick. */
-  if (tempo !== "falsch" && f.s >= max) n.dauer = true;
+     lange Pause überstanden — der Beweis, dass es wirklich sitzt.
+
+     Zwei Bedingungen, die früher fehlten und den dritten Trick in
+     Minuten statt in Wochen erreichbar gemacht haben:
+
+     1. Die Pause muss tatsächlich abgelaufen sein. Der Arenakampf ruft
+        diese Stelle auch für Wesen auf, die noch gar nicht dran wären —
+        dann ist nichts überstanden.
+     2. Sie muss es richtig gewusst haben, ohne Beere und ohne Zögern.
+        Wer nach drei Wochen erst überlegen muss, hat den Beweis nicht
+        erbracht — nur den nächsten Termin verdient. */
+  const faellig = (f.f || 0) <= Date.now();
+  if (faellig && (tempo === "blitz" || tempo === "normal") && f.s >= max) {
+    n.dauer = dauerZahl(f) + 1;
+  }
   if (tempo === "falsch") {
     n.s = Math.max(1, n.s - 1);
     n.f = faelligIn(welt, nr, 1);
@@ -1259,7 +1288,7 @@ function TrickReihe({ t, nr }) {
               : "bg-emerald-200/60 text-emerald-500")
           }
         >
-          {k < kann.length ? tr.bild + " " + tr.name : "🔒 " + tr.name}
+          {k < kann.length ? tr.bild + " " + aName(t, nr, k, tr) : "🔒 " + tr.name}
         </span>
       ))}
     </div>
@@ -1284,8 +1313,11 @@ function WesenKarte({ nr, gross, t }) {
       <p className="text-xs font-black uppercase tracking-widest text-emerald-700">
         Nr. {nr}
       </p>
-      <div className={gross ? "text-8xl" : "text-6xl"}>{w.bild}</div>
-      <p className="mt-1 text-2xl font-black text-emerald-950">{w.name}</p>
+      <div className={gross ? "text-8xl" : "text-6xl"}>{wBild(t, nr)}</div>
+      <p className="mt-1 text-2xl font-black text-emerald-950">{wName(t, nr)}</p>
+      {eigenerName(t, nr) && (
+        <p className="-mt-0.5 text-[11px] text-emerald-500">eigentlich {w.name}</p>
+      )}
       <p className="text-sm font-bold text-emerald-700">
         {s.text} <Sterne n={s.sterne} />
         {istSpiegel(nr) && " · Spiegel-Wesen"}
@@ -1349,11 +1381,136 @@ function Ball({ klasse }) {
   );
 }
 
+/* ============================================================
+   EIGENE NAMEN
+
+   Die Fantasienamen sind die Vorgabe, nicht das Gesetz. Wer ein Wesen
+   gefangen hat, darf ihm einen eigenen Namen geben — so wie man einem
+   Pokémon einen Spitznamen gibt. Gespeichert wird das je Trainerkarte;
+   wer nichts ändert, behält Zwanzo.
+
+   Rechnen ändert sich dadurch nie: der Karteikasten kennt nur Zahlen.
+   ============================================================ */
+function wName(t, nr) {
+  const e = t && t.namen && t.namen[nr];
+  if (e && e.name) return e.name;
+  return WESEN[nr] ? WESEN[nr].name : "Nr. " + nr;
+}
+
+function wBild(t, nr) {
+  const e = t && t.namen && t.namen[nr];
+  if (e && e.bild) return e.bild;
+  return WESEN[nr] ? WESEN[nr].bild : "✨";
+}
+
+function eigenerName(t, nr) {
+  const e = t && t.namen && t.namen[nr];
+  return !!(e && (e.name || e.bild));
+}
+
+/* Auch die Angriffe darf sie benennen — je Wesen und Trickplatz. */
+function aName(t, nr, i, trick) {
+  const e = t && t.angriffe && t.angriffe[nr];
+  const eigen = e && e[i];
+  return eigen || (trick ? trick.name : "");
+}
+
+function mitNamen(t, nr, name, bild) {
+  const namen = { ...(t.namen || {}) };
+  const sauber = { name: (name || "").trim().slice(0, 16), bild: (bild || "").trim().slice(0, 8) };
+  if (!sauber.name && !sauber.bild) delete namen[nr];
+  else namen[nr] = sauber;
+  return { ...t, namen };
+}
+
+function mitAngriff(t, nr, i, name) {
+  const alle = { ...(t.angriffe || {}) };
+  const eins = { ...(alle[nr] || {}) };
+  const sauber = (name || "").trim().slice(0, 20);
+  if (!sauber) delete eins[i];
+  else eins[i] = sauber;
+  if (Object.keys(eins).length === 0) delete alle[nr];
+  else alle[nr] = eins;
+  return { ...t, angriffe: alle };
+}
+
+/* Ein Wesen taufen. Name und Bild — beides freiwillig, beides
+   jederzeit rückgängig. Leer lassen heisst: zurück zur Vorgabe. */
+function Taufe({ t, nr, speichern, onFertig, knopf }) {
+  const eigen = (t.namen || {})[nr] || {};
+  const [name, setName] = useState(eigen.name || "");
+  const [bild, setBild] = useState(eigen.bild || "");
+  return (
+    <div className="rounded-2xl border-2 border-amber-400/60 bg-emerald-900/70 p-3 text-left">
+      <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+        Wie soll es heißen?
+      </p>
+      <div className="mt-2 flex gap-2">
+        <input
+          value={bild}
+          onChange={(e) => setBild(e.target.value.slice(0, 8))}
+          placeholder={WESEN[nr] ? WESEN[nr].bild : "✨"}
+          className="w-16 rounded-xl border-2 border-emerald-600 bg-emerald-950 px-2 py-2 text-center text-2xl outline-none focus:border-amber-400"
+        />
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value.slice(0, 16))}
+          placeholder={WESEN[nr] ? WESEN[nr].name : "Name"}
+          className="min-w-0 flex-1 rounded-xl border-2 border-emerald-600 bg-emerald-950 px-3 py-2 font-black text-emerald-50 outline-none focus:border-amber-400"
+        />
+      </div>
+      <p className="mt-1 text-[11px] text-emerald-400">
+        Leer lassen = {WESEN[nr] ? WESEN[nr].bild + " " + WESEN[nr].name : "Vorgabe"}
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Knopf klein art="ruhig" onClick={onFertig}>
+          Abbrechen
+        </Knopf>
+        <Knopf
+          klein
+          art="gruen"
+          onClick={() => { speichern(mitNamen(t, nr, name, bild)); Ton.tippen(); onFertig(); }}
+        >
+          {knopf || "Speichern"}
+        </Knopf>
+      </div>
+    </div>
+  );
+}
+
+/* Dasselbe für einen Angriff. */
+function AngriffTaufe({ t, nr, i, trick, speichern, onFertig }) {
+  const [name, setName] = useState(aName(t, nr, i, null) || "");
+  return (
+    <div className="rounded-2xl border-2 border-amber-400/60 bg-emerald-900/70 p-3 text-left">
+      <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+        Wie soll der Angriff heißen?
+      </p>
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value.slice(0, 20))}
+        placeholder={trick ? trick.name : "Angriff"}
+        className="mt-2 w-full rounded-xl border-2 border-emerald-600 bg-emerald-950 px-3 py-2 font-black text-emerald-50 outline-none focus:border-amber-400"
+      />
+      <p className="mt-1 text-[11px] text-emerald-400">
+        Leer lassen = {trick ? trick.bild + " " + trick.name : "Vorgabe"}
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Knopf klein art="ruhig" onClick={onFertig}>Abbrechen</Knopf>
+        <Knopf klein art="gruen"
+          onClick={() => { speichern(mitAngriff(t, nr, i, name)); Ton.tippen(); onFertig(); }}>
+          Speichern
+        </Knopf>
+      </div>
+    </div>
+  );
+}
+
 /* Schattenriss eines noch nicht gefangenen Wesens */
-function Schatten({ nr, gross }) {
+function Schatten({ t, nr, gross }) {
   return (
     <div className={(gross ? "text-7xl" : "text-4xl") + " opacity-30 grayscale contrast-0 brightness-0"}>
-      {WESEN[nr].bild}
+      {wBild(t, nr)}
     </div>
   );
 }
@@ -1378,6 +1535,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
   const [wiederholung, setWiederholung] = useState(false);
   const [wackel, setWackel] = useState(0);
   const [neuGefangen, setNeuGefangen] = useState(null);
+  const [taufeOffen, setTaufeOffen] = useState(false);
   const [fangArt, setFangArt] = useState("neu"); // "neu" oder "seite"
   const [bilanz, setBilanz] = useState({ richtig: 0, falsch: 0, blitze: 0, gefangen: [], seiten: [] });
   const [warBlitz, setWarBlitz] = useState(false);
@@ -1513,6 +1671,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
 
     if (wurdeGefangen) {
       setNeuGefangen(nr);
+      setTaufeOffen(false);
       setFangArt(warBekannt ? "seite" : "neu");
       /* Bekanntes Wesen: kein Ball, keine Fangszene — es gehört ihr ja
          schon. Nur die Meldung, dass es hier auch etwas kann. */
@@ -1568,8 +1727,8 @@ function Streifzug({ start, welt, speichern, onEnde }) {
               <div className="mt-2 flex flex-wrap justify-center gap-3">
                 {bilanz.seiten.map((x) => (
                   <div key={x} className="text-center">
-                    <div className="text-4xl">{WESEN[x].bild}</div>
-                    <p className="text-xs font-bold text-emerald-100">{WESEN[x].name}</p>
+                    <div className="text-4xl">{wBild(t, x)}</div>
+                    <p className="text-xs font-bold text-emerald-100">{wName(t, x)}</p>
                   </div>
                 ))}
               </div>
@@ -1584,8 +1743,8 @@ function Streifzug({ start, welt, speichern, onEnde }) {
               <div className="mt-2 flex flex-wrap justify-center gap-3">
                 {bilanz.gefangen.map((x) => (
                   <div key={x} className="text-center">
-                    <div className="text-4xl">{WESEN[x].bild}</div>
-                    <p className="text-xs font-bold text-emerald-100">{WESEN[x].name}</p>
+                    <div className="text-4xl">{wBild(t, x)}</div>
+                    <p className="text-xs font-bold text-emerald-100">{wName(t, x)}</p>
                   </div>
                 ))}
               </div>
@@ -1598,7 +1757,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
                 Vollständig erforscht ✨
               </p>
               <p className="mt-1 text-sm text-emerald-100">
-                {neuErforscht.map((x) => WESEN[x].name).join(", ")} — jede Rechnung
+                {neuErforscht.map((x) => wName(t, x)).join(", ")} — jede Rechnung
                 hat gesessen.
               </p>
             </div>
@@ -1612,8 +1771,8 @@ function Streifzug({ start, welt, speichern, onEnde }) {
               <div className="mt-2 flex flex-wrap justify-center gap-3">
                 {jetztReif.map((x) => (
                   <div key={x} className="text-center">
-                    <div className="text-3xl">{WESEN[x].bild}</div>
-                    <p className="text-xs font-bold text-emerald-100">{WESEN[x].name}</p>
+                    <div className="text-3xl">{wBild(t, x)}</div>
+                    <p className="text-xs font-bold text-emerald-100">{wName(t, x)}</p>
                   </div>
                 ))}
               </div>
@@ -1673,7 +1832,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
             </p>
             {fangArt === "seite" && (
               <p className="mt-1 text-emerald-200">
-                {WESEN[neuGefangen].name} kennt sich auch{" "}
+                {wName(t, neuGefangen)} kennt sich auch{" "}
                 {welt === "malfeld" ? "im Malfeld" : "auf dem Wiesenweg"} aus.
               </p>
             )}
@@ -1682,14 +1841,32 @@ function Streifzug({ start, welt, speichern, onEnde }) {
             </div>
             <div className="mt-4 rounded-2xl bg-emerald-900/70 p-3 text-left">
               <p className="text-xs font-bold uppercase tracking-widest text-emerald-300">
-                Rechnungen, die {WESEN[neuGefangen].name} rufen
+                Rechnungen, die {wName(t, neuGefangen)} rufen
               </p>
               <Rechnungen
                 liste={fakten(welt, neuGefangen).slice(0, 6).map((x) => x.text)}
                 mehr={fakten(welt, neuGefangen).length > 6}
               />
             </div>
-            <div className="mt-4">
+            {taufeOffen ? (
+              <div className="a-rutschen mt-4">
+                <Taufe
+                  t={t}
+                  nr={neuGefangen}
+                  speichern={setT}
+                  knopf="So heißt es!"
+                  onFertig={() => setTaufeOffen(false)}
+                />
+              </div>
+            ) : (
+              <button
+                onClick={() => setTaufeOffen(true)}
+                className="kein-blau mt-4 w-full rounded-2xl border-2 border-amber-400/60 py-2 text-sm font-bold text-amber-200"
+              >
+                ✏️ Willst du ihm einen Namen geben?
+              </button>
+            )}
+            <div className="mt-3">
               <Knopf onClick={() => { setPhase("richtig"); weiter(); }}>Weiter ⚡</Knopf>
             </div>
           </div>
@@ -1724,14 +1901,14 @@ function Streifzug({ start, welt, speichern, onEnde }) {
       {/* Wer ist gerade dran */}
       <div className="flex items-center gap-3 rounded-2xl bg-emerald-900/60 p-3">
         {wild && !schonBekannt ? (
-          <Schatten nr={nr} />
+          <Schatten t={t} nr={nr} />
         ) : (
-          <div className="text-4xl">{WESEN[nr].bild}</div>
+          <div className="text-4xl">{wBild(t, nr)}</div>
         )}
         <div className="min-w-0 flex-1">
           {schonBekannt ? (
             <>
-              <p className="text-sm font-black text-amber-300">{WESEN[nr].name}</p>
+              <p className="text-sm font-black text-amber-300">{wName(t, nr)}</p>
               <p className="text-xs text-emerald-300">
                 zeigt dir eine neue Seite —{" "}
                 {welt === "malfeld" ? "im Malfeld" : "auf dem Wiesenweg"}
@@ -1748,7 +1925,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
             <>
               {/* Bewusst ohne Nummer: die Nummer IST das Ergebnis der
                   Rechnung, die gerade gefragt wird. */}
-              <p className="text-sm font-black text-amber-300">{WESEN[nr].name}</p>
+              <p className="text-sm font-black text-amber-300">{wName(t, nr)}</p>
               <p className="text-xs text-emerald-300">
                 {neueRechnung
                   ? "zeigt dir eine neue Rechnung ✨"
@@ -1889,6 +2066,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
    ============================================================ */
 function Trickbuch({ t, speichern, onZurueck }) {
   const [gelernt, setGelernt] = useState(null);
+  const [angriffTaufe, setAngriffTaufe] = useState(false);
   const koennen = ALLE_NR.filter((nr) => trickZahl(t, nr) > 0);
   const moeglich = ALLE_NR.reduce((n, nr) => n + trickListe(nr).length, 0);
   const habe = tricksGesamt(t);
@@ -1897,10 +2075,12 @@ function Trickbuch({ t, speichern, onZurueck }) {
 
   function lehren(nr) {
     if (punkte < TRICK_KOSTEN) return;
-    const trick = trickListe(nr)[trickZahl(t, nr)];
+    const i = trickZahl(t, nr);
+    const trick = trickListe(nr)[i];
     Ton.orden();
     speichern(lehreTrick(t, nr));
-    setGelernt({ nr, trick });
+    setGelernt({ nr, trick, i });
+    setAngriffTaufe(false);
   }
 
   return (
@@ -1920,9 +2100,28 @@ function Trickbuch({ t, speichern, onZurueck }) {
       {gelernt && (
         <div className="a-auftauchen mb-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3">
           <p className="text-center font-black text-amber-200">
-            {WESEN[gelernt.nr].bild} {WESEN[gelernt.nr].name} kann jetzt{" "}
-            {gelernt.trick.bild} {gelernt.trick.name}!
+            {wBild(t, gelernt.nr)} {wName(t, gelernt.nr)} kann jetzt{" "}
+            {gelernt.trick.bild} {aName(t, gelernt.nr, gelernt.i, gelernt.trick)}!
           </p>
+          {angriffTaufe ? (
+            <div className="a-rutschen mt-2">
+              <AngriffTaufe
+                t={t}
+                nr={gelernt.nr}
+                i={gelernt.i}
+                trick={gelernt.trick}
+                speichern={speichern}
+                onFertig={() => setAngriffTaufe(false)}
+              />
+            </div>
+          ) : (
+            <button
+              onClick={() => setAngriffTaufe(true)}
+              className="kein-blau mt-2 w-full rounded-xl border-2 border-amber-400/50 py-1.5 text-xs font-bold text-amber-200"
+            >
+              ✏️ Angriff umbenennen
+            </button>
+          )}
         </div>
       )}
 
@@ -1949,9 +2148,9 @@ function Trickbuch({ t, speichern, onZurueck }) {
                       : "bg-emerald-900/50 opacity-50")
                   }
                 >
-                  <div className="text-3xl">{WESEN[nr].bild}</div>
+                  <div className="text-3xl">{wBild(t, nr)}</div>
                   <p className="truncate text-xs font-bold text-emerald-50">
-                    {WESEN[nr].name}
+                    {wName(t, nr)}
                   </p>
                   <p className="mt-1 text-[10px] leading-tight text-amber-300">
                     lernt {naechster.bild}
@@ -1977,8 +2176,8 @@ function Trickbuch({ t, speichern, onZurueck }) {
           </p>
           {spaeter.map(({ nr, bed }) => (
             <p key={nr} className="mt-1 text-sm text-emerald-200">
-              <span className="text-lg">{WESEN[nr].bild}</span>{" "}
-              <b>{WESEN[nr].name}</b> — {bed.was}
+              <span className="text-lg">{wBild(t, nr)}</span>{" "}
+              <b>{wName(t, nr)}</b> — {bed.was}
             </p>
           ))}
           <p className="mt-2 text-xs text-emerald-400">
@@ -1995,9 +2194,9 @@ function Trickbuch({ t, speichern, onZurueck }) {
         <div className="space-y-2">
           {koennen.map((nr) => (
             <div key={nr} className="flex items-center gap-3 rounded-2xl bg-emerald-900/60 p-3">
-              <span className="text-3xl">{WESEN[nr].bild}</span>
+              <span className="text-3xl">{wBild(t, nr)}</span>
               <div className="min-w-0 flex-1">
-                <p className="font-black text-emerald-50">{WESEN[nr].name}</p>
+                <p className="font-black text-emerald-50">{wName(t, nr)}</p>
                 <div className="mt-1 flex flex-wrap gap-1">
                   {trickListe(nr).map((tr, k) => (
                     <span
@@ -2009,7 +2208,7 @@ function Trickbuch({ t, speichern, onZurueck }) {
                           : "bg-emerald-800 text-emerald-500")
                       }
                     >
-                      {k < trickZahl(t, nr) ? tr.bild + " " + tr.name : "🔒 " + tr.name}
+                      {k < trickZahl(t, nr) ? tr.bild + " " + aName(t, nr, k, tr) : "🔒 " + tr.name}
                     </span>
                   ))}
                 </div>
@@ -2031,7 +2230,7 @@ function Zahlodex({ t, speichern, onZurueck, startBuch }) {
   const gefangen = anzahlGefangen(t);
   const wartend = wartenAufTrick(t).bereit.length;
 
-  if (gewaehlt) return <WesenDetail t={t} nr={gewaehlt} onZurueck={() => setGewaehlt(null)} />;
+  if (gewaehlt) return <WesenDetail t={t} nr={gewaehlt} speichern={speichern} onZurueck={() => setGewaehlt(null)} />;
   if (buch) return <Trickbuch t={t} speichern={speichern} onZurueck={() => setBuch(false)} />;
 
   const zellen = [];
@@ -2053,7 +2252,7 @@ function Zahlodex({ t, speichern, onZurueck, startBuch }) {
       >
         {hab ? (
           <>
-            <span>{w.bild}</span>
+            <span>{wBild(t, n)}</span>
             {trickZahl(t, n) > 0 && (
               <span className="absolute right-0 top-0 text-[8px]">✨</span>
             )}
@@ -2125,7 +2324,8 @@ function TrickZiel({ t, welt, nr }) {
   );
 }
 
-function WesenDetail({ t, nr, onZurueck }) {
+function WesenDetail({ t, nr, speichern, onZurueck }) {
+  const [taufe, setTaufe] = useState(false);
   const l = linie(nr);
   const fw = holF(t, "wiese", nr);
   const fm = holF(t, "malfeld", nr);
@@ -2159,12 +2359,29 @@ function WesenDetail({ t, nr, onZurueck }) {
 
   return (
     <div className="mx-auto max-w-md p-4">
-      <Kopf titel={hab ? WESEN[nr].name : "Unbekanntes Wesen"} unter={"Nr. " + nr} onZurueck={onZurueck} />
+      <Kopf titel={hab ? wName(t, nr) : "Unbekanntes Wesen"} unter={"Nr. " + nr} onZurueck={onZurueck} />
       {hab ? (
-        <WesenKarte nr={nr} gross t={t} />
+        <>
+          <WesenKarte nr={nr} gross t={t} />
+          {taufe ? (
+            <div className="a-rutschen mt-2">
+              <Taufe t={t} nr={nr} speichern={speichern} onFertig={() => setTaufe(false)} />
+            </div>
+          ) : (
+            <button
+              onClick={() => setTaufe(true)}
+              className="kein-blau mt-2 w-full rounded-2xl border-2 border-emerald-600 py-2 text-sm font-bold text-emerald-200"
+            >
+              ✏️ Umbenennen
+              {eigenerName(t, nr) && (
+                <span className="text-emerald-400"> · heißt eigentlich {WESEN[nr].name}</span>
+              )}
+            </button>
+          )}
+        </>
       ) : (
         <div className="rounded-3xl border-4 border-emerald-700 bg-emerald-900/60 p-8 text-center">
-          <Schatten nr={nr} gross />
+          <Schatten t={t} nr={nr} gross />
           <p className="mt-3 font-black text-emerald-300">Noch nicht gefangen</p>
           <p className="text-sm text-emerald-400">Rechne dich hin — dann zeigt es sich.</p>
         </div>
@@ -2186,7 +2403,7 @@ function WesenDetail({ t, nr, onZurueck }) {
                   }
                 >
                   <div className="text-2xl">
-                    {istGefangen(t, x) ? WESEN[x].bild : <span className="opacity-30 grayscale brightness-0">{WESEN[x].bild}</span>}
+                    {istGefangen(t, x) ? wBild(t, x) : <span className="opacity-30 grayscale brightness-0">{wBild(t, x)}</span>}
                   </div>
                   <p className="text-[10px] font-bold text-emerald-200">{x}</p>
                 </div>
@@ -2271,6 +2488,80 @@ function meisterPunkte(a) {
 }
 
 /* Wie viele Wesen der Reihe hat das Kind schon? */
+/* ============================================================
+   DER POKAL
+
+   Die drei Sterne messen Können: alles richtig, alles blitzschnell,
+   an einem einzigen Nachmittag holbar. Genau das war das Problem —
+   nach der Hälfte der Arenen war nichts mehr zu holen.
+
+   Der Pokal misst etwas anderes: dass es auch nach Wochen noch sitzt.
+   Er hat drei Stufen, und zwischen ihnen liegt eine Pause, die man
+   nicht abkürzen kann. Die Arena selbst bleibt immer offen — gesperrt
+   ist nur die nächste Pokalstufe, und ein misslungener Titelkampf
+   kostet nichts. Gewartet wird zwischen Erfolgen, nicht zwischen
+   Versuchen.
+   ============================================================ */
+const POKAL = ["🥉", "🥈", "🥇"];
+const POKAL_PAUSE = [3, 7, 21];   // Tage bis zur jeweils nächsten Stufe
+
+function pokalStand(t, id) {
+  const e = (t.pokal || {})[id];
+  if (!e) return { stufe: 0, laeuft: false, offen: false, freiAb: null, fertig: false };
+  const stufe = e.stufe || 0;
+  if (stufe >= POKAL.length)
+    return { stufe, laeuft: true, offen: false, freiAb: null, fertig: true };
+  const freiAb = (e.seit || 0) + POKAL_PAUSE[stufe] * 86400000;
+  return { stufe, laeuft: true, offen: Date.now() >= freiAb, freiAb, fertig: false };
+}
+
+function tageBis(ms) {
+  return Math.max(1, Math.ceil((ms - Date.now()) / 86400000));
+}
+
+/* Die Uhr fängt an zu laufen, sobald die Arena drei Sterne trägt. */
+function mitPokalStart(t, id) {
+  if ((t.pokal || {})[id]) return t;
+  return { ...t, pokal: { ...(t.pokal || {}), [id]: { stufe: 0, seit: Date.now() } } };
+}
+
+function mitPokal(t, id) {
+  const e = (t.pokal || {})[id] || { stufe: 0 };
+  return {
+    ...t,
+    pokal: { ...(t.pokal || {}), [id]: { stufe: Math.min(POKAL.length, (e.stufe || 0) + 1), seit: Date.now() } },
+  };
+}
+
+function pokalGesamt(t) {
+  return ARENEN.reduce((n, a) => n + pokalStand(t, a.id).stufe, 0);
+}
+
+/* Wenn alle zwölf Arenen Gold tragen. Das ist das Ende des Spiels. */
+function meisterkrone(t) {
+  return ARENEN.every((a) => pokalStand(t, a.id).stufe >= POKAL.length);
+}
+
+/* Für alles, was schon drei Sterne hat, aber noch keinen Pokaleintrag
+   (also alles von vor dieser Fassung): die Frist beginnt heute. */
+function pokalNachtragen(t) {
+  let neu = t;
+  ARENEN.forEach((a) => {
+    if (sterne(neu, a.id) >= 3) neu = mitPokalStart(neu, a.id);
+  });
+  return neu;
+}
+
+function Pokalreihe({ stufe, klein }) {
+  return (
+    <span className={klein ? "text-sm" : "text-lg"}>
+      {POKAL.map((b, i) => (
+        <span key={i} className={i < stufe ? "" : "opacity-20 grayscale"}>{b}</span>
+      ))}
+    </span>
+  );
+}
+
 function arenaReif(t, a) {
   if (a.art === "liga") {
     const hab = ARENEN_OHNE_LIGA.filter((x) => t.orden.includes(x.id)).length;
@@ -2377,6 +2668,14 @@ function KampfErklaerung({ onWeiter, zurueck }) {
           Sei schnell! Wer in der ersten Hälfte der Zeit antwortet, bekommt eine
           ⚡ dazu. Damit bringst du deinen Wesen neue Tricks bei.
         </p>
+        <p className="mt-3 font-bold text-amber-200">Und dann gibt es den Pokal:</p>
+        <p>
+          Wer alle drei Sterne hat, darf um den Pokal kämpfen — 🥉, dann 🥈,
+          dann 🥇. Dazwischen liegt aber immer eine Pause: {POKAL_PAUSE[0]},{" "}
+          {POKAL_PAUSE[1]} und {POKAL_PAUSE[2]} Tage. Denn der Pokal fragt
+          nicht, ob du es heute kannst — sondern ob du es in drei Wochen noch
+          kannst. Kämpfen darfst du trotzdem jederzeit.
+        </p>
         <p className="mt-2 text-emerald-300">
           Und wenn du irgendwo feststeckst: Du hast {BEERE_KAMPF === 1 ? "eine" : BEERE_KAMPF}{" "}
           🫐 Beere dabei. Sie hält die Uhr an und zeigt dir den Weg. Die
@@ -2399,8 +2698,7 @@ function ArenaListe({ t, onKampf, onZurueck }) {
       <Kopf
         titel="Arenen"
         unter={sterneGesamt(t) + " von " + ARENEN.length * 3 + " Sternen · " +
-          ARENEN_OHNE_LIGA.filter((x) => t.orden.includes(x.id)).length +
-          " von " + ARENEN_OHNE_LIGA.length + " Orden"}
+          pokalGesamt(t) + " von " + ARENEN.length * POKAL.length + " Pokalen"}
         onZurueck={onZurueck}
         rechts={
           <button
@@ -2422,9 +2720,10 @@ function ArenaListe({ t, onKampf, onZurueck }) {
           const rekord = (t.rekord || {})[a.id] || 0;
           const st = sterne(t, a.id);
           const leiter = arenaLeiter(a);
+          const pk = pokalStand(t, a.id);
           return (
+            <div key={a.id}>
             <button
-              key={a.id}
               disabled={!offen}
               onClick={() => onKampf(a)}
               className={
@@ -2441,7 +2740,7 @@ function ArenaListe({ t, onKampf, onZurueck }) {
               }
             >
               <div className="text-4xl">
-                {offen ? (a.art === "liga" ? "🏆" : WESEN[leiter].bild) : "🔒"}
+                {offen ? (a.art === "liga" ? "🏆" : wBild(t, leiter)) : "🔒"}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-black text-emerald-50">{a.name}</p>
@@ -2451,7 +2750,7 @@ function ArenaListe({ t, onKampf, onZurueck }) {
                       ? "Die sechzehn schwersten Rechnungen. 6·6 bis 9·9. Sonst nichts."
                       : "Erst alle " + reif.noetig + " Orden holen (" + reif.hab + "/" + reif.noetig + ")"
                     : offen
-                    ? "Arenaleiter: " + WESEN[leiter].name +
+                    ? "Arenaleiter: " + wName(t, leiter) +
                       (a.art === "reihe" ? " (" + a.reihe + " · " + a.reihe + ")" : "")
                     : "Erst " + reif.noetig + " Wesen aus dieser Reihe fangen (" +
                       reif.hab + "/" + reif.noetig + ")"}
@@ -2468,10 +2767,35 @@ function ArenaListe({ t, onKampf, onZurueck }) {
               {offen && (
                 <div className="text-right text-sm leading-tight">
                   <Sterne3 n={st} />
-                  {hat && <div className="text-lg">🏅</div>}
+                  {pk.laeuft && <div><Pokalreihe stufe={pk.stufe} klein /></div>}
+                  {hat && !pk.laeuft && <div className="text-lg">🏅</div>}
                 </div>
               )}
             </button>
+
+            {/* Der Pokal hängt unter der Arena — sichtbar erst, wenn
+                die drei Sterne stehen. */}
+            {offen && pk.laeuft && !pk.fertig && (
+              pk.offen ? (
+                <button
+                  onClick={() => onKampf({ ...a, titel: true })}
+                  className="a-funkeln kein-blau mt-1 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-300 px-3 py-2 text-sm font-black text-emerald-950 shadow-lg active:translate-y-px"
+                >
+                  🏆 Titelkampf um {POKAL[pk.stufe]} — jetzt!
+                </button>
+              ) : (
+                <p className="mt-1 text-center text-[11px] text-emerald-500">
+                  {POKAL[pk.stufe]} Titelkampf in {tageBis(pk.freiAb)}{" "}
+                  {tageBis(pk.freiAb) === 1 ? "Tag" : "Tagen"}
+                </p>
+              )
+            )}
+            {offen && pk.fertig && (
+              <p className="mt-1 text-center text-[11px] font-bold text-amber-300">
+                🥇 Gold — diese Arena gehört dir.
+              </p>
+            )}
+            </div>
           );
         })}
       </div>
@@ -2571,7 +2895,7 @@ function ArenaBank({ t, arena, aktiv }) {
             }
           >
             <span className={"text-lg " + (hab ? "" : "opacity-25 grayscale brightness-0")}>
-              {WESEN[nr].bild}
+              {wBild(t, nr)}
             </span>
             {tr > 0 && (
               <span className="absolute -right-0.5 -top-1 text-[9px]">
@@ -2595,6 +2919,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   const [luft, setLuft] = useState(LUFT_HOLEN);
   const [pause, setPause] = useState(false);
   const [geschnauft, setGeschnauft] = useState(false);
+  const [vorherPokal] = useState(() => pokalStand(start, arena.id).stufe);
   const [beerenRest, setBeerenRest] = useState(BEERE_KAMPF);
   const [geholfen, setGeholfen] = useState(false);  // Beere in dieser Rechnung
   const [tipp, setTipp] = useState(0);              // welche Beere gerade offen ist
@@ -2622,6 +2947,12 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   const frage = fragen[Math.min(i, fragen.length - 1)];
   const dauer = blitzZeit(frage);
   const tipps = beeren(frage);
+  /* Ein Titelkampf zählt ab der Meister-Schwelle — dieselbe wie für
+     den zweiten Stern. Scheitern kostet nichts, nur die Pokalstufe
+     bleibt dann liegen. */
+  const titel = !!arena.titel;
+  const titelSchwelle = meisterPunkte(arena);
+  const titelGewonnen = titel && punkte >= titelSchwelle && vorherPokal < POKAL.length;
   const leiterNr = arenaLeiter(arena);
 
   useEffect(() => {
@@ -2783,10 +3114,11 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   function lehren(nr) {
     const bed = trickBedingung(t, welt, nr);
     if (trickPunkte(t) < TRICK_KOSTEN || !bed.ok) return;
-    const trick = trickListe(nr)[trickZahl(t, nr)];
+    const i = trickZahl(t, nr);
+    const trick = trickListe(nr)[i];
     Ton.orden();
     setT(lehreTrick(t, nr));
-    setGelehrt((g) => [...g, { nr, trick }]);
+    setGelehrt((g) => [...g, { nr, trick, i }]);
   }
 
   /* Am Ende: Orden und Rekord festhalten */
@@ -2803,6 +3135,15 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
         rekord: { ...(alt.rekord || {}), [arena.id]: Math.max(vorherRekord, punkte) },
         sterne: { ...(alt.sterne || {}), [arena.id]: Math.max(vorherSterne, neu2) },
       }));
+    }
+    /* Drei Sterne starten die Pokaluhr. Ein gewonnener Titelkampf
+       hebt die Stufe und startet die nächste Pause. */
+    if (Math.max(vorherSterne, neu2) >= 3) {
+      setT((alt) => mitPokalStart(alt, arena.id));
+    }
+    if (titelGewonnen) {
+      Ton.orden();
+      setT((alt) => mitPokal(alt, arena.id));
     }
   }, [phase]);
 
@@ -2838,8 +3179,8 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
           <div className="a-auftauchen mb-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3">
             {gelehrt.map((g, k) => (
               <p key={k} className="text-center font-black text-amber-200">
-                {WESEN[g.nr].bild} {WESEN[g.nr].name} kann jetzt {g.trick.bild}{" "}
-                {g.trick.name}!
+                {wBild(t, g.nr)} {wName(t, g.nr)} kann jetzt {g.trick.bild}{" "}
+                {aName(t, g.nr, g.i, g.trick)}!
               </p>
             ))}
           </div>
@@ -2874,9 +3215,9 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
                           : "bg-emerald-900/50 opacity-50")
                       }
                     >
-                      <div className="text-3xl">{WESEN[nr].bild}</div>
+                      <div className="text-3xl">{wBild(t, nr)}</div>
                       <p className="truncate text-xs font-bold text-emerald-50">
-                        {WESEN[nr].name}
+                        {wName(t, nr)}
                       </p>
                       <p className="mt-1 text-[10px] leading-tight text-amber-300">
                         lernt {naechster.bild}
@@ -2896,8 +3237,8 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
                 </p>
                 {nochNicht.map(({ nr, bed }) => (
                   <p key={nr} className="mt-1 text-sm text-emerald-200">
-                    <span className="text-lg">{WESEN[nr].bild}</span>{" "}
-                    <b>{WESEN[nr].name}</b> — {bed.was}
+                    <span className="text-lg">{wBild(t, nr)}</span>{" "}
+                    <b>{wName(t, nr)}</b> — {bed.was}
                   </p>
                 ))}
                 <p className="mt-2 text-xs text-emerald-400">
@@ -2931,7 +3272,9 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
     return (
       <div className="mx-auto max-w-md p-4 text-center">
         <div className="a-auftauchen rounded-3xl bg-emerald-900/70 p-5">
-          <div className="text-6xl">{gewonnen ? "🏅" : WESEN[leiterNr].bild}</div>
+          <div className="text-6xl">
+            {titelGewonnen ? POKAL[vorherPokal] : gewonnen ? "🏅" : wBild(t, leiterNr)}
+          </div>
           <p className="mt-2 text-5xl font-black text-amber-300">{punkte}</p>
           <p className="text-xs uppercase tracking-widest text-emerald-300">Punkte</p>
           {/* Ohne den Namen weiß niemand, für welche Arena die Sterne sind. */}
@@ -2941,6 +3284,23 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
           <div className="text-3xl">
             <Sterne3 n={Math.max(vorherSterne, jetztSterne)} />
           </div>
+          {titel && (
+            <p className={"mt-1 text-sm font-black " + (titelGewonnen ? "text-amber-200" : "text-emerald-400")}>
+              {titelGewonnen
+                ? "🏆 Titel geholt — " + POKAL[vorherPokal] + " gehört dir!"
+                : "Titelkampf verloren — " + titelSchwelle + " Punkte hätte es gebraucht. Du darfst sofort wieder ran."}
+            </p>
+          )}
+          {titelGewonnen && vorherPokal + 1 < POKAL.length && (
+            <p className="text-[11px] text-emerald-400">
+              {POKAL[vorherPokal + 1]} ist in {POKAL_PAUSE[vorherPokal + 1]} Tagen dran.
+            </p>
+          )}
+          {titelGewonnen && vorherPokal + 1 >= POKAL.length && (
+            <p className="a-funkeln text-[11px] font-bold text-amber-300">
+              Gold! Diese Arena gehört dir für immer.
+            </p>
+          )}
           <h2 className="mt-1 text-xl font-black text-emerald-50">
             {jetztSterne > vorherSterne
               ? jetztSterne === 3
@@ -2983,9 +3343,9 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
               <div className="mt-2 space-y-1">
                 {liste.map(([nr, p2]) => (
                   <div key={nr} className="flex items-center gap-2 text-sm">
-                    <span className="text-xl">{WESEN[nr] ? WESEN[nr].bild : "✨"}</span>
+                    <span className="text-xl">{WESEN[nr] ? wBild(t, nr) : "✨"}</span>
                     <span className="flex-1 truncate text-emerald-100">
-                      {WESEN[nr] ? WESEN[nr].name : "Nr. " + nr}
+                      {WESEN[nr] ? wName(t, nr) : "Nr. " + nr}
                       {trickZahl(t, Number(nr)) > 0 && (
                         <span className="text-amber-300">
                           {" "}
@@ -3032,9 +3392,13 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
           ‹
         </button>
         <div className="flex-1 text-center">
-          <p className="text-sm font-black text-amber-300">{arena.name}</p>
+          <p className="text-sm font-black text-amber-300">
+            {titel ? "🏆 Titelkampf · " : ""}{arena.name}
+          </p>
           <p className="text-[11px] text-emerald-300">
-            gegen {WESEN[leiterNr].name} · Orden ab {ordenPunkte(arena)}
+            {titel
+              ? POKAL[vorherPokal] + " ab " + titelSchwelle + " Punkten"
+              : "gegen " + wName(t, leiterNr) + " · Orden ab " + ordenPunkte(arena)}
           </p>
         </div>
         <span className="text-xs font-bold text-emerald-300">
@@ -3129,8 +3493,8 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
             {angriff ? (
               <>
                 <p className="font-black text-emerald-700">
-                  <span className="text-2xl">{WESEN[angriff.nr] ? WESEN[angriff.nr].bild : "✨"}</span>{" "}
-                  {WESEN[angriff.nr] ? WESEN[angriff.nr].name : "Treffer"}
+                  <span className="text-2xl">{WESEN[angriff.nr] ? wBild(t, angriff.nr) : "✨"}</span>{" "}
+                  {WESEN[angriff.nr] ? wName(t, angriff.nr) : "Treffer"}
                   {angriff.mitBeere
                     ? " greift an — mit Beere!"
                     : angriff.trick
@@ -3411,13 +3775,14 @@ function fortschritt(t) {
     rechnungen: [rechnungenHab, rechnungenZiel],
     tricks: [tricksGesamt(t), ALLE_NR.reduce((n, nr) => n + trickListe(nr).length, 0)],
     sterne: [sterneGesamt(t), ARENEN.length * 3],
+    pokale: [pokalGesamt(t), ARENEN.length * POKAL.length],
   };
 }
 
 function Kachel({ oben, unten, hell }) {
   return (
     <div className="rounded-xl bg-emerald-950/50 p-2">
-      <p className={"text-base font-black " + (hell ? "text-amber-300" : "text-emerald-100")}>
+      <p className={"text-sm font-black " + (hell ? "text-amber-300" : "text-emerald-100")}>
         {oben}
       </p>
       <p className="text-[10px] text-emerald-400">{unten}</p>
@@ -3449,12 +3814,18 @@ function Trainerkarte({ name, t, onBild }) {
           <p className="text-[10px] text-emerald-300">von {ALLE_NR.length}</p>
         </div>
       </div>
-      <div className="mt-3 grid grid-cols-4 gap-1.5 text-center">
+      <div className="mt-3 grid grid-cols-5 gap-1 text-center">
         <Kachel oben={f.sterne[0] + "/" + f.sterne[1]} unten="Sterne ★" />
+        <Kachel oben={f.pokale[0] + "/" + f.pokale[1]} unten="Pokale 🏆" />
         <Kachel oben={f.rechnungen[0] + "/" + f.rechnungen[1]} unten="Rechnungen" />
         <Kachel oben={f.tricks[0] + "/" + f.tricks[1]} unten="Tricks ✨" />
         <Kachel oben={trickPunkte(t)} unten="⚡ übrig" hell />
       </div>
+      {meisterkrone(t) && (
+        <p className="a-funkeln mt-2 text-center text-sm font-black text-amber-300">
+          👑 Meisterkrone — alle zwölf Arenen in Gold.
+        </p>
+      )}
     </div>
   );
 }
@@ -3503,7 +3874,22 @@ function naechsterSchritt(t) {
       art: "wiedersehen",
     };
   }
-  /* 3. Es gibt noch Wesen, die sie nie getroffen hat. */
+  /* 3. Ein Titelkampf ist frei geworden — der Grund zurückzukommen,
+     den es vor dem Pokal nicht gab. */
+  const titelfrei = ARENEN.filter((a) => pokalStand(t, a.id).offen);
+  if (titelfrei.length > 0) {
+    const a = titelfrei[0];
+    return {
+      bild: "🏆",
+      text:
+        arenaName(a) + " ist bereit für den Titelkampf um " +
+        POKAL[pokalStand(t, a.id).stufe] + ".",
+      knopf: "Zu den Arenen 🏅",
+      ziel: "arena",
+    };
+  }
+
+  /* 4. Es gibt noch Wesen, die sie nie getroffen hat. */
   const fehlen = ALLE_NR.length - anzahlGefangen(t);
   if (fehlen > 0) {
     return {
@@ -3525,8 +3911,8 @@ function naechsterSchritt(t) {
     if (offen.length > 0) {
       const { nr, a } = offen[0];
       return {
-        bild: WESEN[nr].bild,
-        text: WESEN[nr].name + " kennt erst " + a.hab + " von " + a.ziel + " Rechnungen.",
+        bild: wBild(t, nr),
+        text: wName(t, nr) + " kennt erst " + a.hab + " von " + a.ziel + " Rechnungen.",
         knopf: "Auf Streifzug 🌿",
         ziel: "welt",
       };
@@ -3709,6 +4095,211 @@ function sicherungsStand(stand) {
     dringend: tage >= 30,
     text: tage <= 0 ? "Heute gesichert" : "Gesichert vor " + tage + (tage === 1 ? " Tag" : " Tagen"),
   };
+}
+
+/* ============================================================
+   EINSTELLUNGEN
+
+   Der Elternbereich. Hier liegt alles, was man einmal einstellt und
+   dann nie wieder anfasst — vor allem die Namen. Die Namensliste ist
+   ein eigener kleiner Code, unabhängig von der grossen Sicherung:
+   damit kann man am Laptop in Ruhe eine Liste zusammenstellen und sie
+   aufs Gerät des Kindes laden.
+   ============================================================ */
+const NAMEN_KOPF = "ZAHLODEXNAMEN1:";
+
+function namenAlsCode(t) {
+  const roh = JSON.stringify({ namen: t.namen || {}, angriffe: t.angriffe || {} });
+  const bytes = new TextEncoder().encode(roh);
+  let binaer = "";
+  bytes.forEach((b) => (binaer += String.fromCharCode(b)));
+  return NAMEN_KOPF + btoa(binaer);
+}
+
+function namenAusCode(text) {
+  const ab = String(text || "").indexOf(NAMEN_KOPF);
+  if (ab < 0) throw new Error("Das ist keine Zahlodex-Namensliste.");
+  const rein = String(text).slice(ab + NAMEN_KOPF.length).replace(/\s/g, "");
+  let daten;
+  try {
+    const roh = atob(rein);
+    const bytes = Uint8Array.from(roh, (c) => c.charCodeAt(0));
+    daten = JSON.parse(new TextDecoder().decode(bytes));
+  } catch (e) {
+    throw new Error("Die Liste ist unvollständig oder beschädigt.");
+  }
+  if (!daten || typeof daten !== "object" || !daten.namen)
+    throw new Error("In dieser Liste sind keine Namen drin.");
+  return daten;
+}
+
+function eigeneNamenZahl(t) {
+  return ALLE_NR.filter((nr) => eigenerName(t, nr)).length;
+}
+
+function eigeneAngriffeZahl(t) {
+  return Object.values(t.angriffe || {}).reduce((n, e) => n + Object.keys(e).length, 0);
+}
+
+function Einstellungen({ t, speichern, onZurueck, onSicherung }) {
+  const [eingabe, setEingabe] = useState("");
+  const [fehler, setFehler] = useState(null);
+  const [vorschau, setVorschau] = useState(null);
+  const [kopiert, setKopiert] = useState(false);
+  const [sicherFrage, setSicherFrage] = useState(false);
+  const eigene = eigeneNamenZahl(t);
+  const angriffe = eigeneAngriffeZahl(t);
+  const code = namenAlsCode(t);
+
+  async function kopiere() {
+    try {
+      await navigator.clipboard.writeText(code);
+      setKopiert(true);
+      setTimeout(() => setKopiert(false), 2500);
+    } catch (e) {
+      setFehler("Kopieren ging nicht — markier den Code im Feld.");
+    }
+  }
+
+  function pruefe(text) {
+    setFehler(null);
+    try {
+      setVorschau(namenAusCode(text));
+    } catch (e) {
+      setVorschau(null);
+      setFehler(e.message);
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-md p-4">
+      <Kopf
+        titel="Einstellungen"
+        unter="Für Eltern — hier ändert sich nichts am Rechnen"
+        onZurueck={onZurueck}
+      />
+
+      <div className="rounded-2xl bg-emerald-900/60 p-4">
+        <p className="text-sm font-black text-amber-300">Namen der Wesen</p>
+        <p className="mt-1 text-xs leading-relaxed text-emerald-300">
+          Jedes Wesen hat einen Fantasienamen als Vorgabe. Wer will, gibt ihm
+          im Zahlodex einen eigenen — Name und Bild, jederzeit änderbar. Die
+          Vorgabe geht dabei nie verloren.
+        </p>
+        <p className="mt-2 text-sm font-bold text-emerald-100">
+          {eigene === 0
+            ? "Zurzeit alle 46 mit Fantasienamen."
+            : eigene + (eigene === 1 ? " Wesen hat" : " Wesen haben") + " einen eigenen Namen."}
+          {angriffe > 0 && " · " + angriffe + (angriffe === 1 ? " Angriff" : " Angriffe") + " umbenannt"}
+        </p>
+
+        {(eigene > 0 || angriffe > 0) && (
+          <div className="mt-3">
+            {sicherFrage ? (
+              <div className="a-rutschen rounded-2xl border-2 border-rose-400/60 bg-rose-950/40 p-3">
+                <p className="text-sm font-black text-rose-200">
+                  Alle eigenen Namen löschen?
+                </p>
+                <p className="mt-1 text-xs text-rose-200/80">
+                  Danach heißen wieder alle wie in der Vorgabe. Sichere dir
+                  vorher die Liste, wenn du sie behalten willst.
+                </p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <Knopf klein art="ruhig" onClick={() => setSicherFrage(false)}>
+                    Doch nicht
+                  </Knopf>
+                  <button
+                    onClick={() => {
+                      speichern({ ...t, namen: {}, angriffe: {} });
+                      setSicherFrage(false);
+                    }}
+                    className="kein-blau w-full rounded-2xl bg-rose-500 px-4 py-2 text-sm font-black text-rose-950"
+                  >
+                    Ja, zurücksetzen
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <Knopf klein art="ruhig" onClick={() => setSicherFrage(true)}>
+                Alle zurück auf Fantasienamen
+              </Knopf>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-3 rounded-2xl border-2 border-emerald-700 p-4">
+        <p className="text-sm font-black text-emerald-100">Namensliste weitergeben</p>
+        <p className="mt-1 text-xs leading-relaxed text-emerald-400">
+          Nur die Namen, ohne Spielstand. Praktisch, um am Rechner eine Liste
+          zusammenzustellen und sie hier einzusetzen.
+        </p>
+        <div className="mt-2">
+          <Knopf klein art="ruhig" onClick={kopiere}>
+            {kopiert ? "Kopiert! ✓" : "Liste kopieren 📋"}
+          </Knopf>
+        </div>
+        <textarea
+          readOnly
+          value={code}
+          onFocus={(e) => e.target.select()}
+          className="mt-2 h-14 w-full rounded-xl bg-emerald-950/70 p-2 font-mono text-[10px] leading-tight text-emerald-400"
+        />
+        <textarea
+          value={eingabe}
+          placeholder={NAMEN_KOPF + "…"}
+          onChange={(e) => { setEingabe(e.target.value); if (e.target.value.trim()) pruefe(e.target.value); }}
+          className="mt-2 h-14 w-full rounded-xl bg-emerald-950/70 p-2 font-mono text-[10px] text-emerald-200 placeholder-emerald-700"
+        />
+        {fehler && <p className="mt-2 text-xs font-bold text-rose-300">{fehler}</p>}
+        {vorschau && (
+          <div className="a-rutschen mt-2 rounded-2xl bg-emerald-950/60 p-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+              Das ist drin
+            </p>
+            <p className="mt-1 text-sm text-emerald-100">
+              {Object.keys(vorschau.namen).length} Namen
+              {Object.keys(vorschau.angriffe || {}).length > 0
+                ? " · " + Object.keys(vorschau.angriffe).length + " Wesen mit eigenen Angriffen"
+                : ""}
+            </p>
+            <div className="mt-1 max-h-24 overflow-y-auto text-[11px] text-emerald-400">
+              {Object.entries(vorschau.namen).slice(0, 30).map(([nr, e]) => (
+                <span key={nr} className="mr-2 inline-block">
+                  {e.bild || ""}{e.name || ""}
+                </span>
+              ))}
+            </div>
+            <div className="mt-2">
+              <Knopf
+                klein
+                art="gruen"
+                onClick={() => {
+                  speichern({ ...t, namen: vorschau.namen, angriffe: vorschau.angriffe || {} });
+                  setVorschau(null);
+                  setEingabe("");
+                }}
+              >
+                Liste übernehmen
+              </Knopf>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <button
+        onClick={onSicherung}
+        className="kein-blau mt-3 w-full rounded-2xl border-2 border-emerald-700 p-3 text-center text-sm font-bold text-emerald-300"
+      >
+        🔐 Sicherung des ganzen Spielstands
+      </button>
+
+      <p className="mt-3 text-center text-[11px] leading-relaxed text-emerald-500">
+        Namen sind reine Deko. Welche Rechnung zu welchem Wesen gehört, hängt
+        allein an der Zahl — daran ändert kein Name etwas.
+      </p>
+    </div>
+  );
 }
 
 function Sicherung({ stand, setStand, onZurueck }) {
@@ -4078,6 +4669,11 @@ function App() {
       if (s.trainer.Florentina && s.trainer.Florentina.bild === "🧢") {
         s.trainer.Florentina = { ...s.trainer.Florentina, bild: "🐾" };
       }
+      /* Arenen, die schon drei Sterne tragen, bekommen ihre Pokaluhr
+         nachträglich — die erste Frist läuft ab heute. */
+      Object.keys(s.trainer).forEach((n) => {
+        s.trainer[n] = pokalNachtragen(s.trainer[n]);
+      });
       setStand(s);
       setWelt(s.trainer[s.aktiv].welt || "wiese");
       setGeladen(true);
@@ -4139,6 +4735,20 @@ function App() {
               return { ...s, trainer: rest, aktiv: s.aktiv === n ? namen[0] : s.aktiv };
             })
           }
+        />
+      </>
+    );
+  }
+
+  if (ansicht === "einstellungen") {
+    return (
+      <>
+        <Stile />
+        <Einstellungen
+          t={t}
+          speichern={speichereTrainer}
+          onZurueck={() => setAnsicht("menue")}
+          onSicherung={() => setAnsicht("sicherung")}
         />
       </>
     );
@@ -4274,6 +4884,12 @@ function App() {
               ?
             </button>
             <button
+              onClick={() => setAnsicht("einstellungen")}
+              className="kein-blau rounded-xl border-2 border-emerald-600 px-3 py-1 text-sm text-emerald-200"
+            >
+              ⚙️
+            </button>
+            <button
               onClick={() => setTonAn(!tonAn)}
               className="kein-blau rounded-xl border-2 border-emerald-600 px-3 py-1 text-sm text-emerald-200"
             >
@@ -4361,7 +4977,7 @@ function App() {
             <Weg
               titel="Arenen 🏅"
               unter="Zeig, was sie können."
-              zahl={"★ " + stand2.sterne[0] + " von " + stand2.sterne[1]}
+              zahl={"★ " + stand2.sterne[0] + "/" + stand2.sterne[1] + " · 🏆 " + stand2.pokale[0] + "/" + stand2.pokale[1]}
               onClick={() => setAnsicht("arena")}
             />
             <Weg
@@ -4392,7 +5008,7 @@ function App() {
         {/* Der Fortschritt lebt in genau einem Browser. Der Hinweis
             mahnt erst, wenn wirklich etwas zu verlieren ist. */}
         <button
-          onClick={() => setAnsicht("sicherung")}
+          onClick={() => setAnsicht(sicherung.dringend ? "sicherung" : "einstellungen")}
           className={
             "kein-blau mt-3 w-full rounded-2xl border-2 p-2 text-center text-xs font-bold transition " +
             (sicherung.dringend
@@ -4400,8 +5016,7 @@ function App() {
               : "border-emerald-800 text-emerald-500")
           }
         >
-          🔐 {sicherung.text}
-          {sicherung.dringend && " — jetzt sichern"}
+          {sicherung.dringend ? "🔐 " + sicherung.text + " — jetzt sichern" : "⚙️ Einstellungen · " + sicherung.text}
         </button>
 
         <a
