@@ -2067,6 +2067,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
 function Trickbuch({ t, speichern, onZurueck }) {
   const [gelernt, setGelernt] = useState(null);
   const [angriffTaufe, setAngriffTaufe] = useState(false);
+  const [bearbeiten, setBearbeiten] = useState(null);
   const koennen = ALLE_NR.filter((nr) => trickZahl(t, nr) > 0);
   const moeglich = ALLE_NR.reduce((n, nr) => n + trickListe(nr).length, 0);
   const habe = tricksGesamt(t);
@@ -2191,34 +2192,74 @@ function Trickbuch({ t, speichern, onZurueck }) {
           und bring sie dann einem Wesen bei, das dort blitzschnell war.
         </p>
       ) : (
+        <>
+        <p className="mb-2 text-center text-xs text-emerald-400">
+          Tipp auf einen Angriff, wenn er anders heißen soll ✏️
+        </p>
         <div className="space-y-2">
           {koennen.map((nr) => (
-            <div key={nr} className="flex items-center gap-3 rounded-2xl bg-emerald-900/60 p-3">
-              <span className="text-3xl">{wBild(t, nr)}</span>
-              <div className="min-w-0 flex-1">
-                <p className="font-black text-emerald-50">{wName(t, nr)}</p>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {trickListe(nr).map((tr, k) => (
-                    <span
-                      key={k}
-                      className={
-                        "rounded-full px-2 py-0.5 text-[11px] font-bold " +
-                        (k < trickZahl(t, nr)
-                          ? "bg-amber-300 text-emerald-950"
-                          : "bg-emerald-800 text-emerald-500")
-                      }
-                    >
-                      {k < trickZahl(t, nr) ? tr.bild + " " + aName(t, nr, k, tr) : "🔒 " + tr.name}
-                    </span>
-                  ))}
+            <div key={nr} className="rounded-2xl bg-emerald-900/60 p-3">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{wBild(t, nr)}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-black text-emerald-50">{wName(t, nr)}</p>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {trickListe(nr).map((tr, k) => {
+                      const kann = k < trickZahl(t, nr);
+                      /* Gelernte Angriffe lassen sich hier antippen und
+                         umbenennen — nicht nur im Moment des Lernens. */
+                      if (!kann)
+                        return (
+                          <span
+                            key={k}
+                            className="rounded-full bg-emerald-800 px-2 py-0.5 text-[11px] font-bold text-emerald-500"
+                          >
+                            🔒 {tr.name}
+                          </span>
+                        );
+                      return (
+                        <button
+                          key={k}
+                          onClick={() =>
+                            setBearbeiten(
+                              bearbeiten && bearbeiten.nr === nr && bearbeiten.k === k
+                                ? null
+                                : { nr, k, trick: tr }
+                            )
+                          }
+                          className={
+                            "kein-blau rounded-full px-2 py-0.5 text-[11px] font-bold transition " +
+                            (bearbeiten && bearbeiten.nr === nr && bearbeiten.k === k
+                              ? "bg-amber-200 text-emerald-950 ring-2 ring-amber-400"
+                              : "bg-amber-300 text-emerald-950")
+                          }
+                        >
+                          {tr.bild} {aName(t, nr, k, tr)} ✏️
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
+                <span className="text-lg font-black text-amber-300">
+                  +{trickZahl(t, nr) * PUNKTE_TRICK}
+                </span>
               </div>
-              <span className="text-lg font-black text-amber-300">
-                +{trickZahl(t, nr) * PUNKTE_TRICK}
-              </span>
+              {bearbeiten && bearbeiten.nr === nr && (
+                <div className="a-rutschen mt-2">
+                  <AngriffTaufe
+                    t={t}
+                    nr={nr}
+                    i={bearbeiten.k}
+                    trick={bearbeiten.trick}
+                    speichern={speichern}
+                    onFertig={() => setBearbeiten(null)}
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>
+        </>
       )}
     </div>
   );
@@ -2326,6 +2367,7 @@ function TrickZiel({ t, welt, nr }) {
 
 function WesenDetail({ t, nr, speichern, onZurueck }) {
   const [taufe, setTaufe] = useState(false);
+  const [angriff, setAngriff] = useState(null);
   const l = linie(nr);
   const fw = holF(t, "wiese", nr);
   const fm = holF(t, "malfeld", nr);
@@ -2377,6 +2419,43 @@ function WesenDetail({ t, nr, speichern, onZurueck }) {
                 <span className="text-emerald-400"> · heißt eigentlich {WESEN[nr].name}</span>
               )}
             </button>
+          )}
+          {/* Auch die Angriffe, die es schon kann — jederzeit, nicht nur
+              im Moment des Lernens. */}
+          {trickZahl(t, nr) > 0 && (
+            <div className="mt-2 rounded-2xl bg-emerald-900/60 p-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+                Angriffe umbenennen
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1">
+                {trickListe(nr).slice(0, trickZahl(t, nr)).map((tr, k) => (
+                  <button
+                    key={k}
+                    onClick={() => setAngriff(angriff && angriff.k === k ? null : { k, trick: tr })}
+                    className={
+                      "kein-blau rounded-full px-2 py-1 text-xs font-bold transition " +
+                      (angriff && angriff.k === k
+                        ? "bg-amber-200 text-emerald-950 ring-2 ring-amber-400"
+                        : "bg-amber-300 text-emerald-950")
+                    }
+                  >
+                    {tr.bild} {aName(t, nr, k, tr)} ✏️
+                  </button>
+                ))}
+              </div>
+              {angriff && (
+                <div className="a-rutschen mt-2">
+                  <AngriffTaufe
+                    t={t}
+                    nr={nr}
+                    i={angriff.k}
+                    trick={angriff.trick}
+                    speichern={speichern}
+                    onFertig={() => setAngriff(null)}
+                  />
+                </div>
+              )}
+            </div>
           )}
         </>
       ) : (

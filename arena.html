@@ -1421,7 +1421,7 @@ function beeren(fakt) {
    Florentina und ihre Freunde dasselbe Gerät benutzen können.
    ============================================================ */
 /* wird beim Bauen ersetzt, siehe tools/build.mjs */
-const FASSUNG = "21 · 5.9.2026";
+const FASSUNG = "23 · 16.9.2026";
 const SPEICHER = "florentina-zahlodex";
 const TRAINER_BILDER = ["🐾", "🧢", "🎒", "🪄", "🛼", "🦄", "🚀", "🍀"];
 function leererTrainer(bild) {
@@ -2468,6 +2468,7 @@ function Trickbuch({
 }) {
   const [gelernt, setGelernt] = useState(null);
   const [angriffTaufe, setAngriffTaufe] = useState(false);
+  const [bearbeiten, setBearbeiten] = useState(null);
   const koennen = ALLE_NR.filter(nr => trickZahl(t, nr) > 0);
   const moeglich = ALLE_NR.reduce((n, nr) => n + trickListe(nr).length, 0);
   const habe = tricksGesamt(t);
@@ -2554,11 +2555,15 @@ function Trickbuch({
     className: "mt-2 text-xs text-emerald-400"
   }, "Nimm sie mit auf den Streifzug. Ein Trick will verdient sein!")), koennen.length === 0 ? /*#__PURE__*/React.createElement("p", {
     className: "rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200"
-  }, "Noch kann keines deiner Wesen einen Trick. Hol dir \u26A1 in der Arena \u2014 und bring sie dann einem Wesen bei, das dort blitzschnell war.") : /*#__PURE__*/React.createElement("div", {
+  }, "Noch kann keines deiner Wesen einen Trick. Hol dir \u26A1 in der Arena \u2014 und bring sie dann einem Wesen bei, das dort blitzschnell war.") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
+    className: "mb-2 text-center text-xs text-emerald-400"
+  }, "Tipp auf einen Angriff, wenn er anders hei\xDFen soll \u270F\uFE0F"), /*#__PURE__*/React.createElement("div", {
     className: "space-y-2"
   }, koennen.map(nr => /*#__PURE__*/React.createElement("div", {
     key: nr,
-    className: "flex items-center gap-3 rounded-2xl bg-emerald-900/60 p-3"
+    className: "rounded-2xl bg-emerald-900/60 p-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-3xl"
   }, wBild(t, nr)), /*#__PURE__*/React.createElement("div", {
@@ -2567,12 +2572,35 @@ function Trickbuch({
     className: "font-black text-emerald-50"
   }, wName(t, nr)), /*#__PURE__*/React.createElement("div", {
     className: "mt-1 flex flex-wrap gap-1"
-  }, trickListe(nr).map((tr, k) => /*#__PURE__*/React.createElement("span", {
-    key: k,
-    className: "rounded-full px-2 py-0.5 text-[11px] font-bold " + (k < trickZahl(t, nr) ? "bg-amber-300 text-emerald-950" : "bg-emerald-800 text-emerald-500")
-  }, k < trickZahl(t, nr) ? tr.bild + " " + aName(t, nr, k, tr) : "🔒 " + tr.name)))), /*#__PURE__*/React.createElement("span", {
+  }, trickListe(nr).map((tr, k) => {
+    const kann = k < trickZahl(t, nr);
+    /* Gelernte Angriffe lassen sich hier antippen und
+       umbenennen — nicht nur im Moment des Lernens. */
+    if (!kann) return /*#__PURE__*/React.createElement("span", {
+      key: k,
+      className: "rounded-full bg-emerald-800 px-2 py-0.5 text-[11px] font-bold text-emerald-500"
+    }, "\uD83D\uDD12 ", tr.name);
+    return /*#__PURE__*/React.createElement("button", {
+      key: k,
+      onClick: () => setBearbeiten(bearbeiten && bearbeiten.nr === nr && bearbeiten.k === k ? null : {
+        nr,
+        k,
+        trick: tr
+      }),
+      className: "kein-blau rounded-full px-2 py-0.5 text-[11px] font-bold transition " + (bearbeiten && bearbeiten.nr === nr && bearbeiten.k === k ? "bg-amber-200 text-emerald-950 ring-2 ring-amber-400" : "bg-amber-300 text-emerald-950")
+    }, tr.bild, " ", aName(t, nr, k, tr), " \u270F\uFE0F");
+  }))), /*#__PURE__*/React.createElement("span", {
     className: "text-lg font-black text-amber-300"
-  }, "+", trickZahl(t, nr) * PUNKTE_TRICK)))));
+  }, "+", trickZahl(t, nr) * PUNKTE_TRICK)), bearbeiten && bearbeiten.nr === nr && /*#__PURE__*/React.createElement("div", {
+    className: "a-rutschen mt-2"
+  }, /*#__PURE__*/React.createElement(AngriffTaufe, {
+    t: t,
+    nr: nr,
+    i: bearbeiten.k,
+    trick: bearbeiten.trick,
+    speichern: speichern,
+    onFertig: () => setBearbeiten(null)
+  })))))));
 }
 function Zahlodex({
   t,
@@ -2674,6 +2702,7 @@ function WesenDetail({
   onZurueck
 }) {
   const [taufe, setTaufe] = useState(false);
+  const [angriff, setAngriff] = useState(null);
   const l = linie(nr);
   const fw = holF(t, "wiese", nr);
   const fm = holF(t, "malfeld", nr);
@@ -2716,7 +2745,29 @@ function WesenDetail({
     className: "kein-blau mt-2 w-full rounded-2xl border-2 border-emerald-600 py-2 text-sm font-bold text-emerald-200"
   }, "\u270F\uFE0F Umbenennen", eigenerName(t, nr) && /*#__PURE__*/React.createElement("span", {
     className: "text-emerald-400"
-  }, " \xB7 hei\xDFt eigentlich ", WESEN[nr].name))) : /*#__PURE__*/React.createElement("div", {
+  }, " \xB7 hei\xDFt eigentlich ", WESEN[nr].name)), trickZahl(t, nr) > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mt-2 rounded-2xl bg-emerald-900/60 p-3"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold uppercase tracking-widest text-amber-300"
+  }, "Angriffe umbenennen"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-2 flex flex-wrap gap-1"
+  }, trickListe(nr).slice(0, trickZahl(t, nr)).map((tr, k) => /*#__PURE__*/React.createElement("button", {
+    key: k,
+    onClick: () => setAngriff(angriff && angriff.k === k ? null : {
+      k,
+      trick: tr
+    }),
+    className: "kein-blau rounded-full px-2 py-1 text-xs font-bold transition " + (angriff && angriff.k === k ? "bg-amber-200 text-emerald-950 ring-2 ring-amber-400" : "bg-amber-300 text-emerald-950")
+  }, tr.bild, " ", aName(t, nr, k, tr), " \u270F\uFE0F"))), angriff && /*#__PURE__*/React.createElement("div", {
+    className: "a-rutschen mt-2"
+  }, /*#__PURE__*/React.createElement(AngriffTaufe, {
+    t: t,
+    nr: nr,
+    i: angriff.k,
+    trick: angriff.trick,
+    speichern: speichern,
+    onFertig: () => setAngriff(null)
+  })))) : /*#__PURE__*/React.createElement("div", {
     className: "rounded-3xl border-4 border-emerald-700 bg-emerald-900/60 p-8 text-center"
   }, /*#__PURE__*/React.createElement(Schatten, {
     t: t,

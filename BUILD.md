@@ -140,6 +140,8 @@ von dort genommen — ab dann baut es auch ohne Internet.
   kostet nichts, gewartet wird nur zwischen Erfolgen. `meisterkrone`, wenn alle
   Arenen Gold tragen.
 - **Eigene Namen**: `t.namen[nr] = { name, bild }` und `t.angriffe[nr][i]`
+  (umbenennbar im Fangmoment, im Steckbrief und im Trickbuch — dort ist jeder
+  schon gelernte Angriff ein Knopf; gesperrte bleiben reiner Text)
   liegen als Ebene über `WESEN_LISTE` und `TRICK_REIHE`. Gelesen wird
   ausschließlich über `wName`, `wBild` und `aName` — wer neue Anzeigen baut,
   darf `WESEN[nr].name` nicht direkt verwenden. Namen sind reine Deko; welche
