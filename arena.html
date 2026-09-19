@@ -1421,7 +1421,7 @@ function beeren(fakt) {
    Florentina und ihre Freunde dasselbe Gerät benutzen können.
    ============================================================ */
 /* wird beim Bauen ersetzt, siehe tools/build.mjs */
-const FASSUNG = "24 · 19.9.2026";
+const FASSUNG = "25 · 19.9.2026";
 const SPEICHER = "florentina-zahlodex";
 const TRAINER_BILDER = ["🐾", "🧢", "🎒", "🪄", "🛼", "🦄", "🚀", "🍀"];
 function leererTrainer(bild) {
@@ -3163,9 +3163,9 @@ function KampfErklaerung({
     className: "mt-2 text-emerald-300"
   }, "Sei schnell! Wer in der ersten H\xE4lfte der Zeit antwortet, bekommt eine \u26A1 dazu. Damit bringst du deinen Wesen neue Tricks bei."), /*#__PURE__*/React.createElement("p", {
     className: "mt-3 font-bold text-amber-200"
-  }, "Und dann gibt es den Pokal:"), /*#__PURE__*/React.createElement("p", null, "Wer alle drei Sterne hat, darf um den Pokal k\xE4mpfen \u2014 \uD83E\uDD49, dann \uD83E\uDD48, dann \uD83E\uDD47. Dazwischen liegt aber immer eine Pause: ", POKAL_PAUSE[0], ",", " ", POKAL_PAUSE[1], " und ", POKAL_PAUSE[2], " Tage. Denn der Pokal fragt nicht, ob du es heute kannst \u2014 sondern ob du es in drei Wochen noch kannst. Und ein Titel z\xE4hlt nur", " ", /*#__PURE__*/React.createElement("b", {
+  }, "Und dann gibt es den Pokal:"), /*#__PURE__*/React.createElement("p", null, "Wer alle drei Sterne hat, darf um den Pokal k\xE4mpfen \u2014 \uD83E\uDD49, dann \uD83E\uDD48, dann \uD83E\uDD47. Dazwischen liegt aber immer eine Pause: ", POKAL_PAUSE[0], ",", " ", POKAL_PAUSE[1], " und ", POKAL_PAUSE[2], " Tage. Denn der Pokal fragt nicht, ob du es heute kannst \u2014 sondern ob du es in drei Wochen noch kannst. Und ein Titel z\xE4hlt nur, wenn du", " ", /*#__PURE__*/React.createElement("b", {
     className: "text-amber-200"
-  }, "ganz ohne Fehler"), ": jede einzelne Rechnung muss sitzen. Daneben? Macht nichts \u2014 du darfst sofort wieder antreten. K\xE4mpfen darfst du sowieso jederzeit."), /*#__PURE__*/React.createElement("p", {
+  }, "jede Rechnung richtig und jede blitzschnell"), " hast \u2014 genau wie beim dritten Stern. Wer nach drei Wochen erst \xFCberlegen muss, wei\xDF es eben nicht mehr aus dem Stand. Daneben? Macht nichts \u2014 du darfst sofort wieder antreten. K\xE4mpfen darfst du sowieso jederzeit."), /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-emerald-300"
   }, "Und wenn du irgendwo feststeckst: Du hast ", BEERE_KAMPF === 1 ? "eine" : BEERE_KAMPF, " ", "\uD83E\uDED0 Beere dabei. Sie h\xE4lt die Uhr an und zeigt dir den Weg. Die Rechnung z\xE4hlt dann ", PUNKTE_BEERE, " statt ", PUNKTE_GRUND, " Punkte \u2014 raten bringt gar nichts."), /*#__PURE__*/React.createElement("div", {
     className: "mt-5"
@@ -3237,7 +3237,9 @@ function ArenaListe({
         titel: true
       }),
       className: "a-funkeln kein-blau mt-1 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-300 px-3 py-2 text-sm font-black text-emerald-950 shadow-lg active:translate-y-px"
-    }, "\uD83C\uDFC6 Titelkampf um ", POKAL[pk.stufe], " \u2014 ohne Fehler!") : /*#__PURE__*/React.createElement("p", {
+    }, "\uD83C\uDFC6 Titelkampf um ", POKAL[pk.stufe], /*#__PURE__*/React.createElement("span", {
+      className: "block text-[11px] font-bold opacity-80"
+    }, "alles richtig, alles blitzschnell")) : /*#__PURE__*/React.createElement("p", {
       className: "mt-1 text-center text-[11px] text-emerald-500"
     }, POKAL[pk.stufe], " Titelkampf in ", tageBis(pk.freiAb), " ", tageBis(pk.freiAb) === 1 ? "Tag" : "Tagen")), offen && pk.fertig && /*#__PURE__*/React.createElement("p", {
       className: "mt-1 text-center text-[11px] font-bold text-amber-300"
@@ -3366,7 +3368,7 @@ function ArenaKampf({
   const [pause, setPause] = useState(false);
   const [geschnauft, setGeschnauft] = useState(false);
   const [vorherPokal] = useState(() => pokalStand(start, arena.id).stufe);
-  const [fehlerGemacht, setFehlerGemacht] = useState(false);
+  const [titelWeg, setTitelWeg] = useState(false);
   const [beerenRest, setBeerenRest] = useState(BEERE_KAMPF);
   const [geholfen, setGeholfen] = useState(false); // Beere in dieser Rechnung
   const [tipp, setTipp] = useState(0); // welche Beere gerade offen ist
@@ -3398,7 +3400,12 @@ function ArenaKampf({
   /* Ein Titel ist kein Punktestand, sondern ein Beweis: nach Wochen
      Pause jede einzelne Rechnung gewusst. Ein Fehler, und er wartet
      aufs nächste Mal — versuchen darf sie es sofort wieder. */
-  const titelGewonnen = titel && !fehlerGemacht && vorherPokal < POKAL.length;
+  /* Ein Titel verlangt dasselbe wie der dritte Stern: jede Rechnung
+     richtig UND jede blitzschnell. Nach drei Wochen Pause ist genau
+     das der Beweis, dass es sitzt — wer erst überlegen muss, weiss es
+     eben nicht mehr aus dem Stand. Luft holen und Beere zählen
+     deshalb auch nicht als blitzschnell. */
+  const titelGewonnen = titel && treffer >= fragen.length && schnellZahl >= fragen.length && vorherPokal < POKAL.length;
   const leiterNr = arenaLeiter(arena);
   useEffect(() => {
     speichern(t);
@@ -3433,7 +3440,7 @@ function ArenaKampf({
     const schnell = art === "schnell";
     setLetzte(art);
     setPause(false);
-    if (!richtig) setFehlerGemacht(true);
+    if (art !== "schnell") setTitelWeg(true);
 
     /* --- Punkte --- */
     let dazu = 0;
@@ -3700,7 +3707,7 @@ function ArenaKampf({
       n: Math.max(vorherSterne, jetztSterne)
     })), titel && /*#__PURE__*/React.createElement("p", {
       className: "mt-1 text-sm font-black " + (titelGewonnen ? "text-amber-200" : "text-emerald-400")
-    }, titelGewonnen ? "🏆 Titel geholt — " + POKAL[vorherPokal] + " gehört dir!" : fragen.length - treffer === 1 ? "Eine Rechnung daneben — der Titel braucht alle " + fragen.length + ". Du darfst sofort wieder ran." : fragen.length - treffer + " Rechnungen daneben — der Titel braucht jede einzelne. Du darfst sofort wieder ran."), titelGewonnen && vorherPokal + 1 < POKAL.length && /*#__PURE__*/React.createElement("p", {
+    }, titelGewonnen ? "🏆 Titel geholt — " + POKAL[vorherPokal] + " gehört dir!" : fehlerZahl > 0 ? (fehlerZahl === 1 ? "Eine Rechnung daneben" : fehlerZahl + " Rechnungen daneben") + " — der Titel braucht alle richtig und alle blitzschnell. Du darfst sofort wieder ran." : "Alles richtig! Aber " + (fragen.length - schnellZahl) + (fragen.length - schnellZahl === 1 ? " Rechnung war" : " Rechnungen waren") + " nicht blitzschnell — und der Titel will beides. Du darfst sofort wieder ran."), titelGewonnen && vorherPokal + 1 < POKAL.length && /*#__PURE__*/React.createElement("p", {
       className: "text-[11px] text-emerald-400"
     }, POKAL[vorherPokal + 1], " ist in ", POKAL_PAUSE[vorherPokal + 1], " Tagen dran."), titelGewonnen && vorherPokal + 1 >= POKAL.length && /*#__PURE__*/React.createElement("p", {
       className: "a-funkeln text-[11px] font-bold text-amber-300"
@@ -3762,7 +3769,7 @@ function ArenaKampf({
     className: "text-sm font-black text-amber-300"
   }, titel ? "🏆 Titelkampf · " : "", arena.name), /*#__PURE__*/React.createElement("p", {
     className: "text-[11px] text-emerald-300"
-  }, titel ? fehlerGemacht ? "Titel futsch — spiel ruhig zu Ende, du darfst sofort wieder ran" : POKAL[vorherPokal] + " — jede Rechnung muss sitzen" : "gegen " + wName(t, leiterNr) + " · Orden ab " + ordenPunkte(arena))), /*#__PURE__*/React.createElement("span", {
+  }, titel ? titelWeg ? "Titel futsch — spiel ruhig zu Ende, du darfst sofort wieder ran" : POKAL[vorherPokal] + " — alles richtig, alles blitzschnell" : "gegen " + wName(t, leiterNr) + " · Orden ab " + ordenPunkte(arena))), /*#__PURE__*/React.createElement("span", {
     className: "text-xs font-bold text-emerald-300"
   }, i + 1, "/", fragen.length)), /*#__PURE__*/React.createElement("div", {
     className: "mt-2 flex items-end justify-center gap-3"

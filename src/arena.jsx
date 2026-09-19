@@ -2753,10 +2753,12 @@ function KampfErklaerung({ onWeiter, zurueck }) {
           dann 🥇. Dazwischen liegt aber immer eine Pause: {POKAL_PAUSE[0]},{" "}
           {POKAL_PAUSE[1]} und {POKAL_PAUSE[2]} Tage. Denn der Pokal fragt
           nicht, ob du es heute kannst — sondern ob du es in drei Wochen noch
-          kannst. Und ein Titel zählt nur{" "}
-          <b className="text-amber-200">ganz ohne Fehler</b>: jede einzelne
-          Rechnung muss sitzen. Daneben? Macht nichts — du darfst sofort wieder
-          antreten. Kämpfen darfst du sowieso jederzeit.
+          kannst. Und ein Titel zählt nur, wenn du{" "}
+          <b className="text-amber-200">jede Rechnung richtig und jede
+          blitzschnell</b> hast — genau wie beim dritten Stern. Wer nach drei
+          Wochen erst überlegen muss, weiß es eben nicht mehr aus dem Stand.
+          Daneben? Macht nichts — du darfst sofort wieder antreten. Kämpfen
+          darfst du sowieso jederzeit.
         </p>
         <p className="mt-2 text-emerald-300">
           Und wenn du irgendwo feststeckst: Du hast {BEERE_KAMPF === 1 ? "eine" : BEERE_KAMPF}{" "}
@@ -2863,7 +2865,10 @@ function ArenaListe({ t, onKampf, onZurueck }) {
                   onClick={() => onKampf({ ...a, titel: true })}
                   className="a-funkeln kein-blau mt-1 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-300 px-3 py-2 text-sm font-black text-emerald-950 shadow-lg active:translate-y-px"
                 >
-                  🏆 Titelkampf um {POKAL[pk.stufe]} — ohne Fehler!
+                  🏆 Titelkampf um {POKAL[pk.stufe]}
+                  <span className="block text-[11px] font-bold opacity-80">
+                    alles richtig, alles blitzschnell
+                  </span>
                 </button>
               ) : (
                 <p className="mt-1 text-center text-[11px] text-emerald-500">
@@ -3010,7 +3015,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   const [pause, setPause] = useState(false);
   const [geschnauft, setGeschnauft] = useState(false);
   const [vorherPokal] = useState(() => pokalStand(start, arena.id).stufe);
-  const [fehlerGemacht, setFehlerGemacht] = useState(false);
+  const [titelWeg, setTitelWeg] = useState(false);
   const [beerenRest, setBeerenRest] = useState(BEERE_KAMPF);
   const [geholfen, setGeholfen] = useState(false);  // Beere in dieser Rechnung
   const [tipp, setTipp] = useState(0);              // welche Beere gerade offen ist
@@ -3045,7 +3050,16 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   /* Ein Titel ist kein Punktestand, sondern ein Beweis: nach Wochen
      Pause jede einzelne Rechnung gewusst. Ein Fehler, und er wartet
      aufs nächste Mal — versuchen darf sie es sofort wieder. */
-  const titelGewonnen = titel && !fehlerGemacht && vorherPokal < POKAL.length;
+  /* Ein Titel verlangt dasselbe wie der dritte Stern: jede Rechnung
+     richtig UND jede blitzschnell. Nach drei Wochen Pause ist genau
+     das der Beweis, dass es sitzt — wer erst überlegen muss, weiss es
+     eben nicht mehr aus dem Stand. Luft holen und Beere zählen
+     deshalb auch nicht als blitzschnell. */
+  const titelGewonnen =
+    titel &&
+    treffer >= fragen.length &&
+    schnellZahl >= fragen.length &&
+    vorherPokal < POKAL.length;
   const leiterNr = arenaLeiter(arena);
 
   useEffect(() => {
@@ -3091,7 +3105,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
     const schnell = art === "schnell";
     setLetzte(art);
     setPause(false);
-    if (!richtig) setFehlerGemacht(true);
+    if (art !== "schnell") setTitelWeg(true);
 
     /* --- Punkte --- */
     let dazu = 0;
@@ -3385,9 +3399,12 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
             <p className={"mt-1 text-sm font-black " + (titelGewonnen ? "text-amber-200" : "text-emerald-400")}>
               {titelGewonnen
                 ? "🏆 Titel geholt — " + POKAL[vorherPokal] + " gehört dir!"
-                : (fragen.length - treffer) === 1
-                ? "Eine Rechnung daneben — der Titel braucht alle " + fragen.length + ". Du darfst sofort wieder ran."
-                : (fragen.length - treffer) + " Rechnungen daneben — der Titel braucht jede einzelne. Du darfst sofort wieder ran."}
+                : fehlerZahl > 0
+                ? (fehlerZahl === 1 ? "Eine Rechnung daneben" : fehlerZahl + " Rechnungen daneben") +
+                  " — der Titel braucht alle richtig und alle blitzschnell. Du darfst sofort wieder ran."
+                : "Alles richtig! Aber " + (fragen.length - schnellZahl) +
+                  (fragen.length - schnellZahl === 1 ? " Rechnung war" : " Rechnungen waren") +
+                  " nicht blitzschnell — und der Titel will beides. Du darfst sofort wieder ran."}
             </p>
           )}
           {titelGewonnen && vorherPokal + 1 < POKAL.length && (
@@ -3502,9 +3519,9 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
           </p>
           <p className="text-[11px] text-emerald-300">
             {titel
-              ? fehlerGemacht
+              ? titelWeg
                 ? "Titel futsch — spiel ruhig zu Ende, du darfst sofort wieder ran"
-                : POKAL[vorherPokal] + " — jede Rechnung muss sitzen"
+                : POKAL[vorherPokal] + " — alles richtig, alles blitzschnell"
               : "gegen " + wName(t, leiterNr) + " · Orden ab " + ordenPunkte(arena)}
           </p>
         </div>

@@ -126,8 +126,10 @@ von dort genommen — ab dann baut es auch ohne Internet.
   Schwellen waren kaputt — Tempo- und Trickbonus lassen die Punkte mitwachsen,
   sodass ein starkes Team mit acht von zwoelf Fehlern noch den Orden holte. Der
   Orden ist genau der erste Stern, keine zweite Schwelle daneben. Ein
-  Titelkampf zaehlt nur ganz ohne Fehler; ein Fehlversuch startet die Pause
-  nicht neu. `ordenPunkte`
+  Titelkampf verlangt dasselbe wie ★★★: jede Rechnung richtig UND jede
+  blitzschnell (Luft holen und Beere zaehlen nicht als blitzschnell). Sonst
+  waere die Wartezeit sinnlos — nach drei Wochen soll es aus dem Stand sitzen.
+  Ein Fehlversuch kostet nichts und startet die Pause nicht neu. `ordenPunkte`
   und `meisterPunkte` leiten die Schwellen aus `kampfFragen` ab (12 Fragen in
   einer Arena, 16 in der Liga). Die Liga steht als eigener Eintrag in `ARENEN`
   und öffnet, wenn alle Orden aus `ARENEN_OHNE_LIGA` hängen; ihre Fragen kommen
