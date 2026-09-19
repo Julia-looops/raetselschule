@@ -120,7 +120,14 @@ von dort genommen — ab dann baut es auch ohne Internet.
   `LUFT_HOLEN`. Wie viel Zeit eine Rechnung bekommt, rechnet `blitzZeit` aus
   (4, 6 oder 8 Sekunden je nach Schwierigkeit); wer in der ersten Hälfte
   antwortet, bekommt Tempobonus und eine ⚡.
-- **Sterne und Liga**: `sterneFuer` vergibt je Kampf 0-3 Sterne, `ordenPunkte`
+- **Sterne und Liga**: `sterneFuer` vergibt je Kampf 0-3 Sterne. Zuerst zaehlen
+  die Treffer, erst danach die Punkte: ★ hoechstens `ORDEN_FEHLER` Fehler
+  (plus `ordenPunkte`), ★★ und ★★★ nur fehlerfrei. Rein punktbasierte
+  Schwellen waren kaputt — Tempo- und Trickbonus lassen die Punkte mitwachsen,
+  sodass ein starkes Team mit acht von zwoelf Fehlern noch den Orden holte. Der
+  Orden ist genau der erste Stern, keine zweite Schwelle daneben. Ein
+  Titelkampf zaehlt nur ganz ohne Fehler; ein Fehlversuch startet die Pause
+  nicht neu. `ordenPunkte`
   und `meisterPunkte` leiten die Schwellen aus `kampfFragen` ab (12 Fragen in
   einer Arena, 16 in der Liga). Die Liga steht als eigener Eintrag in `ARENEN`
   und öffnet, wenn alle Orden aus `ARENEN_OHNE_LIGA` hängen; ihre Fragen kommen

@@ -2740,9 +2740,9 @@ function KampfErklaerung({ onWeiter, zurueck }) {
           da 8 · 7 = 56, dann kommt Rexi. Wesen mit Tricks hauen fester zu.
         </p>
         <p className="mt-2 font-bold text-amber-200">Dafür gibt es Sterne:</p>
-        <p>★ {ORDEN_PUNKTE} Punkte — der Orden gehört dir</p>
-        <p>★★ {MEISTER_PUNKTE} Punkte — Meister</p>
-        <p>★★★ alles richtig und alles blitzschnell</p>
+        <p>★ höchstens {ORDEN_FEHLER === 1 ? "ein Fehler" : ORDEN_FEHLER + " Fehler"} — der Orden gehört dir</p>
+        <p>★★ kein Fehler, dazu genug Punkte — Meister</p>
+        <p>★★★ kein Fehler und alles blitzschnell</p>
         <p className="mt-2 text-emerald-300">
           Sei schnell! Wer in der ersten Hälfte der Zeit antwortet, bekommt eine
           ⚡ dazu. Damit bringst du deinen Wesen neue Tricks bei.
@@ -2753,7 +2753,10 @@ function KampfErklaerung({ onWeiter, zurueck }) {
           dann 🥇. Dazwischen liegt aber immer eine Pause: {POKAL_PAUSE[0]},{" "}
           {POKAL_PAUSE[1]} und {POKAL_PAUSE[2]} Tage. Denn der Pokal fragt
           nicht, ob du es heute kannst — sondern ob du es in drei Wochen noch
-          kannst. Kämpfen darfst du trotzdem jederzeit.
+          kannst. Und ein Titel zählt nur{" "}
+          <b className="text-amber-200">ganz ohne Fehler</b>: jede einzelne
+          Rechnung muss sitzen. Daneben? Macht nichts — du darfst sofort wieder
+          antreten. Kämpfen darfst du sowieso jederzeit.
         </p>
         <p className="mt-2 text-emerald-300">
           Und wenn du irgendwo feststeckst: Du hast {BEERE_KAMPF === 1 ? "eine" : BEERE_KAMPF}{" "}
@@ -2860,7 +2863,7 @@ function ArenaListe({ t, onKampf, onZurueck }) {
                   onClick={() => onKampf({ ...a, titel: true })}
                   className="a-funkeln kein-blau mt-1 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-300 px-3 py-2 text-sm font-black text-emerald-950 shadow-lg active:translate-y-px"
                 >
-                  🏆 Titelkampf um {POKAL[pk.stufe]} — jetzt!
+                  🏆 Titelkampf um {POKAL[pk.stufe]} — ohne Fehler!
                 </button>
               ) : (
                 <p className="mt-1 text-center text-[11px] text-emerald-500">
@@ -2927,10 +2930,18 @@ const MEISTER_PUNKTE = 200;
    Der dritte Stern ist mit Tricks nicht zu kaufen — er verlangt, dass
    jede einzelne Rechnung aus dem Stand sitzt.
    ============================================================ */
+/* Die Schwellen hingen nur an Punkten — und Punkte wachsen mit Tricks
+   und Tempo mit. Wer ein starkes Team hatte, konnte acht von zwölf
+   Rechnungen danebenhauen und trug trotzdem den Orden davon. Deshalb
+   zählt jetzt zuerst, wie viel wirklich richtig war; die Punkte
+   entscheiden erst darüber, ob es auch zum zweiten Stern reicht. */
+const ORDEN_FEHLER = 1;   // so viele Fehler verzeiht der Orden
+
 function sterneFuer(punkte, treffer, schnell, fragen, arena) {
-  if (treffer >= fragen && schnell >= fragen) return 3;
-  if (punkte >= meisterPunkte(arena)) return 2;
-  if (punkte >= ordenPunkte(arena)) return 1;
+  const fehler = fragen - treffer;
+  if (fehler === 0 && schnell >= fragen) return 3;
+  if (fehler === 0 && punkte >= meisterPunkte(arena)) return 2;
+  if (fehler <= ORDEN_FEHLER && punkte >= ordenPunkte(arena)) return 1;
   return 0;
 }
 
@@ -2999,6 +3010,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   const [pause, setPause] = useState(false);
   const [geschnauft, setGeschnauft] = useState(false);
   const [vorherPokal] = useState(() => pokalStand(start, arena.id).stufe);
+  const [fehlerGemacht, setFehlerGemacht] = useState(false);
   const [beerenRest, setBeerenRest] = useState(BEERE_KAMPF);
   const [geholfen, setGeholfen] = useState(false);  // Beere in dieser Rechnung
   const [tipp, setTipp] = useState(0);              // welche Beere gerade offen ist
@@ -3030,8 +3042,10 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
      den zweiten Stern. Scheitern kostet nichts, nur die Pokalstufe
      bleibt dann liegen. */
   const titel = !!arena.titel;
-  const titelSchwelle = meisterPunkte(arena);
-  const titelGewonnen = titel && punkte >= titelSchwelle && vorherPokal < POKAL.length;
+  /* Ein Titel ist kein Punktestand, sondern ein Beweis: nach Wochen
+     Pause jede einzelne Rechnung gewusst. Ein Fehler, und er wartet
+     aufs nächste Mal — versuchen darf sie es sofort wieder. */
+  const titelGewonnen = titel && !fehlerGemacht && vorherPokal < POKAL.length;
   const leiterNr = arenaLeiter(arena);
 
   useEffect(() => {
@@ -3077,6 +3091,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
     const schnell = art === "schnell";
     setLetzte(art);
     setPause(false);
+    if (!richtig) setFehlerGemacht(true);
 
     /* --- Punkte --- */
     let dazu = 0;
@@ -3203,8 +3218,10 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   /* Am Ende: Orden und Rekord festhalten */
   useEffect(() => {
     if (phase !== "ende") return;
-    const gewonnen = punkte >= ordenPunkte(arena);
     const neu2 = sterneFuer(punkte, treffer, schnellZahl, fragen.length, arena);
+    /* Der Orden ist genau der erste Stern — nicht mehr eine eigene,
+       allein punktbasierte Schwelle daneben. */
+    const gewonnen = neu2 >= 1;
     const neuerRekord = punkte > vorherRekord;
     if (gewonnen || neuerRekord || neu2 > vorherSterne) {
       if (neu2 > vorherSterne) Ton.orden();
@@ -3340,9 +3357,10 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
 
   /* -------------------- Ende -------------------- */
   if (phase === "ende") {
-    const gewonnen = punkte >= ordenPunkte(arena);
-    const neuerRekord = punkte > vorherRekord;
+    const fehlerZahl = fragen.length - treffer;
     const jetztSterne = sterneFuer(punkte, treffer, schnellZahl, fragen.length, arena);
+    const gewonnen = jetztSterne >= 1 || vorherSterne >= 1;
+    const neuerRekord = punkte > vorherRekord;
     const verdient = schnellZahl;
     const kannLehren =
       trickPunkte(t) >= TRICK_KOSTEN &&
@@ -3367,7 +3385,9 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
             <p className={"mt-1 text-sm font-black " + (titelGewonnen ? "text-amber-200" : "text-emerald-400")}>
               {titelGewonnen
                 ? "🏆 Titel geholt — " + POKAL[vorherPokal] + " gehört dir!"
-                : "Titelkampf verloren — " + titelSchwelle + " Punkte hätte es gebraucht. Du darfst sofort wieder ran."}
+                : (fragen.length - treffer) === 1
+                ? "Eine Rechnung daneben — der Titel braucht alle " + fragen.length + ". Du darfst sofort wieder ran."
+                : (fragen.length - treffer) + " Rechnungen daneben — der Titel braucht jede einzelne. Du darfst sofort wieder ran."}
             </p>
           )}
           {titelGewonnen && vorherPokal + 1 < POKAL.length && (
@@ -3394,14 +3414,20 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
           <p className="mt-1 text-sm text-emerald-300">
             {treffer} von {fragen.length} richtig · {schnellZahl} blitzschnell
           </p>
-          {/* Was fehlt zum nächsten Stern? */}
+          {/* Was fehlt zum nächsten Stern? Seit die Treffer zählen und
+              nicht mehr nur die Punkte, muss auch hier das Richtige
+              stehen — sonst sucht sie den Fehler bei den Punkten. */}
           {Math.max(vorherSterne, jetztSterne) < 3 && (
             <p className="mt-1 text-xs text-amber-200">
               {Math.max(vorherSterne, jetztSterne) === 0
-                ? "★ ab " + ordenPunkte(arena) + " Punkten — dir fehlten " + (ordenPunkte(arena) - punkte)
+                ? fehlerZahl > ORDEN_FEHLER
+                  ? "★ mit höchstens " + ORDEN_FEHLER + " Fehler — du hattest " + fehlerZahl
+                  : "★ ab " + ordenPunkte(arena) + " Punkten — dir fehlten " + (ordenPunkte(arena) - punkte)
                 : Math.max(vorherSterne, jetztSterne) === 1
-                ? "★★ ab " + meisterPunkte(arena) + " Punkten" +
-                  (punkte < meisterPunkte(arena) ? " — dir fehlten " + (meisterPunkte(arena) - punkte) : "")
+                ? fehlerZahl > 0
+                  ? "★★ nur ganz ohne Fehler — du hattest " + fehlerZahl
+                  : "★★ ab " + meisterPunkte(arena) + " Punkten" +
+                    (punkte < meisterPunkte(arena) ? " — dir fehlten " + (meisterPunkte(arena) - punkte) : "")
                 : "★★★ für alle " + fragen.length + " richtig und alle blitzschnell"}
             </p>
           )}
@@ -3476,7 +3502,9 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
           </p>
           <p className="text-[11px] text-emerald-300">
             {titel
-              ? POKAL[vorherPokal] + " ab " + titelSchwelle + " Punkten"
+              ? fehlerGemacht
+                ? "Titel futsch — spiel ruhig zu Ende, du darfst sofort wieder ran"
+                : POKAL[vorherPokal] + " — jede Rechnung muss sitzen"
               : "gegen " + wName(t, leiterNr) + " · Orden ab " + ordenPunkte(arena)}
           </p>
         </div>
