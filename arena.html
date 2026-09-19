@@ -741,6 +741,10 @@ function schwereZahl(x) {
   return x >= 6 && x <= 9; // die 10er sind leicht, die 6er bis 9er nicht
 }
 function blitzZeit(fakt) {
+  if (fakt.op === ":") {
+    /* Geteilt ist der Umkehrweg — das braucht eine Spur länger. */
+    return schwereZahl(fakt.b) || schwereZahl(fakt.antwort) ? 8 : 6;
+  }
   if (fakt.op === "·") {
     if (schwereZahl(fakt.a) && schwereZahl(fakt.b)) return 8;
     if (schwereZahl(fakt.a) || schwereZahl(fakt.b)) return 6;
@@ -1260,6 +1264,11 @@ function Rechenbild({
     a: fakt.a,
     b: fakt.b
   });
+  /* 56 : 7 — sieben Reihen, und gefragt ist, wie viele in einer sind */
+  if (fakt.op === ":") return /*#__PURE__*/React.createElement(Punktefeld, {
+    a: fakt.b,
+    b: fakt.antwort
+  });
   if (fakt.op === "+") return /*#__PURE__*/React.createElement(Zwanzigerfeld, {
     voll: fakt.a,
     dazu: fakt.b
@@ -1370,6 +1379,24 @@ function beeren(fakt) {
       name: "Tauschbeere",
       text: a + " · " + bb + " ist genauso viel wie " + bb + " · " + a + ". Immer."
     });
+  } else if (fakt.op === ":") {
+    /* 56 : 7 — der Weg zurück durch die Reihe */
+    b.push({
+      bild: "🍓",
+      name: "Punktbeere",
+      text: "Leg " + fakt.a + " Punkte in " + fakt.b + " gleiche Reihen. Wie viele sind in einer?",
+      bild2: true
+    });
+    b.push({
+      bild: "🪜",
+      name: "Leiterbeere",
+      text: "Zähl die " + fakt.b + "er-Reihe hoch, bis du bei " + fakt.a + " bist. So oft passt sie hinein."
+    });
+    b.push({
+      bild: "🔁",
+      name: "Malbeere",
+      text: fakt.b + " · ? = " + fakt.a + " — dieselbe Frage, nur andersherum."
+    });
   } else if (fakt.op === "+") {
     const rest = 10 - fakt.a;
     b.push({
@@ -1421,7 +1448,7 @@ function beeren(fakt) {
    Florentina und ihre Freunde dasselbe Gerät benutzen können.
    ============================================================ */
 /* wird beim Bauen ersetzt, siehe tools/build.mjs */
-const FASSUNG = "25 · 19.9.2026";
+const FASSUNG = "26 · 19.9.2026";
 const SPEICHER = "florentina-zahlodex";
 const TRAINER_BILDER = ["🐾", "🧢", "🎒", "🪄", "🛼", "🦄", "🚀", "🍀"];
 function leererTrainer(bild) {
@@ -2539,7 +2566,23 @@ function Trickbuch({
     }, "lernt ", naechster.bild, /*#__PURE__*/React.createElement("br", null), naechster.name));
   })), /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-center text-xs text-amber-200"
-  }, punkte >= TRICK_KOSTEN ? "Ein Trick kostet " + TRICK_KOSTEN + " ⚡ — du hast " + punkte + "." : "Noch " + (TRICK_KOSTEN - punkte) + " ⚡, dann kannst du.")), spaeter.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, punkte >= TRICK_KOSTEN ? "Ein Trick kostet " + TRICK_KOSTEN + " ⚡ — du hast " + punkte + "." : "Noch " + (TRICK_KOSTEN - punkte) + " ⚡, dann kannst du.")), bereit.length === 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mb-3 rounded-2xl border-2 border-emerald-700 p-3"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-center font-black text-amber-300"
+  }, punkte, " \u26A1 warten auf dich"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 text-center text-xs text-emerald-300"
+  }, "Gerade kann sie niemand annehmen. \u26A1 verfallen aber nicht \u2014 sie bleiben liegen, bis jemand so weit ist."), /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 text-xs font-bold uppercase tracking-widest text-emerald-300"
+  }, "So bekommt ein Wesen den n\xE4chsten Trick"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-2 space-y-1.5 text-sm text-emerald-100"
+  }, /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", {
+    className: "text-amber-300"
+  }, "1."), " In der Arena k\xE4mpfen und bei diesem Wesen ", /*#__PURE__*/React.createElement("b", null, "blitzschnell"), " antworten. Dann l\xE4dt es dich ein."), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", {
+    className: "text-amber-300"
+  }, "2."), " Das Wesen muss stark genug sein \u2014 das wird es nur auf dem Streifzug.", spaeter.length > 0 && " Wem noch was fehlt, steht gleich hier drunter."), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", {
+    className: "text-amber-300"
+  }, "3."), " Dann hierher kommen und", " ", TRICK_KOSTEN, " \u26A1 ausgeben. Der Rest bleibt dir."))), spaeter.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "mb-3 rounded-2xl bg-emerald-900/60 p-3"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-xs font-bold uppercase tracking-widest text-emerald-300"
@@ -2899,8 +2942,17 @@ const ARENEN = [{
   art: "liga",
   name: "Die Liga",
   leiterNr: 100
+},
+/* Und darüber noch eine: alles auf einmal. Mal, geteilt, plus,
+   minus — zwanzig Rechnungen, fünf je Rechenart. Öffnet erst, wenn
+   die Liga gewonnen ist. */
+{
+  id: "super",
+  art: "super",
+  name: "Die Super-Arena",
+  leiterNr: 81
 }];
-const ARENEN_OHNE_LIGA = ARENEN.filter(a => a.art !== "liga");
+const ARENEN_OHNE_LIGA = ARENEN.filter(a => a.art !== "liga" && a.art !== "super");
 function arenaLeiter(a) {
   return a.art === "reihe" ? a.reihe * a.reihe : a.leiterNr;
 }
@@ -2908,6 +2960,7 @@ function arenaLeiter(a) {
 /* Wie viele Rechnungen und wie viele Punkte je Stern? Die Liga ist
    länger, also müssen auch ihre Schwellen mitwachsen. */
 function kampfFragen(a) {
+  if (a.art === "super") return SUPER_FRAGEN;
   return a.art === "liga" ? 16 : 12;
 }
 function ordenPunkte(a) {
@@ -3024,6 +3077,15 @@ function Pokalreihe({
   }, b)));
 }
 function arenaReif(t, a) {
+  if (a.art === "super") {
+    /* Erst die Liga, dann das hier. */
+    const hab = t.orden.includes("liga") ? 1 : 0;
+    return {
+      hab,
+      noetig: 1,
+      dazu: 1
+    };
+  }
   if (a.art === "liga") {
     const hab = ARENEN_OHNE_LIGA.filter(x => t.orden.includes(x.id)).length;
     return {
@@ -3070,7 +3132,78 @@ function ligaFakten() {
   });
   return aus;
 }
+
+/* ============================================================
+   DIE SUPER-ARENA
+
+   Alle vier Grundrechenarten in einem Kampf — mal, geteilt, plus,
+   minus, zu gleichen Teilen. Das Geteilt ist nichts Neues, das das
+   Spiel erst lernen müsste: jedes Wesen kennt seine Paare längst.
+   Wer weiss, dass 7 · 8 zu Rexi gehört, weiss auch 56 : 7.
+
+   Sie ist der Abschluss über der Liga und dafür länger: zwanzig
+   Rechnungen, fünf je Rechenart.
+   ============================================================ */
+const SUPER_FRAGEN = 20;
+function superFakten() {
+  const aus = {
+    mal: [],
+    geteilt: [],
+    plus: [],
+    minus: []
+  };
+  for (let x = 2; x <= 10; x++) for (let y = 2; y <= 10; y++) {
+    aus.mal.push({
+      id: "m" + x + "x" + y,
+      text: x + " · " + y,
+      antwort: x * y,
+      a: x,
+      b: y,
+      op: "·"
+    });
+    /* c : x = y — gefragt ist der zweite Faktor */
+    aus.geteilt.push({
+      id: "d" + x * y + ":" + x,
+      text: x * y + " : " + x,
+      antwort: y,
+      a: x * y,
+      b: x,
+      op: ":"
+    });
+  }
+  for (let x = 2; x <= 9; x++) for (let y = 2; y <= 9; y++) if (x + y > 10 && x + y <= 20) aus.plus.push({
+    id: "p" + x + "+" + y,
+    text: x + " + " + y,
+    antwort: x + y,
+    a: x,
+    b: y,
+    op: "+"
+  });
+  for (let m = 11; m <= 20; m++) for (let k = 2; k <= 9; k++) if (m - k < 10 && m - k > 0) aus.minus.push({
+    id: "s" + m + "-" + k,
+    text: m + " − " + k,
+    antwort: m - k,
+    a: m,
+    b: k,
+    op: "−"
+  });
+  /* Zu gleichen Teilen ziehen, damit nicht eine Rechenart die Runde
+     beherrscht — und die schweren Malrechnungen bevorzugt. */
+  const jeArt = SUPER_FRAGEN / 4;
+  /* 4 : 2 ist in einer Super-Arena keine Aufgabe. Beim Malnehmen und
+     beim Teilen kommen deshalb die schweren zuerst — bei Plus und
+     Minus gibt es keine leichten, dort sind alle mit Zehnerübergang. */
+  const zieh = (liste, schwer) => {
+    const l = [...liste].sort(() => Math.random() - 0.5);
+    if (schwer) l.sort((x, y) => (schwer(y) ? 1 : 0) - (schwer(x) ? 1 : 0));
+    return l.slice(0, jeArt);
+  };
+  const schweresMal = x => schwereZahl(x.a) && schwereZahl(x.b);
+  const schweresGeteilt = x => schwereZahl(x.b) && schwereZahl(x.antwort);
+  return [...zieh(aus.mal, schweresMal), ...zieh(aus.geteilt, schweresGeteilt), ...zieh(aus.plus, null), ...zieh(aus.minus, null)];
+}
 function arenaTeam(a) {
+  if (a.art === "super") return [...new Set(superFakten().map(x => x.antwort))];
   if (a.art === "liga") return [...new Set(ligaFakten().map(x => x.antwort))];
   if (a.art === "reihe") {
     const aus = [];
@@ -3084,13 +3217,47 @@ function teamTricks(t, a) {
 }
 
 /* Die Aufgaben eines Arenakampfs */
+/* Zwei Rechnungen mit demselben Ergebnis direkt hintereinander (8 · 9
+   und gleich darauf 9 · 8) sind geschenkt — man tippt die Zahl noch
+   einmal, ohne zu rechnen. Also umsortieren: immer die erste Rechnung
+   nehmen, deren Ergebnis nicht gerade dran war. */
+function ohneDoppel(liste) {
+  /* Immer aus dem GRÖSSTEN Topf nehmen, der nicht gerade dran war —
+     dieselbe Regel wie beim Mischen der Wesen. Einfach "das nächste
+     passende" zu greifen reicht nicht: dann sind die Einzelstücke
+     zuerst weg und am Schluss liegen nur noch Paare da, die dann doch
+     hintereinander kommen. */
+  const toepfe = new Map();
+  liste.forEach(x => {
+    const k = x.antwort;
+    if (!toepfe.has(k)) toepfe.set(k, []);
+    toepfe.get(k).push(x);
+  });
+  const raus = [];
+  let letzte = null;
+  while (raus.length < liste.length) {
+    let schluessel = [...toepfe.keys()].filter(k => toepfe.get(k).length > 0 && k !== letzte);
+    if (schluessel.length === 0) schluessel = [...toepfe.keys()].filter(k => toepfe.get(k).length > 0);
+    const hoechste = Math.max(...schluessel.map(k => toepfe.get(k).length));
+    const beste = schluessel.filter(k => toepfe.get(k).length === hoechste);
+    const gewaehlt = beste[Math.floor(Math.random() * beste.length)];
+    raus.push(toepfe.get(gewaehlt).pop());
+    letzte = gewaehlt;
+  }
+  return raus;
+}
 function arenaAufgaben(a, anzahl) {
   const pool = [];
   if (a.art === "liga") {
-    return ligaFakten().sort(() => Math.random() - 0.5).slice(0, anzahl);
+    return ohneDoppel(ligaFakten().sort(() => Math.random() - 0.5).slice(0, anzahl));
+  }
+  if (a.art === "super") {
+    return ohneDoppel(superFakten().sort(() => Math.random() - 0.5).slice(0, anzahl));
   }
   if (a.art === "reihe") {
-    for (let b = 1; b <= 10; b++) {
+    /* Die 1er sind keine Rechnung, sondern eine Ablesung — in der
+       Arena haben sie nichts verloren. */
+    for (let b = 2; b <= 10; b++) {
       pool.push({
         id: "m" + a.reihe + "x" + b,
         text: a.reihe + " · " + b,
@@ -3116,7 +3283,7 @@ function arenaAufgaben(a, anzahl) {
     const hart = pool.filter(x => schwereZahl(x.a) && schwereZahl(x.b));
     const rest = pool.filter(x => !(schwereZahl(x.a) && schwereZahl(x.b)));
     const gelost = rest.sort(() => Math.random() - 0.5).slice(0, Math.max(0, anzahl - hart.length));
-    return [...hart, ...gelost].sort(() => Math.random() - 0.5).slice(0, anzahl);
+    return ohneDoppel([...hart, ...gelost].sort(() => Math.random() - 0.5).slice(0, anzahl));
   } else if (a.op === "+") {
     for (let x = 2; x <= 9; x++) for (let y = 2; y <= 9; y++) if (x + y > 10 && x + y <= 20) pool.push({
       id: "p" + x + "+" + y,
@@ -3137,7 +3304,7 @@ function arenaAufgaben(a, anzahl) {
     });
   }
   const gemischt = pool.sort(() => Math.random() - 0.5);
-  return gemischt.slice(0, anzahl);
+  return ohneDoppel(gemischt.slice(0, anzahl));
 }
 
 /* Wird einmal vor dem ersten Kampf eingeblendet — als Fussnote unter
@@ -3211,16 +3378,16 @@ function ArenaListe({
     }, /*#__PURE__*/React.createElement("button", {
       disabled: !offen,
       onClick: () => onKampf(a),
-      className: "kein-blau flex w-full items-center gap-3 rounded-2xl p-3 text-left transition " + (a.art === "liga" ? offen ? "bg-gradient-to-r from-amber-500/30 to-fuchsia-500/20 ring-2 ring-amber-300" : "bg-emerald-900/50 opacity-60" : hat ? "bg-amber-400/20 ring-2 ring-amber-400" : offen ? "bg-emerald-800/70 hover:bg-emerald-700" : "bg-emerald-900/50 opacity-60")
+      className: "kein-blau flex w-full items-center gap-3 rounded-2xl p-3 text-left transition " + (a.art === "liga" || a.art === "super" ? offen ? "bg-gradient-to-r from-amber-500/30 to-fuchsia-500/20 ring-2 ring-amber-300" : "bg-emerald-900/50 opacity-60" : hat ? "bg-amber-400/20 ring-2 ring-amber-400" : offen ? "bg-emerald-800/70 hover:bg-emerald-700" : "bg-emerald-900/50 opacity-60")
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-4xl"
-    }, offen ? a.art === "liga" ? "🏆" : wBild(t, leiter) : "🔒"), /*#__PURE__*/React.createElement("div", {
+    }, offen ? a.art === "liga" ? "🏆" : a.art === "super" ? "🌈" : wBild(t, leiter) : "🔒"), /*#__PURE__*/React.createElement("div", {
       className: "min-w-0 flex-1"
     }, /*#__PURE__*/React.createElement("p", {
       className: "font-black text-emerald-50"
     }, a.name), /*#__PURE__*/React.createElement("p", {
       className: "text-xs text-emerald-300"
-    }, a.art === "liga" ? offen ? "Die sechzehn schwersten Rechnungen. 6·6 bis 9·9. Sonst nichts." : "Erst alle " + reif.noetig + " Orden holen (" + reif.hab + "/" + reif.noetig + ")" : offen ? "Arenaleiter: " + wName(t, leiter) + (a.art === "reihe" ? " (" + a.reihe + " · " + a.reihe + ")" : "") : "Erst " + reif.noetig + " Wesen aus dieser Reihe fangen (" + reif.hab + "/" + reif.noetig + ")"), offen && /*#__PURE__*/React.createElement("p", {
+    }, a.art === "super" ? offen ? "Alles auf einmal: mal, geteilt, plus, minus. Zwanzig Rechnungen." : "Erst die Liga gewinnen" : a.art === "liga" ? offen ? "Die sechzehn schwersten Rechnungen. 6·6 bis 9·9. Sonst nichts." : "Erst alle " + reif.noetig + " Orden holen (" + reif.hab + "/" + reif.noetig + ")" : offen ? "Arenaleiter: " + wName(t, leiter) + (a.art === "reihe" ? " (" + a.reihe + " · " + a.reihe + ")" : "") : "Erst " + reif.noetig + " Wesen aus dieser Reihe fangen (" + reif.hab + "/" + reif.noetig + ")"), offen && /*#__PURE__*/React.createElement("p", {
       className: "text-xs text-amber-300"
     }, rekord > 0 ? "Rekord " + rekord + " · " : "", teamTricks(t, a) > 0 ? teamTricks(t, a) + (teamTricks(t, a) === 1 ? " Trick" : " Tricks") + " im Team" : "noch keine Tricks im Team")), offen && /*#__PURE__*/React.createElement("div", {
       className: "text-right text-sm leading-tight"
@@ -3407,6 +3574,8 @@ function ArenaKampf({
      deshalb auch nicht als blitzschnell. */
   const titelGewonnen = titel && treffer >= fragen.length && schnellZahl >= fragen.length && vorherPokal < POKAL.length;
   const leiterNr = arenaLeiter(arena);
+  const bewertet = useRef(-1); // welche Frage schon verbucht ist
+
   useEffect(() => {
     speichern(t);
   }, [t]);
@@ -3434,6 +3603,11 @@ function ArenaKampf({
     return () => window.removeEventListener("keydown", taste);
   });
   function bewerten(art, rest) {
+    /* Doppelt wertet niemand: Enter und Uhrablauf koennen im selben
+       Moment zuschlagen, und ein zweiter Durchlauf wuerde eine Frage
+       ein zweites Mal verbuchen. */
+    if (bewertet.current === i) return;
+    bewertet.current = i;
     const nr = frage.antwort;
     const wesen = WESEN[nr];
     const richtig = art === "schnell" || art === "richtig";
@@ -3518,13 +3692,26 @@ function ArenaKampf({
       }));
     }
     setPhase("kurz");
-    setTimeout(() => {
-      if (i + 1 >= fragen.length) setPhase("ende");else {
-        setI(i + 1);
-        setEingabe("");
-        setPhase("kampf");
-      }
-    }, richtig ? 700 : 1600);
+    /* Bei einer richtigen Antwort geht es von selbst weiter. Bei einer
+       falschen nicht: 1,6 Sekunden reichen nicht, um zu sehen, WAS
+       falsch war — und genau das ist der Moment, in dem man etwas
+       lernt. Also wartet die Runde, bis sie weitergehen will. */
+    if (richtig) setTimeout(naechsteFrage, 700);
+  }
+  function naechsteFrage() {
+    if (i + 1 >= fragen.length) {
+      setPhase("ende");
+      return;
+    }
+    setI(i + 1);
+    /* Die Uhr MUSS im selben Zug gestellt werden. Sonst sieht der
+       Ablauf-Wächter oben für einen Herzschlag lang noch die Restzeit
+       der vorigen Frage — und wenn die abgelaufen war, wertet er die
+       neue Frage sofort als "zu langsam". Genau so hat ein Fehler die
+       nächste Rechnung mitgerissen. */
+    setZeit(blitzZeit(fragen[i + 1]));
+    setEingabe("");
+    setPhase("kampf");
   }
   function pruefen() {
     if (eingabe === "" || phase !== "kampf") return;
@@ -3684,7 +3871,10 @@ function ArenaKampf({
   if (phase === "ende") {
     const fehlerZahl = fragen.length - treffer;
     const jetztSterne = sterneFuer(punkte, treffer, schnellZahl, fragen.length, arena);
-    const gewonnen = jetztSterne >= 1 || vorherSterne >= 1;
+    /* "Verteidigt" heisst: sie hat die Latte HEUTE gerissen oder nicht.
+       Dass der Orden von frueher noch haengt, ist kein Erfolg von
+       dieser Runde — genau das stand hier faelschlich. */
+    const gewonnen = jetztSterne >= 1;
     const neuerRekord = punkte > vorherRekord;
     const verdient = schnellZahl;
     const kannLehren = trickPunkte(t) >= TRICK_KOSTEN && schnelle.some(nr => WESEN[nr] && kannNochLernen(t, nr) && trickBedingung(t, welt, nr).ok);
@@ -3695,7 +3885,7 @@ function ArenaKampf({
       className: "a-auftauchen rounded-3xl bg-emerald-900/70 p-5"
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-6xl"
-    }, titelGewonnen ? POKAL[vorherPokal] : gewonnen ? "🏅" : wBild(t, leiterNr)), /*#__PURE__*/React.createElement("p", {
+    }, titelGewonnen ? POKAL[vorherPokal] : gewonnen ? "🏅" : arena.art === "super" ? "🌈" : wBild(t, leiterNr)), /*#__PURE__*/React.createElement("p", {
       className: "mt-2 text-5xl font-black text-amber-300"
     }, punkte), /*#__PURE__*/React.createElement("p", {
       className: "text-xs uppercase tracking-widest text-emerald-300"
@@ -3713,7 +3903,9 @@ function ArenaKampf({
       className: "a-funkeln text-[11px] font-bold text-amber-300"
     }, "Gold! Diese Arena geh\xF6rt dir f\xFCr immer."), /*#__PURE__*/React.createElement("h2", {
       className: "mt-1 text-xl font-black text-emerald-50"
-    }, jetztSterne > vorherSterne ? jetztSterne === 3 ? "Perfekt! Dritter Stern!" : jetztSterne === 2 ? "Meister! Zweiter Stern!" : "Orden gewonnen!" : gewonnen ? "Orden verteidigt!" : "Knapp daneben"), /*#__PURE__*/React.createElement("p", {
+    }, jetztSterne > vorherSterne ? jetztSterne === 3 ? "Perfekt! Dritter Stern!" : jetztSterne === 2 ? "Meister! Zweiter Stern!" : "Orden gewonnen!" : gewonnen ? "Orden verteidigt!" : vorherSterne >= 1 ? "Diesmal nicht" : "Knapp daneben"), !gewonnen && vorherSterne >= 1 && /*#__PURE__*/React.createElement("p", {
+      className: "text-xs text-emerald-400"
+    }, "Dein Orden bleibt dir \u2014 aber verteidigt ist er heute nicht."), /*#__PURE__*/React.createElement("p", {
       className: "mt-1 text-sm text-emerald-300"
     }, treffer, " von ", fragen.length, " richtig \xB7 ", schnellZahl, " blitzschnell"), Math.max(vorherSterne, jetztSterne) < 3 && /*#__PURE__*/React.createElement("p", {
       className: "mt-1 text-xs text-amber-200"
@@ -3769,7 +3961,7 @@ function ArenaKampf({
     className: "text-sm font-black text-amber-300"
   }, titel ? "🏆 Titelkampf · " : "", arena.name), /*#__PURE__*/React.createElement("p", {
     className: "text-[11px] text-emerald-300"
-  }, titel ? titelWeg ? "Titel futsch — spiel ruhig zu Ende, du darfst sofort wieder ran" : POKAL[vorherPokal] + " — alles richtig, alles blitzschnell" : "gegen " + wName(t, leiterNr) + " · Orden ab " + ordenPunkte(arena))), /*#__PURE__*/React.createElement("span", {
+  }, titel ? titelWeg ? "Titel futsch — spiel ruhig zu Ende, du darfst sofort wieder ran" : POKAL[vorherPokal] + " — alles richtig, alles blitzschnell" : arena.art === "super" ? "Mal · Geteilt · Plus · Minus — " + fragen.length + " Rechnungen" : "gegen " + wName(t, leiterNr) + " · Orden ab " + ordenPunkte(arena))), /*#__PURE__*/React.createElement("span", {
     className: "text-xs font-bold text-emerald-300"
   }, i + 1, "/", fragen.length)), /*#__PURE__*/React.createElement("div", {
     className: "mt-2 flex items-end justify-center gap-3"
@@ -3834,9 +4026,16 @@ function ArenaKampf({
     className: "mt-1 text-lg font-black text-amber-600"
   }, "+", angriff.punkte, angriff.kombo > 0 && /*#__PURE__*/React.createElement("span", {
     className: "text-sm text-emerald-700"
-  }, " \xB7 Kombo ", angriff.kombo, "!"))) : /*#__PURE__*/React.createElement("p", {
+  }, " \xB7 Kombo ", angriff.kombo, "!"))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
     className: "font-black text-rose-700"
-  }, letzte === "langsam" ? "Zu langsam!" : "Daneben!"))), /*#__PURE__*/React.createElement("div", {
+  }, letzte === "langsam" ? "Zu langsam!" : "Daneben!"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 text-sm text-emerald-700"
+  }, "Schau sie dir in Ruhe an \u2014 die Uhr steht."), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3"
+  }, /*#__PURE__*/React.createElement(Knopf, {
+    art: "gruen",
+    onClick: naechsteFrage
+  }, i + 1 >= fragen.length ? "Fertig" : "Weiter ▸"))))), /*#__PURE__*/React.createElement("div", {
     className: "mt-4"
   }, /*#__PURE__*/React.createElement(Ziffernblock, {
     wert: eingabe,
@@ -3846,14 +4045,14 @@ function ArenaKampf({
   })), /*#__PURE__*/React.createElement("div", {
     className: "mt-3 grid grid-cols-2 gap-2"
   }, /*#__PURE__*/React.createElement("button", {
-    onClick: luftHolen,
-    disabled: luft <= 0 || pause || phase !== "kampf",
-    className: "kein-blau rounded-2xl border-2 py-3 text-sm font-black transition " + (luft > 0 && !pause && phase === "kampf" ? "border-sky-400/60 text-sky-200 active:translate-y-px" : "border-emerald-800 text-emerald-700")
-  }, "\uD83D\uDE2E\u200D\uD83D\uDCA8 Luft holen ", "●".repeat(luft), "○".repeat(LUFT_HOLEN - luft)), /*#__PURE__*/React.createElement("button", {
     onClick: beereNehmen,
     disabled: beerenRest <= 0 || geholfen || phase !== "kampf",
     className: "kein-blau rounded-2xl border-2 py-3 text-sm font-black transition " + (beerenRest > 0 && !geholfen && phase === "kampf" ? "border-amber-400/60 text-amber-200 active:translate-y-px" : "border-emerald-800 text-emerald-700")
-  }, "\uD83E\uDED0 Beere ", "●".repeat(beerenRest), "○".repeat(BEERE_KAMPF - beerenRest))), /*#__PURE__*/React.createElement("p", {
+  }, "\uD83E\uDED0 Beere ", "●".repeat(beerenRest), "○".repeat(BEERE_KAMPF - beerenRest)), /*#__PURE__*/React.createElement("button", {
+    onClick: luftHolen,
+    disabled: luft <= 0 || pause || phase !== "kampf",
+    className: "kein-blau rounded-2xl border-2 py-3 text-sm font-black transition " + (luft > 0 && !pause && phase === "kampf" ? "border-sky-400/60 text-sky-200 active:translate-y-px" : "border-emerald-800 text-emerald-700")
+  }, "\uD83D\uDE2E\u200D\uD83D\uDCA8 Luft holen ", "●".repeat(luft), "○".repeat(LUFT_HOLEN - luft))), /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-center text-xs text-emerald-400"
   }, "Schnell sein lohnt sich: In der ersten H\xE4lfte der Zeit gibt es +", PUNKTE_TEMPO, " Punkte und eine \u26A1. Luft holen stoppt die Uhr \u2014 dann z\xE4hlt die Rechnung, aber nicht als blitzschnell. Die Beere zeigt dir den Weg: ", PUNKTE_BEERE, " Punkte statt ", PUNKTE_GRUND, ", daf\xFCr wei\xDFt du es beim n\xE4chsten Mal selber."));
 }
@@ -4010,10 +4209,10 @@ function DuellLauf({
       schnell ? Ton.blitz() : Ton.richtig();
     } else Ton.nochmal();
     setPhase("kurz");
-    setTimeout(() => {
+    if (richtig) setTimeout(() => {
       setZug(zug + 1);
       setPhase("frage");
-    }, richtig ? 700 : 1400);
+    }, 700);
   }
   return /*#__PURE__*/React.createElement("div", {
     className: "mx-auto max-w-md p-4"
@@ -4040,7 +4239,15 @@ function DuellLauf({
     richtig: fakt.antwort
   }) : /*#__PURE__*/React.createElement(React.Fragment, null, fakt.text, " = ", eingabe === "" ? "?" : eingabe)), phase === "kurz" && /*#__PURE__*/React.createElement("p", {
     className: "mt-2 font-black " + (letzte ? "text-emerald-700" : "text-rose-700")
-  }, letzte === 2 ? "Blitzschnell! +2" : letzte === 1 ? "Richtig! +1" : "Daneben")), /*#__PURE__*/React.createElement("div", {
+  }, letzte === 2 ? "Blitzschnell! +2" : letzte === 1 ? "Richtig! +1" : "Daneben"), phase === "kurz" && letzte === 0 && /*#__PURE__*/React.createElement("div", {
+    className: "a-rutschen mt-3"
+  }, /*#__PURE__*/React.createElement(Knopf, {
+    art: "gruen",
+    onClick: () => {
+      setZug(zug + 1);
+      setPhase("frage");
+    }
+  }, "Weiter \u25B8"))), /*#__PURE__*/React.createElement("div", {
     className: "mt-4"
   }, /*#__PURE__*/React.createElement(Ziffernblock, {
     wert: eingabe,

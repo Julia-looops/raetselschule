@@ -361,6 +361,10 @@ function schwereZahl(x) {
 }
 
 function blitzZeit(fakt) {
+  if (fakt.op === ":") {
+    /* Geteilt ist der Umkehrweg — das braucht eine Spur länger. */
+    return schwereZahl(fakt.b) || schwereZahl(fakt.antwort) ? 8 : 6;
+  }
   if (fakt.op === "·") {
     if (schwereZahl(fakt.a) && schwereZahl(fakt.b)) return 8;
     if (schwereZahl(fakt.a) || schwereZahl(fakt.b)) return 6;
@@ -790,6 +794,8 @@ function Zwanzigerfeld({ voll, dazu, weg }) {
 /* passendes Bild zur Rechnung */
 function Rechenbild({ fakt }) {
   if (fakt.op === "·") return <Punktefeld a={fakt.a} b={fakt.b} />;
+  /* 56 : 7 — sieben Reihen, und gefragt ist, wie viele in einer sind */
+  if (fakt.op === ":") return <Punktefeld a={fakt.b} b={fakt.antwort} />;
   if (fakt.op === "+") return <Zwanzigerfeld voll={fakt.a} dazu={fakt.b} />;
   return <Zwanzigerfeld voll={fakt.a} weg={fakt.b} />;
 }
@@ -894,6 +900,24 @@ function beeren(fakt) {
       bild: "🔁",
       name: "Tauschbeere",
       text: a + " · " + bb + " ist genauso viel wie " + bb + " · " + a + ". Immer.",
+    });
+  } else if (fakt.op === ":") {
+    /* 56 : 7 — der Weg zurück durch die Reihe */
+    b.push({
+      bild: "🍓",
+      name: "Punktbeere",
+      text: "Leg " + fakt.a + " Punkte in " + fakt.b + " gleiche Reihen. Wie viele sind in einer?",
+      bild2: true,
+    });
+    b.push({
+      bild: "🪜",
+      name: "Leiterbeere",
+      text: "Zähl die " + fakt.b + "er-Reihe hoch, bis du bei " + fakt.a + " bist. So oft passt sie hinein.",
+    });
+    b.push({
+      bild: "🔁",
+      name: "Malbeere",
+      text: fakt.b + " · ? = " + fakt.a + " — dieselbe Frage, nur andersherum.",
     });
   } else if (fakt.op === "+") {
     const rest = 10 - fakt.a;
@@ -2170,6 +2194,39 @@ function Trickbuch({ t, speichern, onZurueck }) {
         </div>
       )}
 
+      {/* Sie hatte über sechshundert ⚡ und niemanden, der sie
+          annehmen konnte — und nirgends stand, woran das liegt. Wer
+          nichts einlösen kann, soll wenigstens wissen, wofür. */}
+      {bereit.length === 0 && (
+        <div className="mb-3 rounded-2xl border-2 border-emerald-700 p-3">
+          <p className="text-center font-black text-amber-300">
+            {punkte} ⚡ warten auf dich
+          </p>
+          <p className="mt-1 text-center text-xs text-emerald-300">
+            Gerade kann sie niemand annehmen. ⚡ verfallen aber nicht — sie
+            bleiben liegen, bis jemand so weit ist.
+          </p>
+          <p className="mt-3 text-xs font-bold uppercase tracking-widest text-emerald-300">
+            So bekommt ein Wesen den nächsten Trick
+          </p>
+          <div className="mt-2 space-y-1.5 text-sm text-emerald-100">
+            <p>
+              <b className="text-amber-300">1.</b> In der Arena kämpfen und bei
+              diesem Wesen <b>blitzschnell</b> antworten. Dann lädt es dich ein.
+            </p>
+            <p>
+              <b className="text-amber-300">2.</b> Das Wesen muss stark genug
+              sein — das wird es nur auf dem Streifzug.
+              {spaeter.length > 0 && " Wem noch was fehlt, steht gleich hier drunter."}
+            </p>
+            <p>
+              <b className="text-amber-300">3.</b> Dann hierher kommen und{" "}
+              {TRICK_KOSTEN} ⚡ ausgeben. Der Rest bleibt dir.
+            </p>
+          </div>
+        </div>
+      )}
+
       {spaeter.length > 0 && (
         <div className="mb-3 rounded-2xl bg-emerald-900/60 p-3">
           <p className="text-xs font-bold uppercase tracking-widest text-emerald-300">
@@ -2546,9 +2603,13 @@ const ARENEN = [
      besteht aus genau den sechzehn schwersten Rechnungen des kleinen
      Einmaleins: 6·6 bis 9·9, nichts anderes. */
   { id: "liga", art: "liga", name: "Die Liga", leiterNr: 100 },
+  /* Und darüber noch eine: alles auf einmal. Mal, geteilt, plus,
+     minus — zwanzig Rechnungen, fünf je Rechenart. Öffnet erst, wenn
+     die Liga gewonnen ist. */
+  { id: "super", art: "super", name: "Die Super-Arena", leiterNr: 81 },
 ];
 
-const ARENEN_OHNE_LIGA = ARENEN.filter((a) => a.art !== "liga");
+const ARENEN_OHNE_LIGA = ARENEN.filter((a) => a.art !== "liga" && a.art !== "super");
 
 function arenaLeiter(a) {
   return a.art === "reihe" ? a.reihe * a.reihe : a.leiterNr;
@@ -2557,6 +2618,7 @@ function arenaLeiter(a) {
 /* Wie viele Rechnungen und wie viele Punkte je Stern? Die Liga ist
    länger, also müssen auch ihre Schwellen mitwachsen. */
 function kampfFragen(a) {
+  if (a.art === "super") return SUPER_FRAGEN;
   return a.art === "liga" ? 16 : 12;
 }
 function ordenPunkte(a) {
@@ -2642,6 +2704,11 @@ function Pokalreihe({ stufe, klein }) {
 }
 
 function arenaReif(t, a) {
+  if (a.art === "super") {
+    /* Erst die Liga, dann das hier. */
+    const hab = t.orden.includes("liga") ? 1 : 0;
+    return { hab, noetig: 1, dazu: 1 };
+  }
   if (a.art === "liga") {
     const hab = ARENEN_OHNE_LIGA.filter((x) => t.orden.includes(x.id)).length;
     return { hab, noetig: ARENEN_OHNE_LIGA.length, dazu: ARENEN_OHNE_LIGA.length };
@@ -2672,7 +2739,65 @@ function ligaFakten() {
   return aus;
 }
 
+/* ============================================================
+   DIE SUPER-ARENA
+
+   Alle vier Grundrechenarten in einem Kampf — mal, geteilt, plus,
+   minus, zu gleichen Teilen. Das Geteilt ist nichts Neues, das das
+   Spiel erst lernen müsste: jedes Wesen kennt seine Paare längst.
+   Wer weiss, dass 7 · 8 zu Rexi gehört, weiss auch 56 : 7.
+
+   Sie ist der Abschluss über der Liga und dafür länger: zwanzig
+   Rechnungen, fünf je Rechenart.
+   ============================================================ */
+const SUPER_FRAGEN = 20;
+
+function superFakten() {
+  const aus = { mal: [], geteilt: [], plus: [], minus: [] };
+  for (let x = 2; x <= 10; x++)
+    for (let y = 2; y <= 10; y++) {
+      aus.mal.push({ id: "m" + x + "x" + y, text: x + " · " + y, antwort: x * y, a: x, b: y, op: "·" });
+      /* c : x = y — gefragt ist der zweite Faktor */
+      aus.geteilt.push({
+        id: "d" + x * y + ":" + x,
+        text: x * y + " : " + x,
+        antwort: y,
+        a: x * y,
+        b: x,
+        op: ":",
+      });
+    }
+  for (let x = 2; x <= 9; x++)
+    for (let y = 2; y <= 9; y++)
+      if (x + y > 10 && x + y <= 20)
+        aus.plus.push({ id: "p" + x + "+" + y, text: x + " + " + y, antwort: x + y, a: x, b: y, op: "+" });
+  for (let m = 11; m <= 20; m++)
+    for (let k = 2; k <= 9; k++)
+      if (m - k < 10 && m - k > 0)
+        aus.minus.push({ id: "s" + m + "-" + k, text: m + " − " + k, antwort: m - k, a: m, b: k, op: "−" });
+  /* Zu gleichen Teilen ziehen, damit nicht eine Rechenart die Runde
+     beherrscht — und die schweren Malrechnungen bevorzugt. */
+  const jeArt = SUPER_FRAGEN / 4;
+  /* 4 : 2 ist in einer Super-Arena keine Aufgabe. Beim Malnehmen und
+     beim Teilen kommen deshalb die schweren zuerst — bei Plus und
+     Minus gibt es keine leichten, dort sind alle mit Zehnerübergang. */
+  const zieh = (liste, schwer) => {
+    const l = [...liste].sort(() => Math.random() - 0.5);
+    if (schwer) l.sort((x, y) => (schwer(y) ? 1 : 0) - (schwer(x) ? 1 : 0));
+    return l.slice(0, jeArt);
+  };
+  const schweresMal = (x) => schwereZahl(x.a) && schwereZahl(x.b);
+  const schweresGeteilt = (x) => schwereZahl(x.b) && schwereZahl(x.antwort);
+  return [
+    ...zieh(aus.mal, schweresMal),
+    ...zieh(aus.geteilt, schweresGeteilt),
+    ...zieh(aus.plus, null),
+    ...zieh(aus.minus, null),
+  ];
+}
+
 function arenaTeam(a) {
+  if (a.art === "super") return [...new Set(superFakten().map((x) => x.antwort))];
   if (a.art === "liga") return [...new Set(ligaFakten().map((x) => x.antwort))];
   if (a.art === "reihe") {
     const aus = [];
@@ -2687,13 +2812,49 @@ function teamTricks(t, a) {
 }
 
 /* Die Aufgaben eines Arenakampfs */
+/* Zwei Rechnungen mit demselben Ergebnis direkt hintereinander (8 · 9
+   und gleich darauf 9 · 8) sind geschenkt — man tippt die Zahl noch
+   einmal, ohne zu rechnen. Also umsortieren: immer die erste Rechnung
+   nehmen, deren Ergebnis nicht gerade dran war. */
+function ohneDoppel(liste) {
+  /* Immer aus dem GRÖSSTEN Topf nehmen, der nicht gerade dran war —
+     dieselbe Regel wie beim Mischen der Wesen. Einfach "das nächste
+     passende" zu greifen reicht nicht: dann sind die Einzelstücke
+     zuerst weg und am Schluss liegen nur noch Paare da, die dann doch
+     hintereinander kommen. */
+  const toepfe = new Map();
+  liste.forEach((x) => {
+    const k = x.antwort;
+    if (!toepfe.has(k)) toepfe.set(k, []);
+    toepfe.get(k).push(x);
+  });
+  const raus = [];
+  let letzte = null;
+  while (raus.length < liste.length) {
+    let schluessel = [...toepfe.keys()].filter((k) => toepfe.get(k).length > 0 && k !== letzte);
+    if (schluessel.length === 0)
+      schluessel = [...toepfe.keys()].filter((k) => toepfe.get(k).length > 0);
+    const hoechste = Math.max(...schluessel.map((k) => toepfe.get(k).length));
+    const beste = schluessel.filter((k) => toepfe.get(k).length === hoechste);
+    const gewaehlt = beste[Math.floor(Math.random() * beste.length)];
+    raus.push(toepfe.get(gewaehlt).pop());
+    letzte = gewaehlt;
+  }
+  return raus;
+}
+
 function arenaAufgaben(a, anzahl) {
   const pool = [];
   if (a.art === "liga") {
-    return ligaFakten().sort(() => Math.random() - 0.5).slice(0, anzahl);
+    return ohneDoppel(ligaFakten().sort(() => Math.random() - 0.5).slice(0, anzahl));
+  }
+  if (a.art === "super") {
+    return ohneDoppel(superFakten().sort(() => Math.random() - 0.5).slice(0, anzahl));
   }
   if (a.art === "reihe") {
-    for (let b = 1; b <= 10; b++) {
+    /* Die 1er sind keine Rechnung, sondern eine Ablesung — in der
+       Arena haben sie nichts verloren. */
+    for (let b = 2; b <= 10; b++) {
       pool.push({ id: "m" + a.reihe + "x" + b, text: a.reihe + " · " + b, antwort: a.reihe * b, a: a.reihe, b, op: "·" });
       if (b !== a.reihe)
         pool.push({ id: "m" + b + "x" + a.reihe, text: b + " · " + a.reihe, antwort: a.reihe * b, a: b, b: a.reihe, op: "·" });
@@ -2706,7 +2867,7 @@ function arenaAufgaben(a, anzahl) {
     const hart = pool.filter((x) => schwereZahl(x.a) && schwereZahl(x.b));
     const rest = pool.filter((x) => !(schwereZahl(x.a) && schwereZahl(x.b)));
     const gelost = rest.sort(() => Math.random() - 0.5).slice(0, Math.max(0, anzahl - hart.length));
-    return [...hart, ...gelost].sort(() => Math.random() - 0.5).slice(0, anzahl);
+    return ohneDoppel([...hart, ...gelost].sort(() => Math.random() - 0.5).slice(0, anzahl));
   } else if (a.op === "+") {
     for (let x = 2; x <= 9; x++)
       for (let y = 2; y <= 9; y++)
@@ -2719,7 +2880,7 @@ function arenaAufgaben(a, anzahl) {
           pool.push({ id: "s" + m + "-" + k, text: m + " − " + k, antwort: m - k, a: m, b: k, op: "−" });
   }
   const gemischt = pool.sort(() => Math.random() - 0.5);
-  return gemischt.slice(0, anzahl);
+  return ohneDoppel(gemischt.slice(0, anzahl));
 }
 
 
@@ -2812,7 +2973,7 @@ function ArenaListe({ t, onKampf, onZurueck }) {
               onClick={() => onKampf(a)}
               className={
                 "kein-blau flex w-full items-center gap-3 rounded-2xl p-3 text-left transition " +
-                (a.art === "liga"
+                (a.art === "liga" || a.art === "super"
                   ? offen
                     ? "bg-gradient-to-r from-amber-500/30 to-fuchsia-500/20 ring-2 ring-amber-300"
                     : "bg-emerald-900/50 opacity-60"
@@ -2824,12 +2985,16 @@ function ArenaListe({ t, onKampf, onZurueck }) {
               }
             >
               <div className="text-4xl">
-                {offen ? (a.art === "liga" ? "🏆" : wBild(t, leiter)) : "🔒"}
+                {offen ? (a.art === "liga" ? "🏆" : a.art === "super" ? "🌈" : wBild(t, leiter)) : "🔒"}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-black text-emerald-50">{a.name}</p>
                 <p className="text-xs text-emerald-300">
-                  {a.art === "liga"
+                  {a.art === "super"
+                    ? offen
+                      ? "Alles auf einmal: mal, geteilt, plus, minus. Zwanzig Rechnungen."
+                      : "Erst die Liga gewinnen"
+                    : a.art === "liga"
                     ? offen
                       ? "Die sechzehn schwersten Rechnungen. 6·6 bis 9·9. Sonst nichts."
                       : "Erst alle " + reif.noetig + " Orden holen (" + reif.hab + "/" + reif.noetig + ")"
@@ -3061,6 +3226,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
     schnellZahl >= fragen.length &&
     vorherPokal < POKAL.length;
   const leiterNr = arenaLeiter(arena);
+  const bewertet = useRef(-1);   // welche Frage schon verbucht ist
 
   useEffect(() => {
     speichern(t);
@@ -3099,6 +3265,11 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   });
 
   function bewerten(art, rest) {
+    /* Doppelt wertet niemand: Enter und Uhrablauf koennen im selben
+       Moment zuschlagen, und ein zweiter Durchlauf wuerde eine Frage
+       ein zweites Mal verbuchen. */
+    if (bewertet.current === i) return;
+    bewertet.current = i;
     const nr = frage.antwort;
     const wesen = WESEN[nr];
     const richtig = art === "schnell" || art === "richtig";
@@ -3183,14 +3354,27 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
     }
 
     setPhase("kurz");
-    setTimeout(() => {
-      if (i + 1 >= fragen.length) setPhase("ende");
-      else {
-        setI(i + 1);
-        setEingabe("");
-        setPhase("kampf");
-      }
-    }, richtig ? 700 : 1600);
+    /* Bei einer richtigen Antwort geht es von selbst weiter. Bei einer
+       falschen nicht: 1,6 Sekunden reichen nicht, um zu sehen, WAS
+       falsch war — und genau das ist der Moment, in dem man etwas
+       lernt. Also wartet die Runde, bis sie weitergehen will. */
+    if (richtig) setTimeout(naechsteFrage, 700);
+  }
+
+  function naechsteFrage() {
+    if (i + 1 >= fragen.length) {
+      setPhase("ende");
+      return;
+    }
+    setI(i + 1);
+    /* Die Uhr MUSS im selben Zug gestellt werden. Sonst sieht der
+       Ablauf-Wächter oben für einen Herzschlag lang noch die Restzeit
+       der vorigen Frage — und wenn die abgelaufen war, wertet er die
+       neue Frage sofort als "zu langsam". Genau so hat ein Fehler die
+       nächste Rechnung mitgerissen. */
+    setZeit(blitzZeit(fragen[i + 1]));
+    setEingabe("");
+    setPhase("kampf");
   }
 
   function pruefen() {
@@ -3373,7 +3557,10 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   if (phase === "ende") {
     const fehlerZahl = fragen.length - treffer;
     const jetztSterne = sterneFuer(punkte, treffer, schnellZahl, fragen.length, arena);
-    const gewonnen = jetztSterne >= 1 || vorherSterne >= 1;
+    /* "Verteidigt" heisst: sie hat die Latte HEUTE gerissen oder nicht.
+       Dass der Orden von frueher noch haengt, ist kein Erfolg von
+       dieser Runde — genau das stand hier faelschlich. */
+    const gewonnen = jetztSterne >= 1;
     const neuerRekord = punkte > vorherRekord;
     const verdient = schnellZahl;
     const kannLehren =
@@ -3384,7 +3571,13 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
       <div className="mx-auto max-w-md p-4 text-center">
         <div className="a-auftauchen rounded-3xl bg-emerald-900/70 p-5">
           <div className="text-6xl">
-            {titelGewonnen ? POKAL[vorherPokal] : gewonnen ? "🏅" : wBild(t, leiterNr)}
+            {titelGewonnen
+              ? POKAL[vorherPokal]
+              : gewonnen
+              ? "🏅"
+              : arena.art === "super"
+              ? "🌈"
+              : wBild(t, leiterNr)}
           </div>
           <p className="mt-2 text-5xl font-black text-amber-300">{punkte}</p>
           <p className="text-xs uppercase tracking-widest text-emerald-300">Punkte</p>
@@ -3426,8 +3619,15 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
                 : "Orden gewonnen!"
               : gewonnen
               ? "Orden verteidigt!"
+              : vorherSterne >= 1
+              ? "Diesmal nicht"
               : "Knapp daneben"}
           </h2>
+          {!gewonnen && vorherSterne >= 1 && (
+            <p className="text-xs text-emerald-400">
+              Dein Orden bleibt dir — aber verteidigt ist er heute nicht.
+            </p>
+          )}
           <p className="mt-1 text-sm text-emerald-300">
             {treffer} von {fragen.length} richtig · {schnellZahl} blitzschnell
           </p>
@@ -3522,6 +3722,8 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
               ? titelWeg
                 ? "Titel futsch — spiel ruhig zu Ende, du darfst sofort wieder ran"
                 : POKAL[vorherPokal] + " — alles richtig, alles blitzschnell"
+              : arena.art === "super"
+              ? "Mal · Geteilt · Plus · Minus — " + fragen.length + " Rechnungen"
               : "gegen " + wName(t, leiterNr) + " · Orden ab " + ordenPunkte(arena)}
           </p>
         </div>
@@ -3633,9 +3835,19 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
                 </p>
               </>
             ) : (
-              <p className="font-black text-rose-700">
-                {letzte === "langsam" ? "Zu langsam!" : "Daneben!"}
-              </p>
+              <>
+                <p className="font-black text-rose-700">
+                  {letzte === "langsam" ? "Zu langsam!" : "Daneben!"}
+                </p>
+                <p className="mt-1 text-sm text-emerald-700">
+                  Schau sie dir in Ruhe an — die Uhr steht.
+                </p>
+                <div className="mt-3">
+                  <Knopf art="gruen" onClick={naechsteFrage}>
+                    {i + 1 >= fragen.length ? "Fertig" : "Weiter ▸"}
+                  </Knopf>
+                </div>
+              </>
             )}
           </div>
         )}
@@ -3645,19 +3857,10 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
         <Ziffernblock wert={eingabe} setWert={setEingabe} onOk={pruefen} gesperrt={phase !== "kampf"} />
       </div>
 
+      {/* Die Beere lag rechts — also genau unter der Enter-Taste des
+          Ziffernblocks, und wurde beim Antworten dauernd aus Versehen
+          erwischt. Jetzt liegt dort das harmlosere Luft holen. */}
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <button
-          onClick={luftHolen}
-          disabled={luft <= 0 || pause || phase !== "kampf"}
-          className={
-            "kein-blau rounded-2xl border-2 py-3 text-sm font-black transition " +
-            (luft > 0 && !pause && phase === "kampf"
-              ? "border-sky-400/60 text-sky-200 active:translate-y-px"
-              : "border-emerald-800 text-emerald-700")
-          }
-        >
-          😮‍💨 Luft holen {"●".repeat(luft)}{"○".repeat(LUFT_HOLEN - luft)}
-        </button>
         <button
           onClick={beereNehmen}
           disabled={beerenRest <= 0 || geholfen || phase !== "kampf"}
@@ -3669,6 +3872,18 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
           }
         >
           🫐 Beere {"●".repeat(beerenRest)}{"○".repeat(BEERE_KAMPF - beerenRest)}
+        </button>
+        <button
+          onClick={luftHolen}
+          disabled={luft <= 0 || pause || phase !== "kampf"}
+          className={
+            "kein-blau rounded-2xl border-2 py-3 text-sm font-black transition " +
+            (luft > 0 && !pause && phase === "kampf"
+              ? "border-sky-400/60 text-sky-200 active:translate-y-px"
+              : "border-emerald-800 text-emerald-700")
+          }
+        >
+          😮‍💨 Luft holen {"●".repeat(luft)}{"○".repeat(LUFT_HOLEN - luft)}
         </button>
       </div>
       <p className="mt-2 text-center text-xs text-emerald-400">
@@ -3825,7 +4040,7 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
       schnell ? Ton.blitz() : Ton.richtig();
     } else Ton.nochmal();
     setPhase("kurz");
-    setTimeout(() => { setZug(zug + 1); setPhase("frage"); }, richtig ? 700 : 1400);
+    if (richtig) setTimeout(() => { setZug(zug + 1); setPhase("frage"); }, 700);
   }
 
   return (
@@ -3862,6 +4077,13 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
           <p className={"mt-2 font-black " + (letzte ? "text-emerald-700" : "text-rose-700")}>
             {letzte === 2 ? "Blitzschnell! +2" : letzte === 1 ? "Richtig! +1" : "Daneben"}
           </p>
+        )}
+        {phase === "kurz" && letzte === 0 && (
+          <div className="a-rutschen mt-3">
+            <Knopf art="gruen" onClick={() => { setZug(zug + 1); setPhase("frage"); }}>
+              Weiter ▸
+            </Knopf>
+          </div>
         )}
       </div>
       <div className="mt-4">

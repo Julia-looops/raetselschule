@@ -112,6 +112,21 @@ von dort genommen — ab dann baut es auch ohne Internet.
   normal eine, langsam keine (kommt aber binnen eines Tages wieder), falsch
   eine zurück. `faelligIn` streut jeden Abstand um ±15 %, damit nicht alles
   einer Sitzung gleichzeitig wieder ansteht.
+- **Arenafragen**: `arenaAufgaben` baut die Runde. Rechnungen mit 1 kommen in
+  keiner Arena vor. `ohneDoppel` sortiert danach so um, dass nie zwei Fragen
+  mit demselben Ergebnis hintereinander stehen (8 · 9 und gleich darauf 9 · 8
+  tippt man ohne zu rechnen) — nach derselben Regel wie `mischen`: immer aus
+  dem groessten Topf, der nicht gerade dran war. Naiv "das naechste passende"
+  zu nehmen reicht nicht, dann bleiben am Ende nur Paare uebrig.
+- **Die Super-Arena** (`art: "super"`, `SUPER_FRAGEN` = 20): alle vier
+  Rechenarten zu gleichen Teilen, `superFakten` zieht je fuenf. Geteilt ist der
+  Umkehrweg des kleinen Einmaleins (56 : 7 = 8), die Antwort ist wie ueberall
+  die Wesennummer. Bei Mal und Geteilt kommen die schweren zuerst. Oeffnet
+  erst mit dem Liga-Orden. `blitzZeit`, `beeren` und `Rechenbild` haben je
+  einen Zweig fuer `op === ":"`.
+- **Nach einem Fehler** wartet der Kampf auf einen Klick, statt nach 1,6
+  Sekunden weiterzuspringen — so lange reicht nicht, um zu sehen, WAS falsch
+  war. Nur richtige Antworten laufen von selbst weiter. Gilt auch im Duell.
 - **Lernreihenfolge**: `ORDNUNG` — was zuerst drankommt. `REVIER` legt fest, wie
   viele wilde Wesen gleichzeitig gejagt werden (Vorgabe 3).
 - **Der Kampf** (`ArenaKampf`) ist der einzige Modus mit Uhr — die frühere
