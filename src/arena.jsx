@@ -2796,8 +2796,29 @@ function superFakten() {
   ];
 }
 
+/* Alle Zahlen, die in der Super-Arena überhaupt als Antwort vorkommen
+   können — fest, nicht gelost. superFakten() zieht jedes Mal neu; wer
+   das zum Anzeigen benutzt, bekommt bei jedem Neuzeichnen eine andere
+   Wesenreihe, und die Seite wackelt. */
+function superAntworten() {
+  const aus = new Set();
+  for (let x = 2; x <= 10; x++)
+    for (let y = 2; y <= 10; y++) {
+      aus.add(x * y);
+      aus.add(y);          // x·y : x = y
+    }
+  for (let x = 2; x <= 9; x++)
+    for (let y = 2; y <= 9; y++) {
+      if (x + y > 10 && x + y <= 20) aus.add(x + y);
+      if (x - y > 0 && x - y < 10) aus.add(x - y);
+    }
+  for (let m = 11; m <= 20; m++)
+    for (let k = 2; k <= 9; k++) if (m - k < 10 && m - k > 0) aus.add(m - k);
+  return [...aus].filter((n) => WESEN[n]).sort((x, y) => x - y);
+}
+
 function arenaTeam(a) {
-  if (a.art === "super") return [...new Set(superFakten().map((x) => x.antwort))];
+  if (a.art === "super") return superAntworten();
   if (a.art === "liga") return [...new Set(ligaFakten().map((x) => x.antwort))];
   if (a.art === "reihe") {
     const aus = [];
@@ -3139,10 +3160,10 @@ function arenaWelt(a) {
 }
 
 /* Die Bank: die Wesen der Reihe, die im Kampf auftreten können. */
-function ArenaBank({ t, arena, aktiv }) {
+function ArenaBank({ t, arena, aktiv, team }) {
   return (
     <div className="flex flex-wrap justify-center gap-1">
-      {arenaTeam(arena).map((nr) => {
+      {(team || arenaTeam(arena)).map((nr) => {
         if (!WESEN[nr]) return null;
         const hab = istGefangen(t, nr);
         const tr = trickZahl(t, nr);
@@ -3180,6 +3201,13 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   const [pause, setPause] = useState(false);
   const [geschnauft, setGeschnauft] = useState(false);
   const [vorherPokal] = useState(() => pokalStand(start, arena.id).stufe);
+  /* Wer in DIESEM Kampf antritt — einmal beim Betreten festgelegt.
+     Sonst rechnet die Bank bei jedem Neuzeichnen neu, und in der
+     Super-Arena kam dabei jedes Mal eine andere Reihe heraus: die
+     Zeilenzahl sprang, und mit ihr das Eingabefeld. */
+  const [rundenTeam] = useState(() =>
+    [...new Set(fragen.map((f) => f.antwort))].filter((nr) => WESEN[nr]).sort((a2, b2) => a2 - b2)
+  );
   const [titelWeg, setTitelWeg] = useState(false);
   const [beerenRest, setBeerenRest] = useState(BEERE_KAMPF);
   const [geholfen, setGeholfen] = useState(false);  // Beere in dieser Rechnung
@@ -3750,7 +3778,12 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
 
       {/* Die Bank */}
       <div className="mt-3">
-        <ArenaBank t={t} arena={arena} aktiv={phase === "kurz" && angriff ? angriff.nr : null} />
+        <ArenaBank
+          t={t}
+          arena={arena}
+          team={rundenTeam}
+          aktiv={phase === "kurz" && angriff ? angriff.nr : null}
+        />
       </div>
 
       {/* Zeit */}

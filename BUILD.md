@@ -118,6 +118,12 @@ von dort genommen — ab dann baut es auch ohne Internet.
   tippt man ohne zu rechnen) — nach derselben Regel wie `mischen`: immer aus
   dem groessten Topf, der nicht gerade dran war. Naiv "das naechste passende"
   zu nehmen reicht nicht, dann bleiben am Ende nur Paare uebrig.
+- **Anzeigen nie aus einer losenden Funktion speisen.** `arenaTeam` rief fuer
+  die Super-Arena `superFakten()` auf, und das zieht jedes Mal neu — die
+  Wesenreihe im Kampf wechselte bei jedem Neuzeichnen, die Zeilenzahl sprang,
+  und das Eingabefeld sprang mit. `arenaTeam` liefert jetzt die feste Menge
+  (`superAntworten`), und im Kampf zeigt `ArenaBank` ueber `team` die Wesen
+  genau dieser Runde, einmal beim Betreten festgelegt.
 - **Die Super-Arena** (`art: "super"`, `SUPER_FRAGEN` = 20): alle vier
   Rechenarten zu gleichen Teilen, `superFakten` zieht je fuenf. Geteilt ist der
   Umkehrweg des kleinen Einmaleins (56 : 7 = 8), die Antwort ist wie ueberall
