@@ -2837,6 +2837,35 @@ function teamTricks(t, a) {
    und gleich darauf 9 · 8) sind geschenkt — man tippt die Zahl noch
    einmal, ohne zu rechnen. Also umsortieren: immer die erste Rechnung
    nehmen, deren Ergebnis nicht gerade dran war. */
+/* Aus dem Topf ziehen, aber auf Vielfalt achten: erst von jedem
+   Ergebnis eines, dann das zweite, dann das dritte. Sonst kann der
+   Zufall zwölf Rechnungen erwischen, von denen sieben dasselbe
+   Ergebnis haben — und dann laesst sich hinterher beim besten Willen
+   nicht mehr vermeiden, dass zwei davon nebeneinander stehen. */
+function ziehVielfalt(liste, anzahl) {
+  const toepfe = new Map();
+  [...liste]
+    .sort(() => Math.random() - 0.5)
+    .forEach((x) => {
+      if (!toepfe.has(x.antwort)) toepfe.set(x.antwort, []);
+      toepfe.get(x.antwort).push(x);
+    });
+  const reihen = [...toepfe.values()].sort(() => Math.random() - 0.5);
+  const raus = [];
+  for (let runde = 0; raus.length < anzahl; runde++) {
+    let genommen = 0;
+    for (const reihe of reihen) {
+      if (raus.length >= anzahl) break;
+      if (reihe.length > runde) {
+        raus.push(reihe[runde]);
+        genommen++;
+      }
+    }
+    if (genommen === 0) break;   // nichts mehr da
+  }
+  return raus;
+}
+
 function ohneDoppel(liste) {
   /* Immer aus dem GRÖSSTEN Topf nehmen, der nicht gerade dran war —
      dieselbe Regel wie beim Mischen der Wesen. Einfach "das nächste
@@ -2867,10 +2896,12 @@ function ohneDoppel(liste) {
 function arenaAufgaben(a, anzahl) {
   const pool = [];
   if (a.art === "liga") {
-    return ohneDoppel(ligaFakten().sort(() => Math.random() - 0.5).slice(0, anzahl));
+    return ohneDoppel(ziehVielfalt(ligaFakten(), anzahl));
   }
   if (a.art === "super") {
-    return ohneDoppel(superFakten().sort(() => Math.random() - 0.5).slice(0, anzahl));
+    /* superFakten zieht schon je Rechenart — hier nur noch entzerren,
+       damit die Mischung fuenf/fuenf/fuenf/fuenf bleibt. */
+    return ohneDoppel(superFakten().slice(0, anzahl));
   }
   if (a.art === "reihe") {
     /* Die 1er sind keine Rechnung, sondern eine Ablesung — in der
@@ -2887,8 +2918,8 @@ function arenaAufgaben(a, anzahl) {
        es keine schweren, dort ändert sich nichts. */
     const hart = pool.filter((x) => schwereZahl(x.a) && schwereZahl(x.b));
     const rest = pool.filter((x) => !(schwereZahl(x.a) && schwereZahl(x.b)));
-    const gelost = rest.sort(() => Math.random() - 0.5).slice(0, Math.max(0, anzahl - hart.length));
-    return ohneDoppel([...hart, ...gelost].sort(() => Math.random() - 0.5).slice(0, anzahl));
+    const gelost = ziehVielfalt(rest, Math.max(0, anzahl - hart.length));
+    return ohneDoppel([...hart, ...gelost].slice(0, anzahl));
   } else if (a.op === "+") {
     for (let x = 2; x <= 9; x++)
       for (let y = 2; y <= 9; y++)
@@ -2900,8 +2931,7 @@ function arenaAufgaben(a, anzahl) {
         if (m - k < 10 && m - k > 0)
           pool.push({ id: "s" + m + "-" + k, text: m + " − " + k, antwort: m - k, a: m, b: k, op: "−" });
   }
-  const gemischt = pool.sort(() => Math.random() - 0.5);
-  return ohneDoppel(gemischt.slice(0, anzahl));
+  return ohneDoppel(ziehVielfalt(pool, anzahl));
 }
 
 
