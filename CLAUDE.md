@@ -61,6 +61,10 @@ Die Oberflächengruppe dauert ein paar Minuten, weil sie echte Runden spielt und
 an einer Stelle bewusst die Uhr ablaufen lässt. Vor jedem Push beide laufen
 lassen.
 
+Testspielstände brauchen `gesehen: { kampf, start, tasten }` alle auf `true`,
+sonst schiebt sich eine Einblendung vor alles andere (`standSetzen` erledigt
+das).
+
 Wenn ein Test fehlschlägt: **erst nachsehen, ob das Produkt oder der Test falsch
 liegt.** Beides ist hier schon vorgekommen, und einen echten Fehler
 wegzukonfigurieren wäre das Schlimmste.
@@ -97,7 +101,7 @@ und meldet zurück):
 - **Eine laufende Fassungsnummer** muss sichtbar bleiben, sonst lässt sich nicht
   prüfen, ob ein Update angekommen ist.
 
-**Zwei Fehlerarten, die hier wiederholt aufgetreten sind:**
+**Drei Lehren aus diesem Projekt:**
 
 1. **Anzeigen, die aus einer losenden Funktion gespeist werden.** `arenaTeam`
    rief für die Super-Arena `superFakten()` auf — bei jedem Neuzeichnen kam eine
@@ -108,6 +112,13 @@ und meldet zurück):
    Trickbonus mit, also sank die Latte, je stärker das Team wurde — mit drei
    Tricks je Wesen reichten acht von zwölf Fehlern noch für den Orden. Wo es um
    Können geht, zählen **Treffer**, nicht Punkte.
+
+3. **Gelernt wird, was das Spiel misst — nicht unbedingt, was es meint.**
+   Florentina hat sich die Rechnungen als Fingerweg auf dem festen Ziffernblock
+   gemerkt, nicht als Zahlen; ohne Tastatur wusste sie 7 · 8 nicht. Deshalb
+   wandern die Tasten jetzt jede Runde, und es gibt einen Abfrage-Modus ohne
+   Tasten. Bei jeder neuen Mechanik fragen: lässt sie sich schaffen, ohne die
+   Rechnung zu können?
 
 Die Einzelheiten zu allen Stellschrauben stehen in **`BUILD.md`**, das Konzept
 hinter dem Zahlodex in **`ZAHLODEX.md`**. Beide beim Ändern mitpflegen.

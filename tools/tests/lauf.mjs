@@ -94,7 +94,7 @@ function standSetzen(p, zusatz = {}) {
   return p.evaluate((z) => {
     let t = leererTrainer("🐾");
     t.welt = "malfeld";
-    t.gesehen = { kampf: true, start: true };
+    t.gesehen = { kampf: true, start: true, tasten: true };
     const spaet = Date.now() + 90 * 86400000;
     ["wiese", "malfeld"].forEach((w) =>
       WELT[w].nrs.forEach((nr) => {
@@ -132,7 +132,11 @@ async function spieleRunde(p, { falsch = [], bremse = [], maxFragen = 25 } = {})
     const wert = loese(anzeige);
     if (wert === null) break;
     gestellt.push(anzeige.replace(/\s+/g, " ").replace(" = ?", "") + " = " + wert);
-    if (bremse.includes(n)) await p.waitForTimeout(4200);
+    /* Lang genug, um sicher aus dem Blitzfenster zu fallen — das ist
+       mit der Suchzeit fuer die wandernden Tasten auf bis zu 5 s
+       gewachsen. Laeuft dabei die Uhr ganz ab, ist das auch recht:
+       blitzschnell war es dann erst recht nicht. */
+    if (bremse.includes(n)) await p.waitForTimeout(6500);
     await p.keyboard.type(String(falsch.includes(n) ? wert + 1 : wert), { delay: 8 });
     await p.keyboard.press("Enter");
     await p.waitForTimeout(700);
@@ -410,6 +414,81 @@ async function rechnen(p) {
   });
 }
 
+/* Nachtrag zur Gruppe RECHNEN: die wandernden Tasten und das Abfragen */
+async function rechnenTasten(p) {
+  gruppe("Rechnen");
+
+  await pruefe("Gemischte Tasten: alle zehn Ziffern, kaum eine am alten Platz", async () => {
+    const befund = await p.evaluate(() => {
+      const raus = [];
+      const gesehen = new Set();
+      for (let i = 0; i < 500; i++) {
+        const t = gemischteTasten();
+        gesehen.add(t.join(""));
+        if (t.length !== 10 || new Set(t).size !== 10 || !t.every((z) => /^\d$/.test(z)))
+          raus.push("keine Belegung aus 0–9: " + t.join(""));
+        const gleich = t.filter((z, k) => z === TASTEN_STANDARD[k]).length;
+        if (gleich > 2) raus.push(gleich + " Ziffern am gewohnten Platz: " + t.join(""));
+      }
+      if (gesehen.size < 400) raus.push("nur " + gesehen.size + " verschiedene Belegungen in 500 Würfen");
+      return raus;
+    });
+    return befund.length === 0 || befund.slice(0, 3).join("; ");
+  });
+
+  await pruefe("Suchzeit: eine Sekunde mehr je Ziffer fürs Blitzen", async () => {
+    const befund = await p.evaluate(() => {
+      const raus = [];
+      [[6, 5000], [56, 6000], [100, 7000]].forEach(([antwort, soll]) => {
+        if (blitzGrenze(antwort) !== soll) raus.push("blitzGrenze(" + antwort + ") = " + blitzGrenze(antwort) + " statt " + soll);
+      });
+      if (tempoVon(5500, false, true, 56) !== "blitz") raus.push("5,5 s bei 56 zählt nicht als blitzschnell");
+      if (tempoVon(6500, false, true, 56) !== "normal") raus.push("6,5 s bei 56 zählt nicht als normal");
+      if (tempoVon(5500, false, true, 6) !== "normal") raus.push("5,5 s bei 6 zählt noch als blitzschnell");
+      /* Arena: die erste Hälfte der Uhr ist das Blitzfenster */
+      const f = { op: "·", a: 7, b: 8, antwort: 56 };
+      const zugabe = blitzZeit(f) / 2 - grundZeit(f) / 2;
+      if (zugabe !== 2) raus.push("Arena-Blitzfenster wächst bei 56 um " + zugabe + " s statt 2 s");
+      return raus;
+    });
+    return befund.length === 0 || befund.join("; ");
+  });
+
+  await pruefe("Abfragen: nur gefangene Wesen, fällige zuerst, höchstens zehn", async () => {
+    const befund = await p.evaluate(() => {
+      const raus = [];
+      let t = leererTrainer("🐾");
+      const weit = Date.now() + 30 * 86400000;
+      /* 15 gefangen, davon drei fällig, dazu fünf noch wilde. Genommen
+         werden nur Wesen, die nicht allein über die 1 erreichbar sind —
+         sonst fielen die fälligen heraus und die Prüfung wäre leer. */
+      const echte = NR_MALFELD.filter((nr) => zielFakten("malfeld", nr).some(ohneEins));
+      echte.slice(0, 15).forEach((nr, k) => {
+        t = mitF(t, "malfeld", nr, { h: 3, s: 3, f: k < 3 ? Date.now() - 1000 : weit, x: 0, g: [] });
+      });
+      echte.slice(15, 20).forEach((nr) => {
+        t = mitF(t, "malfeld", nr, { h: 1, s: 0, f: 0, x: 0, g: [] });
+      });
+      const faellig = echte.slice(0, 3);
+      for (let i = 0; i < 50; i++) {
+        const r = abfrageRunde(t, "malfeld");
+        if (r.length !== 10) raus.push("Länge " + r.length);
+        r.forEach(({ nr }) => {
+          if (holF(t, "malfeld", nr).s < 1) raus.push("wildes Wesen " + nr + " dabei");
+        });
+        faellig.forEach((nr) => {
+          if (!r.some((x) => x.nr === nr)) raus.push("fälliges Wesen " + nr + " fehlt");
+        });
+        r.forEach(({ fakt }) => {
+          if (fakt.op === "·" && (fakt.a === 1 || fakt.b === 1)) raus.push("Einer-Rechnung abgefragt: " + fakt.text);
+        });
+      }
+      return [...new Set(raus)];
+    });
+    return befund.length === 0 || befund.slice(0, 4).join("; ");
+  });
+}
+
 /* ============================================================
    GRUPPE 2 — OBERFLAECHE
    ============================================================ */
@@ -485,7 +564,8 @@ async function oberflaeche(p, url) {
     /* Erste Frage verstreichen lassen. Danach muss GENAU eine Frage
        verbraucht sein — der Fehler war, dass die naechste sofort
        mitgewertet wurde, weil sie noch die alte Restzeit sah. */
-    await p.waitForTimeout(9000);
+    /* Die Uhr ist mit der Suchzeit auf bis zu 10 s gewachsen. */
+    await p.waitForTimeout(11000);
     await p.locator("button:has-text('Weiter')").click({ timeout: 2000 }).catch(() => {});
     await p.waitForTimeout(500);
     const zaehler = (await text(p)).find((x) => /^\d+\/\d+$/.test(x));
@@ -620,6 +700,108 @@ async function oberflaeche(p, url) {
     );
   });
 
+  /* Liest die Ziffern des Ziffernblocks in Bildschirmreihenfolge */
+  const belegung = async () =>
+    (await p.locator("div.grid.max-w-xs.grid-cols-3 button").allInnerTexts())
+      .map((x) => x.trim())
+      .filter((x) => /^\d$/.test(x))
+      .join("");
+
+  await pruefe("Die Tasten wandern — aber nur zwischen den Runden, nie mittendrin", async () => {
+    await neuLaden({});
+    await inDieArena("Siebener-Arena");
+    const anfang = await belegung();
+    if (anfang.length !== 10) return "Ziffernblock nicht gefunden: " + anfang;
+    if (anfang === "7894561230") return "Tasten liegen noch an der gewohnten Stelle";
+    /* drei Fragen spielen, zwischendurch neu zeichnen lassen */
+    for (let n = 0; n < 3; n++) {
+      const wert = loese(await p.locator("p.text-4xl").first().innerText());
+      await p.keyboard.type(String(wert), { delay: 10 });
+      await p.keyboard.press("Enter");
+      await p.waitForTimeout(900);
+      const jetzt = await belegung();
+      if (jetzt !== anfang) return "Belegung hat sich mitten im Kampf geändert: " + anfang + " → " + jetzt;
+    }
+    /* Neue Runde → neue Belegung */
+    await p.locator("button:has-text('‹')").first().click();
+    await p.waitForTimeout(400);
+    await p.getByText("Siebener-Arena").click();
+    await p.waitForTimeout(500);
+    const zweite = await belegung();
+    return zweite !== anfang || "zweite Runde hat dieselbe Belegung: " + zweite;
+  });
+
+  await pruefe("Wer schon gespielt hat, bekommt die wandernden Tasten einmal erklärt", async () => {
+    await standSetzen(p, { gesehen: { kampf: true, start: true } });
+    await p.reload({ waitUntil: "networkidle" });
+    await p.waitForTimeout(500);
+    if (!(await p.getByText("Die Tasten sind verzaubert!").isVisible())) return "Einblendung fehlt";
+    await p.getByRole("button", { name: /Ich bin bereit/ }).click();
+    await p.waitForTimeout(400);
+    await p.reload({ waitUntil: "networkidle" });
+    await p.waitForTimeout(500);
+    return !(await p.getByText("Die Tasten sind verzaubert!").isVisible()) || "Einblendung kommt wieder";
+  });
+
+  await pruefe("Abfragen: sofort, gewusst und nicht gewusst wirken auf den Karteikasten", async () => {
+    /* Alles im Malfeld fällig und auf Stufe 2 */
+    await p.evaluate(() => {
+      let t = leererTrainer("🐾");
+      t.welt = "malfeld";
+      t.gesehen = { kampf: true, start: true, tasten: true };
+      NR_MALFELD.forEach((nr) => {
+        t = mitF(t, "malfeld", nr, { h: 9, s: 2, f: Date.now() - 1000, x: 0, g: zielFakten("malfeld", nr).map((x) => x.id) });
+      });
+      localStorage.setItem("florentina-zahlodex", JSON.stringify({ version: 1, aktiv: "Florentina", trainer: { Florentina: t } }));
+    });
+    await p.reload({ waitUntil: "networkidle" });
+    await p.waitForTimeout(400);
+    await p.locator("button:has-text('⚙️')").first().click();
+    await p.waitForTimeout(350);
+    await p.locator("button:has-text('Abfragen')").first().click();
+    await p.waitForTimeout(350);
+    await p.locator("button:has-text('Malfeld')").first().click();
+    await p.waitForTimeout(400);
+    if ((await p.locator("div.grid.max-w-xs.grid-cols-3").count()) > 0) return "da ist doch ein Ziffernblock";
+
+    const stufeVon = async (nr) => (await lies(p)).wesen[nr].m.s;
+    const wesenDerFrage = async () => {
+      /* Die Antwort der Frage ist die Wesennummer — ausser bei Umkehraufgaben.
+         Deshalb lieber die Lösung zeigen lassen und dort ablesen. */
+      await p.locator("button:has-text('Lösung zeigen')").click();
+      await p.waitForTimeout(250);
+      const t2 = (await p.locator("p.text-5xl").first().innerText()).replace(/\s+/g, " ");
+      const m = t2.match(/(\d+)\s*[·+−:-]\s*(\d+)\s*=\s*(\d+)/);
+      if (!m) return null;
+      /* Ergebnis der Rechnung = Wesen */
+      return +m[3];
+    };
+    const ergebnis = [];
+    for (const [knopf, erwartet] of [["Sofort gewusst", 4], ["Gewusst, mit", 3], ["Nicht gewusst", 1]]) {
+      const nr = await wesenDerFrage();
+      if (nr === null) return "Lösung nicht lesbar";
+      const vorher = await stufeVon(nr);
+      await p.locator("button:has-text('" + knopf + "')").click();
+      await p.waitForTimeout(350);
+      const nachher = await stufeVon(nr);
+      ergebnis.push(knopf + ": " + vorher + " → " + nachher);
+      if (nachher !== erwartet) return "falsche Wirkung — " + ergebnis.join(", ") + " (erwartet " + erwartet + ")";
+    }
+    /* Rest der Runde durchklicken und die Übersicht prüfen */
+    for (let n = 0; n < 10; n++) {
+      const zeigen = p.locator("button:has-text('Lösung zeigen')");
+      if (!(await zeigen.count())) break;
+      await zeigen.click();
+      await p.waitForTimeout(150);
+      await p.locator("button:has-text('Gewusst, mit')").click();
+      await p.waitForTimeout(150);
+    }
+    const t3 = await text(p);
+    if (!t3.some((x) => x.includes("Die üben wir noch".toUpperCase()) || x.includes("Die üben wir noch")))
+      return "Übersicht nennt die nicht gewusste Rechnung nicht";
+    return t3.some((x) => x === "9/10") || "Übersicht zählt falsch: " + t3.slice(0, 8).join(" | ");
+  });
+
   await pruefe("Trainer löschen fragt nach", async () => {
     await neuLaden({});
     await p.getByText("Trainer wechseln").click();
@@ -660,6 +842,7 @@ globalThis.ARENEN_ALLE = ARENEN_ALLE;
 if (!nurGruppe || nurGruppe === "rechnen") {
   console.log("RECHNEN");
   await rechnen(seite);
+  await rechnenTasten(seite);
   console.log("");
 }
 if (!nurGruppe || nurGruppe === "oberflaeche") {

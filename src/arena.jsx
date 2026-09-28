@@ -343,6 +343,52 @@ function maxStufe(welt, nr) {
 const FANG_TREFFER = 3;   // so oft richtig, dann ist es gefangen
 const BLITZ_MS = 4000;    // schneller als das = blitzschnell
 const LANGSAM_MS = 10000; // langsamer als das = richtig, aber unsicher
+/* Die Tasten wandern (siehe gemischteTasten) — also muss jede Ziffer
+   erst gesucht werden. Ohne diese Zugabe wären Blitz, dritter Stern
+   und Titel auf einmal kaum noch zu schaffen. Der Wert ist ein erster
+   Ansatz; nachjustieren, wenn man sieht, wie schnell sie damit ist. */
+const SUCHZEIT_MS = 1000;  // je Ziffer der Antwort
+
+function ziffernZahl(n) {
+  return String(Math.abs(n)).length;
+}
+
+function blitzGrenze(antwort) {
+  return BLITZ_MS + ziffernZahl(antwort) * SUCHZEIT_MS;
+}
+
+function langsamGrenze(antwort) {
+  return LANGSAM_MS + ziffernZahl(antwort) * SUCHZEIT_MS;
+}
+
+/* ============================================================
+   DIE WANDERNDEN TASTEN
+
+   Florentina hat sich die Rechnungen nicht als Zahlen gemerkt, sondern
+   als Fingerweg: 7 · 8 war "Mitte, dann rechts daneben". Im Spiel ging
+   das gut, weil die Tastatur immer gleich aussah — ohne Tastatur, als
+   ihre Mutter fragte, war die Antwort weg.
+
+   Deshalb liegen die Ziffern jetzt jede Runde woanders. Dann nützt
+   kein Fingerweg mehr; wer 56 tippen will, muss wissen, dass es fünf
+   und sechs sind. Gemischt wird einmal pro Runde (beim Betreten
+   festgelegt, nie beim Neuzeichnen), ← und ✓ bleiben fest.
+   ============================================================ */
+const TASTEN_STANDARD = ["7", "8", "9", "4", "5", "6", "1", "2", "3", "0"];
+
+function gemischteTasten() {
+  /* Echtes Mischen (Fisher-Yates) — und so oft, bis höchstens zwei
+     Ziffern zufällig an ihrem gewohnten Platz liegen geblieben sind. */
+  for (let versuch = 0; versuch < 100; versuch++) {
+    const t = [...TASTEN_STANDARD];
+    for (let i = t.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [t[i], t[j]] = [t[j], t[i]];
+    }
+    if (t.filter((z, i) => z === TASTEN_STANDARD[i]).length <= 2) return t;
+  }
+  return [...TASTEN_STANDARD].reverse();
+}
 const RUNDE_LAENGE = 10;
 const LUFT_HOLEN = 2;         // so oft darf die Uhr pro Runde anhalten
 const TRICK_KOSTEN = 5;       // ⚡ für einen Trick
@@ -361,6 +407,13 @@ function schwereZahl(x) {
 }
 
 function blitzZeit(fakt) {
+  /* Blitzschnell ist, wer in der ersten Hälfte antwortet. Doppelte
+     Suchzeit auf die Uhr heisst also: eine Sekunde mehr je Ziffer fürs
+     Blitzen, zwei mehr bis zum Ablauf. */
+  return grundZeit(fakt) + (2 * ziffernZahl(fakt.antwort) * SUCHZEIT_MS) / 1000;
+}
+
+function grundZeit(fakt) {
   if (fakt.op === ":") {
     /* Geteilt ist der Umkehrweg — das braucht eine Spur länger. */
     return schwereZahl(fakt.b) || schwereZahl(fakt.antwort) ? 8 : 6;
@@ -590,11 +643,11 @@ function faelligIn(welt, nr, stufe) {
    Damit räumt sich die 1er- und die 10er-Reihe von selbst ab,
    während die schweren Kerne im Umlauf bleiben.
    ============================================================ */
-function tempoVon(dauer, mitHilfe, richtig) {
+function tempoVon(dauer, mitHilfe, richtig, antwort) {
   if (!richtig) return "falsch";
   if (mitHilfe) return "hilfe";
-  if (dauer <= BLITZ_MS) return "blitz";
-  if (dauer >= LANGSAM_MS) return "langsam";
+  if (dauer <= blitzGrenze(antwort)) return "blitz";
+  if (dauer >= langsamGrenze(antwort)) return "langsam";
   return "normal";
 }
 
@@ -1236,17 +1289,21 @@ function Kopf({ titel, unter, onZurueck, rechts }) {
 }
 
 /* Ziffernblock — auf dem Tablet schneller als die Systemtastatur */
-function Ziffernblock({ wert, setWert, onOk, gesperrt }) {
+function Ziffernblock({ wert, setWert, onOk, gesperrt, tasten }) {
   function tippe(z) {
     if (gesperrt) return;
     Ton.tippen();
     if (z === "weg") setWert(wert.slice(0, -1));
     else if (wert.length < 3) setWert((wert + z).replace(/^0(?=\d)/, ""));
   }
-  const tasten = ["7", "8", "9", "4", "5", "6", "1", "2", "3"];
+  /* Neun Ziffern im Raster, die zehnte unten in der Mitte zwischen
+     ← und ✓. Wer keine Belegung mitgibt, bekommt die gewohnte. */
+  const belegung = tasten || TASTEN_STANDARD;
+  const raster = belegung.slice(0, 9);
+  const unten = belegung[9];
   return (
     <div className="mx-auto grid max-w-xs grid-cols-3 gap-2">
-      {tasten.map((z) => (
+      {raster.map((z) => (
         <button
           key={z}
           onClick={() => tippe(z)}
@@ -1262,10 +1319,10 @@ function Ziffernblock({ wert, setWert, onOk, gesperrt }) {
         ←
       </button>
       <button
-        onClick={() => tippe("0")}
+        onClick={() => tippe(unten)}
         className="kein-blau rounded-2xl bg-emerald-800/70 py-4 text-2xl font-black text-emerald-50 active:bg-emerald-700"
       >
-        0
+        {unten}
       </button>
       <button
         onClick={onOk}
@@ -1552,6 +1609,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
      aber den Vergleich mit dem Anfang. */
   const [anfang] = useState(start);
   const [liste] = useState(() => baueRunde(start, welt, RUNDE_LAENGE));
+  const [tasten] = useState(() => gemischteTasten());   // einmal pro Runde
   const [pos, setPos] = useState(0);
   const [phase, setPhase] = useState("frage"); // frage | falsch | richtig | fang | bericht
   const [eingabe, setEingabe] = useState("");
@@ -1644,12 +1702,12 @@ function Streifzug({ start, welt, speichern, onEnde }) {
       return;
     }
 
-    const blitz = dauer <= BLITZ_MS && !mitHilfe && !wiederholung;
+    const blitz = dauer <= blitzGrenze(fakt.antwort) && !mitHilfe && !wiederholung;
     setWarBlitz(blitz);
     if (blitz) Ton.blitz(); else Ton.richtig();
 
     let wurdeGefangen = false;
-    const tempo = tempoVon(dauer, mitHilfe, true);
+    const tempo = tempoVon(dauer, mitHilfe, true, fakt.antwort);
     let n = merkeFakt({ ...f, l: fakt.basis || fakt.id }, fakt);
     if (blitz) n.blitz = true;
     if (wiederholung) {
@@ -2053,7 +2111,13 @@ function Streifzug({ start, welt, speichern, onEnde }) {
       ) : (
         <>
           <div className="mt-4">
-            <Ziffernblock wert={eingabe} setWert={setEingabe} onOk={pruefen} gesperrt={phase !== "frage"} />
+            <Ziffernblock
+              wert={eingabe}
+              setWert={setEingabe}
+              onOk={pruefen}
+              gesperrt={phase !== "frage"}
+              tasten={tasten}
+            />
           </div>
           <div className="mt-3 flex gap-2">
             {tipps.map((b, i) => (
@@ -3231,6 +3295,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   const [pause, setPause] = useState(false);
   const [geschnauft, setGeschnauft] = useState(false);
   const [vorherPokal] = useState(() => pokalStand(start, arena.id).stufe);
+  const [tasten] = useState(() => gemischteTasten());   // einmal pro Kampf
   /* Wer in DIESEM Kampf antritt — einmal beim Betreten festgelegt.
      Sonst rechnet die Bank bei jedem Neuzeichnen neu, und in der
      Super-Arena kam dabei jedes Mal eine andere Reihe heraus: die
@@ -3917,7 +3982,13 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
       </div>
 
       <div className="mt-4">
-        <Ziffernblock wert={eingabe} setWert={setEingabe} onOk={pruefen} gesperrt={phase !== "kampf"} />
+        <Ziffernblock
+          wert={eingabe}
+          setWert={setEingabe}
+          onOk={pruefen}
+          gesperrt={phase !== "kampf"}
+          tasten={tasten}
+        />
       </div>
 
       {/* Die Beere lag rechts — also genau unter der Enter-Taste des
@@ -4033,6 +4104,7 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
   const [phase, setPhase] = useState("frage");
   const [letzte, setLetzte] = useState(null);
   const [wurf] = useState(() => Math.floor(Math.random() * 97));
+  const [tasten] = useState(() => gemischteTasten());   // einmal pro Duell
   const beginn = useRef(Date.now());
   const dran = zug % 2;
   const runde = Math.floor(zug / 2);
@@ -4094,7 +4166,7 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
   function pruefen() {
     if (eingabe === "" || phase !== "frage") return;
     const richtig = Number(eingabe) === fakt.antwort;
-    const schnell = Date.now() - beginn.current <= BLITZ_MS;
+    const schnell = Date.now() - beginn.current <= blitzGrenze(fakt.antwort);
     setLetzte(richtig ? (schnell ? 2 : 1) : 0);
     if (richtig) {
       const p = [...punkte];
@@ -4150,10 +4222,16 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
         )}
       </div>
       <div className="mt-4">
-        <Ziffernblock wert={eingabe} setWert={setEingabe} onOk={pruefen} gesperrt={phase !== "frage"} />
+        <Ziffernblock
+          wert={eingabe}
+          setWert={setEingabe}
+          onOk={pruefen}
+          gesperrt={phase !== "frage"}
+          tasten={tasten}
+        />
       </div>
       <p className="mt-2 text-center text-xs text-emerald-400">
-        Unter vier Sekunden gibt es doppelt: zwei Punkte!
+        Wer blitzschnell ist, bekommt doppelt: zwei Punkte!
       </p>
       <button onClick={onEnde} className="mt-2 w-full text-center text-xs text-emerald-500">
         Duell abbrechen
@@ -4393,6 +4471,44 @@ function Weg({ titel, unter, zahl, haupt, onClick }) {
 /* Einmal beim allerersten Start, danach über das "?" oben. Erklärt
    die vier Orte — vor allem, dass der Streifzug der Trainingsplatz
    ist und die Arena die Bühne. */
+/* Einmal für alle, die den Zahlodex schon mit festen Tasten kannten. */
+function TastenErklaerung({ onWeiter }) {
+  const [vorschau] = useState(() => gemischteTasten());
+  return (
+    <div className="mx-auto max-w-md p-4">
+      <div className="a-auftauchen rounded-3xl border-2 border-amber-400/60 bg-emerald-900/80 p-5 text-emerald-100">
+        <div className="text-center text-5xl">🔀</div>
+        <p className="mt-2 text-center text-2xl font-black text-amber-300">
+          Die Tasten sind verzaubert!
+        </p>
+        <p className="mt-3">
+          Ab jetzt wandern die Zahlen auf den Tasten. Jede Runde liegen sie
+          woanders — so zum Beispiel:
+        </p>
+        <div className="pointer-events-none mt-3 scale-90 opacity-90">
+          <Ziffernblock wert="" setWert={() => {}} onOk={() => {}} gesperrt tasten={vorschau} />
+        </div>
+        <p className="mt-3">
+          Wer sich nur merkt, <b>wo</b> er hintippt, kommt jetzt ins Stolpern.
+          Wer die Zahl im Kopf hat, findet sie überall.
+        </p>
+        <p className="mt-2 font-bold text-amber-200">
+          Also: erst denken — 7 · 8 ist sechsundfünfzig. Dann die 5 suchen,
+          dann die 6.
+        </p>
+        <p className="mt-2 text-emerald-300">
+          Keine Sorge: Fürs Suchen bekommst du mehr Zeit. Und wenn es am Anfang
+          holpert, ist das ganz normal — deine Wesen kommen dann einfach öfter
+          vorbei, bis es sitzt.
+        </p>
+        <div className="mt-5">
+          <Knopf onClick={onWeiter}>Ich bin bereit! 🔀</Knopf>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SpielErklaerung({ onWeiter, zurueck }) {
   return (
     <div className="mx-auto max-w-md p-4">
@@ -4430,6 +4546,12 @@ function SpielErklaerung({ onWeiter, zurueck }) {
 
         <p className="mt-3 font-black text-amber-200">⚔️ Duell</p>
         <p>Zu zweit an einem Gerät. Wer weiß es zuerst?</p>
+
+        <p className="mt-3 font-black text-amber-200">🔀 Und aufgepasst:</p>
+        <p>
+          Die Tasten wandern! Jede Runde liegen die Zahlen woanders. Also erst
+          die Zahl im Kopf haben — dann suchen.
+        </p>
 
         <div className="mt-5">
           <Knopf onClick={onWeiter}>{zurueck ? "Alles klar" : "Los geht's! 🌿"}</Knopf>
@@ -4550,7 +4672,248 @@ function eigeneAngriffeZahl(t) {
   return Object.values(t.angriffe || {}).reduce((n, e) => n + Object.keys(e).length, 0);
 }
 
-function Einstellungen({ t, speichern, onZurueck, onSicherung }) {
+/* ============================================================
+   ABFRAGEN — ohne Tasten
+
+   Der Test, bei dem sich herausgestellt hat, dass Florentina sich
+   Fingerwege statt Zahlen merkt: ihre Mutter fragt "Wie viel ist 7 mal
+   8?", und es kommt nichts. Genau diese Situation gibt es hier —
+   regelmässig und mit Wirkung auf den Karteikasten.
+
+   Das Kind sagt die Antwort laut, ein Erwachsener hört zu und tippt,
+   wie es war. Deshalb liegt der Modus im Elternbereich: sich selbst
+   "gewusst" zu geben wäre zu leicht. Keine Uhr, keine Tasten, keine
+   Blitze — nur die Frage, ob die Zahl im Kopf wohnt.
+   ============================================================ */
+const ABFRAGE_LAENGE = 10;
+
+/* 1 · 7 ist Ablesen, nicht Rechnen — wie in der Arena kommt es hier
+   nicht dran. Wesen, die im Malfeld NUR über die 1 erreichbar sind
+   (die Primzahlen 2, 3, 5, 7), fallen deshalb heraus. */
+const ohneEins = (x) => !(x.op === "·" && (x.a === 1 || x.b === 1));
+
+function abfrageRunde(t, welt) {
+  const jetzt = Date.now();
+  const gefangen = WELT[welt].nrs.filter((nr) => {
+    const f = holF(t, welt, nr);
+    return f && f.s >= 1 && zielFakten(welt, nr).some(ohneEins);
+  });
+  /* Wer fällig ist, kommt zuerst dran, danach wer am wenigsten sitzt.
+     Die Auswahl wird am Ende gemischt, damit die Reihenfolge nichts
+     verrät. */
+  const vorrang = (nr) => {
+    const f = holF(t, welt, nr);
+    return (f.f <= jetzt ? 0 : 100) + f.s;
+  };
+  const auswahl = [...gefangen]
+    .sort(() => Math.random() - 0.5)
+    .sort((a, b) => vorrang(a) - vorrang(b))
+    .slice(0, ABFRAGE_LAENGE)
+    .sort(() => Math.random() - 0.5);
+  return auswahl.map((nr) => {
+    let fakt = waehleFakt(t, welt, nr, false);
+    if (!ohneEins(fakt)) {
+      const andere = zielFakten(welt, nr).filter(ohneEins);
+      fakt = andere[Math.floor(Math.random() * andere.length)];
+    }
+    return { nr, fakt };
+  });
+}
+
+function gefangenIn(t, welt) {
+  return WELT[welt].nrs.filter((nr) => {
+    const f = holF(t, welt, nr);
+    return f && f.s >= 1 && zielFakten(welt, nr).some(ohneEins);
+  }).length;
+}
+
+function Abfrage({ t, name, speichern, onZurueck }) {
+  const [welt, setWelt] = useState(null);
+  const [runde, setRunde] = useState([]);
+  const [pos, setPos] = useState(0);
+  const [offen, setOffen] = useState(false);       // Lösung gezeigt?
+  const [antworten, setAntworten] = useState([]);  // { fakt, art }
+
+  function starte(w) {
+    setWelt(w);
+    setRunde(abfrageRunde(t, w));
+    setPos(0);
+    setOffen(false);
+    setAntworten([]);
+  }
+
+  function bewerte(art) {
+    if (!offen) return;
+    const { nr, fakt } = runde[pos];
+    const f = holF(t, welt, nr);
+    let n;
+    if (art === "falsch") {
+      n = nachWiedersehen({ ...f, x: (f.x || 0) + 1, l: fakt.basis || fakt.id }, "falsch", welt, nr);
+      Ton.nochmal();
+    } else {
+      /* Dieselbe Regel wie im Streifzug: gewusst zählt immer als
+         gesehen, rückt aber nur weiter, wenn das Wiedersehen fällig war. */
+      n = merkeFakt({ ...f, l: fakt.basis || fakt.id }, fakt);
+      if (n.f <= Date.now()) n = nachWiedersehen(n, art, welt, nr);
+      art === "blitz" ? Ton.blitz() : Ton.richtig();
+    }
+    const neu = mitF(t, welt, nr, n);
+    speichern({
+      ...neu,
+      stat: {
+        ...neu.stat,
+        richtig: neu.stat.richtig + (art === "falsch" ? 0 : 1),
+        falsch: neu.stat.falsch + (art === "falsch" ? 1 : 0),
+      },
+    });
+    setAntworten((a) => [...a, { fakt, art }]);
+    setOffen(false);
+    setPos(pos + 1);
+  }
+
+  /* -------- Auswahl -------- */
+  if (!welt) {
+    return (
+      <div className="mx-auto max-w-md p-4">
+        <Kopf titel="Abfragen 🗣️" unter="Zu zweit, ganz ohne Tasten" onZurueck={onZurueck} />
+        <div className="rounded-2xl bg-emerald-900/60 p-4 text-sm leading-relaxed text-emerald-100">
+          <p className="font-black text-amber-300">So geht's</p>
+          <p className="mt-1">
+            Lies die Rechnung vor oder zeig sie her. {name} sagt die Antwort
+            laut — ohne Tasten, ohne Hilfe. Dann tippst du auf „Lösung zeigen"
+            und sagst, wie es war.
+          </p>
+          <p className="mt-2 text-emerald-300">
+            ⚡ <b>Sofort gewusst</b> zählt wie blitzschnell im Spiel, ✅{" "}
+            <b>Gewusst</b> wie eine normale richtige Antwort. Was nicht gewusst
+            wurde, kommt in den nächsten Tagen öfter dran.
+          </p>
+        </div>
+        <div className="mt-4 space-y-2">
+          {["malfeld", "wiese"].map((w) => {
+            const zahl = gefangenIn(t, w);
+            return (
+              <button
+                key={w}
+                disabled={zahl === 0}
+                onClick={() => starte(w)}
+                className={
+                  "kein-blau w-full rounded-2xl p-4 text-left transition " +
+                  (zahl > 0 ? "bg-emerald-800/70 hover:bg-emerald-700" : "bg-emerald-900/50 opacity-50")
+                }
+              >
+                <p className="font-black text-emerald-50">
+                  {w === "malfeld" ? "✖️ Malfeld" : "🌿 Wiesenweg"}
+                </p>
+                <p className="text-xs text-emerald-300">
+                  {zahl > 0
+                    ? zahl + " gefangene Wesen · " + Math.min(zahl, ABFRAGE_LAENGE) + " Fragen"
+                    : "Noch keine Wesen gefangen"}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  /* -------- Ende -------- */
+  if (pos >= runde.length) {
+    const gewusst = antworten.filter((a) => a.art !== "falsch").length;
+    const sofort = antworten.filter((a) => a.art === "blitz").length;
+    const offenListe = antworten.filter((a) => a.art === "falsch");
+    return (
+      <div className="mx-auto max-w-md p-4 text-center">
+        <div className="a-auftauchen rounded-3xl bg-emerald-900/70 p-5">
+          <div className="text-6xl">{offenListe.length === 0 ? "🌟" : "🗣️"}</div>
+          <p className="mt-2 text-5xl font-black text-amber-300">
+            {gewusst}/{antworten.length}
+          </p>
+          <p className="text-xs uppercase tracking-widest text-emerald-300">gewusst</p>
+          <p className="mt-2 text-sm text-emerald-200">davon {sofort} sofort ⚡</p>
+          {offenListe.length > 0 ? (
+            <div className="mt-4 rounded-2xl bg-emerald-950/50 p-3 text-left">
+              <p className="text-center text-xs font-bold uppercase tracking-widest text-emerald-300">
+                Die üben wir noch
+              </p>
+              <div className="mt-2 flex flex-wrap justify-center gap-2">
+                {offenListe.map(({ fakt }, k) => (
+                  <span key={k} className="rounded-xl bg-emerald-800/70 px-3 py-1 font-black text-emerald-50">
+                    {loesungsText(fakt)}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-2 text-center text-xs text-emerald-400">
+                Die Wesen dazu kommen jetzt öfter vorbei.
+              </p>
+            </div>
+          ) : (
+            <p className="mt-3 font-black text-amber-200">Alles gewusst — ohne eine einzige Taste!</p>
+          )}
+          <div className="mt-4 space-y-2">
+            <Knopf onClick={() => starte(welt)}>Noch eine Runde</Knopf>
+            <Knopf art="ruhig" onClick={onZurueck}>Fertig</Knopf>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* -------- Frage -------- */
+  const { fakt } = runde[pos];
+  return (
+    <div className="mx-auto max-w-md p-4">
+      <Kopf
+        titel="Abfragen 🗣️"
+        unter={(welt === "malfeld" ? "Malfeld" : "Wiesenweg") + " · " + (pos + 1) + " von " + runde.length}
+        onZurueck={onZurueck}
+      />
+      <div className="rounded-3xl bg-gradient-to-b from-emerald-50 to-white p-8 text-center shadow-2xl">
+        <p className="text-5xl font-black text-emerald-950">
+          {offen ? loesungsText(fakt) : frageText(fakt)}
+        </p>
+        {!offen && (
+          <p className="mt-4 text-sm font-bold text-emerald-700">Sag die Antwort laut! 🗣️</p>
+        )}
+      </div>
+
+      {!offen ? (
+        <div className="mt-6">
+          <Knopf onClick={() => { setOffen(true); Ton.tippen(); }}>👀 Lösung zeigen</Knopf>
+          <p className="mt-2 text-center text-xs text-emerald-400">
+            Erst wenn {name} geantwortet hat.
+          </p>
+        </div>
+      ) : (
+        <div className="a-rutschen mt-6 space-y-2">
+          <p className="text-center text-xs font-bold uppercase tracking-widest text-emerald-300">
+            Wie war's?
+          </p>
+          <Knopf onClick={() => bewerte("blitz")}>⚡ Sofort gewusst</Knopf>
+          <Knopf art="gruen" onClick={() => bewerte("normal")}>✅ Gewusst, mit Überlegen</Knopf>
+          <button
+            onClick={() => bewerte("falsch")}
+            className="kein-blau w-full rounded-2xl border-2 border-rose-400/60 px-5 py-4 text-lg font-black text-rose-200 active:translate-y-px"
+          >
+            ❌ Nicht gewusst
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* "7 · 8 = ?" bzw. bei einer Umkehraufgabe "6 · ? = 42" */
+function frageText(fakt) {
+  return fakt.umkehr ? fakt.text : fakt.text + " = ?";
+}
+
+function loesungsText(fakt) {
+  return fakt.umkehr ? fakt.text.replace("?", String(fakt.antwort)) : fakt.text + " = " + fakt.antwort;
+}
+
+function Einstellungen({ t, speichern, onZurueck, onSicherung, onAbfrage }) {
   const [eingabe, setEingabe] = useState("");
   const [fehler, setFehler] = useState(null);
   const [vorschau, setVorschau] = useState(null);
@@ -4587,6 +4950,19 @@ function Einstellungen({ t, speichern, onZurueck, onSicherung }) {
         unter="Für Eltern — hier ändert sich nichts am Rechnen"
         onZurueck={onZurueck}
       />
+
+      {/* Ganz oben, weil es das Wichtigste hier ist: der Blick darauf,
+          ob die Rechnungen wirklich sitzen. */}
+      <button
+        onClick={onAbfrage}
+        className="kein-blau mb-3 w-full rounded-2xl bg-amber-400 p-4 text-left shadow-lg active:translate-y-px"
+      >
+        <p className="text-lg font-black text-emerald-950">🗣️ Abfragen — ohne Tasten</p>
+        <p className="text-xs text-emerald-900/80">
+          Du fragst, dein Kind antwortet laut, du tippst, wie es war. Zeigt, ob
+          die Zahl wirklich im Kopf ist — und zählt im Karteikasten mit.
+        </p>
+      </button>
 
       <div className="rounded-2xl bg-emerald-900/60 p-4">
         <p className="text-sm font-black text-amber-300">Namen der Wesen</p>
@@ -5158,6 +5534,21 @@ function App() {
           speichern={speichereTrainer}
           onZurueck={() => setAnsicht("menue")}
           onSicherung={() => setAnsicht("sicherung")}
+          onAbfrage={() => setAnsicht("abfrage")}
+        />
+      </>
+    );
+  }
+
+  if (ansicht === "abfrage") {
+    return (
+      <>
+        <Stile />
+        <Abfrage
+          t={t}
+          name={stand.aktiv}
+          speichern={speichereTrainer}
+          onZurueck={() => setAnsicht("einstellungen")}
         />
       </>
     );
@@ -5269,9 +5660,31 @@ function App() {
           zurueck={erklaerung}
           onWeiter={() => {
             setErklaerung(false);
+            /* Wer die Spielerklärung liest, liest dort auch von den
+               wandernden Tasten — die eigene Einblendung braucht es
+               dann nicht mehr. */
             if (!(t.gesehen && t.gesehen.start))
-              speichereTrainer({ ...t, gesehen: { ...(t.gesehen || {}), start: true } });
+              speichereTrainer({
+                ...t,
+                gesehen: { ...(t.gesehen || {}), start: true, tasten: true },
+              });
           }}
+        />
+      </>
+    );
+  }
+
+  /* Wer schon mit festen Tasten gespielt hat, bekommt die Neuigkeit
+     einmal eigens erklärt — sonst fühlt sich die neue Schwierigkeit
+     wie ein Fehler an. */
+  if (!(t.gesehen && t.gesehen.tasten)) {
+    return (
+      <>
+        <Stile />
+        <TastenErklaerung
+          onWeiter={() =>
+            speichereTrainer({ ...t, gesehen: { ...(t.gesehen || {}), tasten: true } })
+          }
         />
       </>
     );

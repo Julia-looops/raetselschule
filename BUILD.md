@@ -130,6 +130,25 @@ von dort genommen — ab dann baut es auch ohne Internet.
   die Wesennummer. Bei Mal und Geteilt kommen die schweren zuerst. Oeffnet
   erst mit dem Liga-Orden. `blitzZeit`, `beeren` und `Rechenbild` haben je
   einen Zweig fuer `op === ":"`.
+- **Wandernde Tasten**: `gemischteTasten` mischt die zehn Ziffern des
+  Ziffernblocks (← und ✓ bleiben fest), höchstens zwei am gewohnten Platz.
+  Gemischt wird einmal pro Runde — Streifzug, Kampf und Duell legen die
+  Belegung beim Betreten per `useState` fest, nie beim Neuzeichnen. Anlass:
+  Florentina hat sich die Rechnungen als Fingerweg gemerkt (7 · 8 = "Mitte, dann
+  rechts daneben") und wusste sie ohne Tastatur nicht.
+- **Suchzeit**: `SUCHZEIT_MS` (1000) je Ziffer der Antwort. `blitzGrenze` und
+  `langsamGrenze` rechnen sie auf `BLITZ_MS` und `LANGSAM_MS` auf (Streifzug,
+  Duell); die Arena-Uhr `blitzZeit` bekommt die doppelte Suchzeit, weil dort die
+  erste Haelfte der Uhr das Blitzfenster ist. `grundZeit` ist die alte Uhr ohne
+  Zugabe. Ein erster Ansatz — nachjustieren, wenn man sieht, wie schnell sie mit
+  gemischten Tasten ist.
+- **Abfragen** (`Abfrage`, im Elternbereich unter ⚙️): keine Tasten, keine Uhr.
+  Das Kind sagt die Antwort laut, ein Erwachsener tippt ⚡ sofort (wirkt wie
+  blitz), ✅ gewusst (normal) oder ❌ nicht gewusst (falsch). `abfrageRunde`
+  nimmt nur gefangene Wesen, fällige zuerst, dann die mit der niedrigsten Stufe,
+  hoechstens `ABFRAGE_LAENGE` (10), und nie eine Einer-Rechnung (`ohneEins`).
+  Liegt bewusst nicht im Kinderbereich: sich selbst "gewusst" zu geben waere zu
+  leicht.
 - **Nach einem Fehler** wartet der Kampf auf einen Klick, statt nach 1,6
   Sekunden weiterzuspringen — so lange reicht nicht, um zu sehen, WAS falsch
   war. Nur richtige Antworten laufen von selbst weiter. Gilt auch im Duell.
