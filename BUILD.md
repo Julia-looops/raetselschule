@@ -136,12 +136,13 @@ von dort genommen — ab dann baut es auch ohne Internet.
   Belegung beim Betreten per `useState` fest, nie beim Neuzeichnen. Anlass:
   Florentina hat sich die Rechnungen als Fingerweg gemerkt (7 · 8 = "Mitte, dann
   rechts daneben") und wusste sie ohne Tastatur nicht.
-- **Suchzeit**: `SUCHZEIT_MS` (1000) je Ziffer der Antwort. `blitzGrenze` und
+- **Suchzeit**: `SUCHZEIT_MS` (2000) je Ziffer der Antwort. `blitzGrenze` und
   `langsamGrenze` rechnen sie auf `BLITZ_MS` und `LANGSAM_MS` auf (Streifzug,
   Duell); die Arena-Uhr `blitzZeit` bekommt die doppelte Suchzeit, weil dort die
   erste Haelfte der Uhr das Blitzfenster ist. `grundZeit` ist die alte Uhr ohne
-  Zugabe. Ein erster Ansatz — nachjustieren, wenn man sieht, wie schnell sie mit
-  gemischten Tasten ist.
+  Zugabe. Beispiel 7 · 8: Arena-Uhr 16 s, blitzschnell bis 8 s; im Streifzug
+  blitzschnell bis 8 s, "langsam" ab 14 s. Der erste Wert (1000) war zu knapp —
+  Florentina hat danach kaum noch gespielt.
 - **Abfragen** (`Abfrage`, im Elternbereich unter ⚙️): keine Tasten, keine Uhr.
   Das Kind sagt die Antwort laut, ein Erwachsener tippt ⚡ sofort (wirkt wie
   blitz), ✅ gewusst (normal) oder ❌ nicht gewusst (falsch). `abfrageRunde`
@@ -215,3 +216,10 @@ von dort genommen — ab dann baut es auch ohne Internet.
 
 Die allererste Fassung (ohne eingebettete Bibliotheken, ohne Finale) liegt im
 Branch `original-cdn-fassung`.
+
+Der Stand vor der längeren Suchzeit und vor dem neuen Look (Fassung vom
+28.9.2026, Commit `7b8f2fe`) trägt das Tag `stand-vor-zeit-und-look`:
+
+```bash
+git checkout stand-vor-zeit-und-look -- src/ tools/tests/ arena.html index.html
+```

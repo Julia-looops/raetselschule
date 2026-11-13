@@ -345,9 +345,13 @@ const BLITZ_MS = 4000;    // schneller als das = blitzschnell
 const LANGSAM_MS = 10000; // langsamer als das = richtig, aber unsicher
 /* Die Tasten wandern (siehe gemischteTasten) — also muss jede Ziffer
    erst gesucht werden. Ohne diese Zugabe wären Blitz, dritter Stern
-   und Titel auf einmal kaum noch zu schaffen. Der Wert ist ein erster
-   Ansatz; nachjustieren, wenn man sieht, wie schnell sie damit ist. */
-const SUCHZEIT_MS = 1000;  // je Ziffer der Antwort
+   und Titel auf einmal kaum noch zu schaffen.
+
+   Zuerst stand hier 1000. Das war zu knapp: Florentina fand, sie habe
+   zu wenig Zeit, und hat kaum noch gespielt. Eine Ziffer unter zehn
+   gemischten zu finden dauert bei einem Kind eher zwei Sekunden als
+   eine — und die Uhr soll das Rechnen messen, nicht das Suchen. */
+const SUCHZEIT_MS = 2000;  // je Ziffer der Antwort
 
 function ziffernZahl(n) {
   return String(Math.abs(n)).length;
@@ -408,8 +412,9 @@ function schwereZahl(x) {
 
 function blitzZeit(fakt) {
   /* Blitzschnell ist, wer in der ersten Hälfte antwortet. Doppelte
-     Suchzeit auf die Uhr heisst also: eine Sekunde mehr je Ziffer fürs
-     Blitzen, zwei mehr bis zum Ablauf. */
+     Suchzeit auf die Uhr heisst also: zwei Sekunden mehr je Ziffer fürs
+     Blitzen, vier mehr bis zum Ablauf. 7 · 8 hat damit 16 Sekunden,
+     blitzschnell ist es bis 8. */
   return grundZeit(fakt) + (2 * ziffernZahl(fakt.antwort) * SUCHZEIT_MS) / 1000;
 }
 

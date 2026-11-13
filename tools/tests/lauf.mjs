@@ -436,19 +436,19 @@ async function rechnenTasten(p) {
     return befund.length === 0 || befund.slice(0, 3).join("; ");
   });
 
-  await pruefe("Suchzeit: eine Sekunde mehr je Ziffer fürs Blitzen", async () => {
+  await pruefe("Suchzeit: zwei Sekunden mehr je Ziffer fürs Blitzen", async () => {
     const befund = await p.evaluate(() => {
       const raus = [];
-      [[6, 5000], [56, 6000], [100, 7000]].forEach(([antwort, soll]) => {
+      [[6, 6000], [56, 8000], [100, 10000]].forEach(([antwort, soll]) => {
         if (blitzGrenze(antwort) !== soll) raus.push("blitzGrenze(" + antwort + ") = " + blitzGrenze(antwort) + " statt " + soll);
       });
-      if (tempoVon(5500, false, true, 56) !== "blitz") raus.push("5,5 s bei 56 zählt nicht als blitzschnell");
-      if (tempoVon(6500, false, true, 56) !== "normal") raus.push("6,5 s bei 56 zählt nicht als normal");
-      if (tempoVon(5500, false, true, 6) !== "normal") raus.push("5,5 s bei 6 zählt noch als blitzschnell");
+      if (tempoVon(7500, false, true, 56) !== "blitz") raus.push("7,5 s bei 56 zählt nicht als blitzschnell");
+      if (tempoVon(8500, false, true, 56) !== "normal") raus.push("8,5 s bei 56 zählt nicht als normal");
+      if (tempoVon(7500, false, true, 6) !== "normal") raus.push("7,5 s bei 6 zählt noch als blitzschnell");
       /* Arena: die erste Hälfte der Uhr ist das Blitzfenster */
       const f = { op: "·", a: 7, b: 8, antwort: 56 };
       const zugabe = blitzZeit(f) / 2 - grundZeit(f) / 2;
-      if (zugabe !== 2) raus.push("Arena-Blitzfenster wächst bei 56 um " + zugabe + " s statt 2 s");
+      if (zugabe !== 4) raus.push("Arena-Blitzfenster wächst bei 56 um " + zugabe + " s statt 4 s");
       return raus;
     });
     return befund.length === 0 || befund.join("; ");
@@ -564,8 +564,9 @@ async function oberflaeche(p, url) {
     /* Erste Frage verstreichen lassen. Danach muss GENAU eine Frage
        verbraucht sein — der Fehler war, dass die naechste sofort
        mitgewertet wurde, weil sie noch die alte Restzeit sah. */
-    /* Die Uhr ist mit der Suchzeit auf bis zu 10 s gewachsen. */
-    await p.waitForTimeout(11000);
+    /* Die Uhr ist mit der Suchzeit gewachsen: in der Zweier-Arena bis
+       14 s (2 · 9: Grundzeit 6 + zweimal 4 fürs Suchen). */
+    await p.waitForTimeout(15000);
     await p.locator("button:has-text('Weiter')").click({ timeout: 2000 }).catch(() => {});
     await p.waitForTimeout(500);
     const zaehler = (await text(p)).find((x) => /^\d+\/\d+$/.test(x));
