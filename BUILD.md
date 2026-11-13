@@ -218,8 +218,10 @@ Die allererste Fassung (ohne eingebettete Bibliotheken, ohne Finale) liegt im
 Branch `original-cdn-fassung`.
 
 Der Stand vor der längeren Suchzeit und vor dem neuen Look (Fassung vom
-28.9.2026, Commit `7b8f2fe`) trägt das Tag `stand-vor-zeit-und-look`:
+28.9.2026) ist der Commit `7b8f2fe`. Zurück dorthin, ohne die Historie zu
+verlieren:
 
 ```bash
-git checkout stand-vor-zeit-und-look -- src/ tools/tests/ arena.html index.html
+git checkout 7b8f2fe -- src/ tools/tests/ arena.html index.html
+node tools/build.mjs && node tools/tests/lauf.mjs
 ```
