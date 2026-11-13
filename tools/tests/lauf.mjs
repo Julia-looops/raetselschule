@@ -94,7 +94,7 @@ function standSetzen(p, zusatz = {}) {
   return p.evaluate((z) => {
     let t = leererTrainer("🐾");
     t.welt = "malfeld";
-    t.gesehen = { kampf: true, start: true, tasten: true };
+    t.gesehen = { kampf: true, start: true, tasten: true, denken: true };
     const spaet = Date.now() + 90 * 86400000;
     ["wiese", "malfeld"].forEach((w) =>
       WELT[w].nrs.forEach((nr) => {
@@ -117,6 +117,12 @@ const text = async (p) =>
 
 /* Die Rechnung in der Frage ausrechnen — egal welche Rechenart. */
 function loese(anzeige) {
+  /* Rückwärts gefragt ("6 · ? = 42"): gesucht ist die zweite Zahl. */
+  const u = anzeige.replace(/\s+/g, " ").match(/(\d+)\s*([·:+−-])\s*\?\s*=\s*(\d+)/);
+  if (u) {
+    const a = +u[1], c = +u[3];
+    return u[2] === "·" ? c / a : u[2] === ":" ? a / c : u[2] === "+" ? c - a : a - c;
+  }
   const m = anzeige.replace(/\s+/g, " ").match(/(\d+)\s*([·:+−-])\s*(\d+)/);
   if (!m) return null;
   const a = +m[1], b = +m[3];
@@ -133,10 +139,10 @@ async function spieleRunde(p, { falsch = [], bremse = [], maxFragen = 25 } = {})
     if (wert === null) break;
     gestellt.push(anzeige.replace(/\s+/g, " ").replace(" = ?", "") + " = " + wert);
     /* Lang genug, um sicher aus dem Blitzfenster zu fallen — das ist
-       mit der Suchzeit fuer die wandernden Tasten auf bis zu 5 s
-       gewachsen. Laeuft dabei die Uhr ganz ab, ist das auch recht:
-       blitzschnell war es dann erst recht nicht. */
-    if (bremse.includes(n)) await p.waitForTimeout(6500);
+       die erste Hälfte der Denk-Uhr, höchstens 5 s. Laeuft dabei die
+       Uhr ganz ab, ist das auch recht: blitzschnell war es dann erst
+       recht nicht. */
+    if (bremse.includes(n)) await p.waitForTimeout(5500);
     await p.keyboard.type(String(falsch.includes(n) ? wert + 1 : wert), { delay: 8 });
     await p.keyboard.press("Enter");
     await p.waitForTimeout(700);
@@ -436,19 +442,66 @@ async function rechnenTasten(p) {
     return befund.length === 0 || befund.slice(0, 3).join("; ");
   });
 
-  await pruefe("Suchzeit: zwei Sekunden mehr je Ziffer fürs Blitzen", async () => {
+  await pruefe("Denkzeit: Blitz und Langsam hängen nicht mehr an der Ziffernzahl", async () => {
     const befund = await p.evaluate(() => {
       const raus = [];
-      [[6, 6000], [56, 8000], [100, 10000]].forEach(([antwort, soll]) => {
-        if (blitzGrenze(antwort) !== soll) raus.push("blitzGrenze(" + antwort + ") = " + blitzGrenze(antwort) + " statt " + soll);
+      [6, 56, 100].forEach((antwort) => {
+        if (tempoVon(3900, false, true, antwort) !== "blitz") raus.push("3,9 s bei " + antwort + " ist nicht blitzschnell");
+        if (tempoVon(4100, false, true, antwort) !== "normal") raus.push("4,1 s bei " + antwort + " ist nicht normal");
+        if (tempoVon(10100, false, true, antwort) !== "langsam") raus.push("10,1 s bei " + antwort + " ist nicht langsam");
       });
-      if (tempoVon(7500, false, true, 56) !== "blitz") raus.push("7,5 s bei 56 zählt nicht als blitzschnell");
-      if (tempoVon(8500, false, true, 56) !== "normal") raus.push("8,5 s bei 56 zählt nicht als normal");
-      if (tempoVon(7500, false, true, 6) !== "normal") raus.push("7,5 s bei 6 zählt noch als blitzschnell");
-      /* Arena: die erste Hälfte der Uhr ist das Blitzfenster */
-      const f = { op: "·", a: 7, b: 8, antwort: 56 };
-      const zugabe = blitzZeit(f) / 2 - grundZeit(f) / 2;
-      if (zugabe !== 4) raus.push("Arena-Blitzfenster wächst bei 56 um " + zugabe + " s statt 4 s");
+      /* Arena: Grundzeit plus zwei Sekunden, die erste Hälfte blitzt */
+      [[{ op: "·", a: 3, b: 4, antwort: 12 }, 6], [{ op: "·", a: 7, b: 4, antwort: 28 }, 8], [{ op: "·", a: 7, b: 8, antwort: 56 }, 10]]
+        .forEach(([f, soll]) => {
+          if (blitzZeit(f) !== soll) raus.push("Uhr für " + f.a + " · " + f.b + " ist " + blitzZeit(f) + " statt " + soll + " s");
+        });
+      /* Freizeit fürs Tippen: wächst mit der Ziffernzahl */
+      if (tippFrei(6) !== 5000 || tippFrei(56) !== 8000) raus.push("tippFrei: " + tippFrei(6) + " / " + tippFrei(56));
+      return raus;
+    });
+    return befund.length === 0 || befund.join("; ");
+  });
+
+  await pruefe("Arena nimmt nicht fälligen Wesen keine Stufe weg", async () => {
+    /* Die Regel steckt in ArenaKampf.bewerten; hier wird nur geprüft,
+       was sie voraussetzt: ein fälliges Wesen fällt bei einem Fehler,
+       und der Vorzieh-Termin liegt höchstens einen Tag entfernt. */
+    const befund = await p.evaluate(() => {
+      const raus = [];
+      const f = { h: 3, s: 4, f: Date.now() - 1000, x: 0, g: [] };
+      if (nachWiedersehen(f, "falsch", "malfeld", 56).s !== 3) raus.push("fälliges Wesen fällt bei Fehler nicht um eine Stufe");
+      for (let k = 0; k < 50; k++) {
+        const bald = faelligIn("malfeld", 56, 2) - Date.now();
+        if (bald > 1.2 * 86400000) raus.push("Vorzieh-Termin liegt " + Math.round(bald / 3600000) + " h entfernt");
+      }
+      return [...new Set(raus)];
+    });
+    return befund.length === 0 || befund.join("; ");
+  });
+
+  await pruefe("Tagesziel: Runden zählen heute, Spieltage wachsen nur", async () => {
+    const befund = await p.evaluate(() => {
+      const raus = [];
+      let t = leererTrainer("🐾");
+      if (rundenHeute(t) !== 0 || spieltage(t) !== 0) raus.push("leerer Trainer hat schon Runden");
+      t = mitRunde(mitRunde(t));
+      if (rundenHeute(t) !== 2 || spieltage(t) !== 1) raus.push("zwei Runden heute: " + rundenHeute(t) + " Runden, " + spieltage(t) + " Tage");
+      /* gestern gespielt: heute zählt wieder von vorn, die Tage bleiben */
+      const gestern = { ...t, tag: "1999-1-1" };
+      if (rundenHeute(gestern) !== 0) raus.push("gestrige Runden zählen heute mit");
+      if (spieltage(gestern) !== 1) raus.push("Spieltage sind verfallen");
+      const wieder = mitRunde(gestern);
+      if (rundenHeute(wieder) !== 1 || spieltage(wieder) !== 2) raus.push("neuer Tag: " + rundenHeute(wieder) + " Runden, " + spieltage(wieder) + " Tage");
+      if (besuchZahl(37) !== 5 || besuchZahl(3) !== 3) raus.push("besuchZahl deckelt nicht bei 5");
+      /* Die Startseite nennt nie mehr als fünf Besucher */
+      let voll = leererTrainer("🐾");
+      NR_MALFELD.forEach((nr) => {
+        voll = mitF(voll, "malfeld", nr, { h: 3, s: 2, f: Date.now() - 1000, x: 0, g: [] });
+      });
+      const satz = naechsterSchritt(voll).text;
+      if (!/^5 Wesen/.test(satz)) raus.push("Startseite sagt: " + satz);
+      const satz2 = naechsterSchritt(mitRunde(voll)).text;
+      if (!/Wenn du magst: 5 Wesen/.test(satz2)) raus.push("nach einer Runde sagt sie: " + satz2);
       return raus;
     });
     return befund.length === 0 || befund.join("; ");
@@ -564,9 +617,9 @@ async function oberflaeche(p, url) {
     /* Erste Frage verstreichen lassen. Danach muss GENAU eine Frage
        verbraucht sein — der Fehler war, dass die naechste sofort
        mitgewertet wurde, weil sie noch die alte Restzeit sah. */
-    /* Die Uhr ist mit der Suchzeit gewachsen: in der Zweier-Arena bis
-       14 s (2 · 9: Grundzeit 6 + zweimal 4 fürs Suchen). */
-    await p.waitForTimeout(15000);
+    /* Die Denk-Uhr läuft in der Zweier-Arena höchstens 8 s (2 · 9:
+       Grundzeit 6 + 2). */
+    await p.waitForTimeout(9000);
     await p.locator("button:has-text('Weiter')").click({ timeout: 2000 }).catch(() => {});
     await p.waitForTimeout(500);
     const zaehler = (await text(p)).find((x) => /^\d+\/\d+$/.test(x));
@@ -625,8 +678,10 @@ async function oberflaeche(p, url) {
   await pruefe("Super-Arena: das Eingabefeld steht still", async () => {
     await neuLaden({ orden: ARENEN_ALLE });
     await inDieArena("Die Super-Arena");
+    /* Der Ziffernblock kommt erst nach "Ich weiß es!" — gemessen wird
+       deshalb der grosse Knopf, der an seiner Stelle steht. */
     const messe = async () => {
-      const block = await p.locator("button:has-text('7')").first().boundingBox();
+      const block = await p.locator("button:has-text('Ich weiß es!')").first().boundingBox();
       const frage = await p.locator("p.text-4xl").first().boundingBox();
       return Math.round(block.y) + "/" + Math.round(frage.y);
     };
@@ -711,6 +766,10 @@ async function oberflaeche(p, url) {
   await pruefe("Die Tasten wandern — aber nur zwischen den Runden, nie mittendrin", async () => {
     await neuLaden({});
     await inDieArena("Siebener-Arena");
+    /* Die Tasten zeigen sich erst nach "Ich weiß es!". Danach bleibt
+       der (gesperrte) Block bis zur nächsten Frage stehen. */
+    await p.locator("button:has-text('Ich weiß es!')").click();
+    await p.waitForTimeout(200);
     const anfang = await belegung();
     if (anfang.length !== 10) return "Ziffernblock nicht gefunden: " + anfang;
     if (anfang === "7894561230") return "Tasten liegen noch an der gewohnten Stelle";
@@ -718,9 +777,9 @@ async function oberflaeche(p, url) {
     for (let n = 0; n < 3; n++) {
       const wert = loese(await p.locator("p.text-4xl").first().innerText());
       await p.keyboard.type(String(wert), { delay: 10 });
+      const jetzt = await belegung();
       await p.keyboard.press("Enter");
       await p.waitForTimeout(900);
-      const jetzt = await belegung();
       if (jetzt !== anfang) return "Belegung hat sich mitten im Kampf geändert: " + anfang + " → " + jetzt;
     }
     /* Neue Runde → neue Belegung */
@@ -728,12 +787,14 @@ async function oberflaeche(p, url) {
     await p.waitForTimeout(400);
     await p.getByText("Siebener-Arena").click();
     await p.waitForTimeout(500);
+    await p.locator("button:has-text('Ich weiß es!')").click();
+    await p.waitForTimeout(200);
     const zweite = await belegung();
     return zweite !== anfang || "zweite Runde hat dieselbe Belegung: " + zweite;
   });
 
   await pruefe("Wer schon gespielt hat, bekommt die wandernden Tasten einmal erklärt", async () => {
-    await standSetzen(p, { gesehen: { kampf: true, start: true } });
+    await standSetzen(p, { gesehen: { kampf: true, start: true, denken: true } });
     await p.reload({ waitUntil: "networkidle" });
     await p.waitForTimeout(500);
     if (!(await p.getByText("Die Tasten sind verzaubert!").isVisible())) return "Einblendung fehlt";
@@ -749,7 +810,7 @@ async function oberflaeche(p, url) {
     await p.evaluate(() => {
       let t = leererTrainer("🐾");
       t.welt = "malfeld";
-      t.gesehen = { kampf: true, start: true, tasten: true };
+      t.gesehen = { kampf: true, start: true, tasten: true, denken: true };
       NR_MALFELD.forEach((nr) => {
         t = mitF(t, "malfeld", nr, { h: 9, s: 2, f: Date.now() - 1000, x: 0, g: zielFakten("malfeld", nr).map((x) => x.id) });
       });
@@ -801,6 +862,130 @@ async function oberflaeche(p, url) {
     if (!t3.some((x) => x.includes("Die üben wir noch".toUpperCase()) || x.includes("Die üben wir noch")))
       return "Übersicht nennt die nicht gewusste Rechnung nicht";
     return t3.some((x) => x === "9/10") || "Übersicht zählt falsch: " + t3.slice(0, 8).join(" | ");
+  });
+
+  const inDenStreifzug = async () => {
+    await p.getByText("Auf Streifzug gehen 🌿").click();
+    await p.waitForTimeout(350);
+    await p.locator("button:has-text('Malfeld')").first().click();
+    await p.waitForTimeout(500);
+  };
+  const frageText = async () => (await p.locator("p.text-4xl").first().innerText()).replace(/\s+/g, " ");
+
+  await pruefe("Erst denken, dann tippen: Tasten erst nach dem Knopf, Rechnung dann verdeckt", async () => {
+    await neuLaden({});
+    await inDenStreifzug();
+    if ((await p.locator("div.grid.max-w-xs.grid-cols-3").count()) > 0) return "Ziffernblock steht schon vor dem Knopf da";
+    const vorher = await frageText();
+    if (loese(vorher) === null) return "keine Rechnung zu sehen: " + vorher;
+    await p.locator("button:has-text('Ich weiß es!')").click();
+    await p.waitForTimeout(200);
+    if ((await p.locator("div.grid.max-w-xs.grid-cols-3").count()) !== 1) return "kein Ziffernblock nach dem Knopf";
+    const verdeckt = await frageText();
+    if (loese(verdeckt) !== null) return "Rechnung steht beim Tippen noch da: " + verdeckt;
+    /* und zurück */
+    await p.locator("button:has-text('Doch nicht')").click();
+    await p.waitForTimeout(200);
+    const wieder = await frageText();
+    return wieder === vorher || "nach 'Doch nicht' steht etwas anderes da: " + vorher + " → " + wieder;
+  });
+
+  await pruefe("Das Wesen zeigt sich erst nach der Antwort", async () => {
+    await neuLaden({});
+    await inDenStreifzug();
+    const namen = await p.evaluate(() => ALLE_NR.map((nr) => WESEN[nr].name));
+    const vor = await text(p);
+    if (!vor.includes("Wer kommt da?")) return "'Wer kommt da?' fehlt";
+    const verraten = namen.filter((n) => vor.includes(n));
+    if (verraten.length) return "Name steht schon vor der Antwort da: " + verraten.join(", ");
+    const frage = await frageText();
+    const wert = loese(frage);
+    /* Rückwärts gefragt ist das Wesen das Ergebnis hinter dem "=". */
+    const rueck = frage.match(/\?\s*=\s*(\d+)/);
+    const soll = await p.evaluate((nr) => WESEN[nr].name, rueck ? +rueck[1] : wert);
+    await p.keyboard.type(String(wert), { delay: 10 });
+    await p.keyboard.press("Enter");
+    await p.waitForTimeout(250);
+    const nach = await text(p);
+    return nach.includes(soll + "!") || "nach der Antwort steht " + soll + " nicht da";
+  });
+
+  await pruefe("Ein Fehler im Streifzug kommt in derselben Runde wieder — genau einmal", async () => {
+    await neuLaden({});
+    await inDenStreifzug();
+    const zaehler = async () => (await text(p)).find((x) => /^\d+\/\d+$/.test(x));
+    if ((await zaehler()) !== "1/10") return "Runde beginnt mit " + (await zaehler());
+    const falsche = await frageText();
+    await p.keyboard.type(String(loese(falsche) + 1), { delay: 10 });
+    await p.keyboard.press("Enter");
+    await p.waitForTimeout(300);
+    if ((await zaehler()) !== "1/11") return "Runde ist nicht um eine Rechnung gewachsen: " + (await zaehler());
+    /* verbessern, dann drei weitere richtig — an fünfter Stelle muss
+       dieselbe Rechnung wieder stehen */
+    await p.locator("button:has-text('Nochmal')").click();
+    await p.waitForTimeout(200);
+    await p.keyboard.type(String(loese(falsche)), { delay: 10 });
+    await p.keyboard.press("Enter");
+    await p.waitForTimeout(900);
+    for (let n = 0; n < 3; n++) {
+      await p.keyboard.type(String(loese(await frageText())), { delay: 10 });
+      await p.keyboard.press("Enter");
+      await p.waitForTimeout(900);
+    }
+    if ((await zaehler()) !== "5/11") return "steht bei " + (await zaehler()) + " statt 5/11";
+    const wieder = await frageText();
+    if (wieder !== falsche) return "an fünfter Stelle steht " + wieder + " statt " + falsche;
+    /* nochmal falsch: jetzt darf die Runde NICHT weiter wachsen */
+    await p.keyboard.type(String(loese(wieder) + 1), { delay: 10 });
+    await p.keyboard.press("Enter");
+    await p.waitForTimeout(300);
+    return (await zaehler()) === "5/11" || "Runde wächst ein zweites Mal: " + (await zaehler());
+  });
+
+  await pruefe("Arena: beim Tippen steht die Uhr — trödeln kostet nur den Blitz", async () => {
+    await neuLaden({});
+    await inDieArena("Zweier-Arena");
+    const wert = loese(await frageText());
+    await p.locator("button:has-text('Ich weiß es!')").click();
+    /* länger als jede Denk-Uhr (höchstens 10 s) und länger als die
+       Freizeit fürs Tippen */
+    await p.waitForTimeout(12000);
+    if (await p.getByText("Zu langsam!").isVisible()) return "die Uhr ist beim Tippen abgelaufen";
+    await p.keyboard.type(String(wert), { delay: 10 });
+    await p.keyboard.press("Enter");
+    await p.waitForTimeout(300);
+    const t = await lies(p);
+    if (t.stat.richtig !== 1) return "richtige Antwort wurde nicht als richtig gezählt";
+    return t.stat.blitze === 0 || "nach 12 s am Ziffernblock gab es trotzdem einen Blitz";
+  });
+
+  await pruefe("Arena: zügig gewusst und gemütlich getippt bleibt blitzschnell", async () => {
+    await neuLaden({});
+    await inDieArena("Zweier-Arena");
+    const wert = loese(await frageText());
+    await p.locator("button:has-text('Ich weiß es!')").click();
+    await p.waitForTimeout(4000);   // innerhalb der Freizeit (mind. 5 s)
+    await p.keyboard.type(String(wert), { delay: 10 });
+    await p.keyboard.press("Enter");
+    await p.waitForTimeout(300);
+    const t = await lies(p);
+    return t.stat.blitze === 1 || "4 s am Ziffernblock haben den Blitz gekostet";
+  });
+
+  await pruefe("Arena: ein Fehler nimmt einem nicht fälligen Wesen keine Stufe", async () => {
+    await neuLaden({});
+    await inDieArena("Zweier-Arena");
+    const wert = loese(await frageText());
+    await p.keyboard.type(String(wert + 1), { delay: 10 });
+    await p.keyboard.press("Enter");
+    await p.waitForTimeout(400);
+    const f = await p.evaluate((nr) => {
+      const t = JSON.parse(localStorage.getItem("florentina-zahlodex")).trainer.Florentina;
+      return holF(t, "malfeld", nr);
+    }, wert);
+    if (f.s !== 4) return "Stufe ist von 4 auf " + f.s + " gefallen";
+    const tage = (f.f - Date.now()) / 86400000;
+    return tage < 1.3 || "kommt erst in " + tage.toFixed(1) + " Tagen wieder statt binnen eines Tages";
   });
 
   await pruefe("Trainer löschen fragt nach", async () => {

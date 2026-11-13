@@ -341,28 +341,106 @@ function maxStufe(welt, nr) {
   return leiter(welt, nr).length - 1;
 }
 const FANG_TREFFER = 3;   // so oft richtig, dann ist es gefangen
-const BLITZ_MS = 4000;    // schneller als das = blitzschnell
-const LANGSAM_MS = 10000; // langsamer als das = richtig, aber unsicher
-/* Die Tasten wandern (siehe gemischteTasten) — also muss jede Ziffer
-   erst gesucht werden. Ohne diese Zugabe wären Blitz, dritter Stern
-   und Titel auf einmal kaum noch zu schaffen.
+const BLITZ_MS = 4000;    // schneller gewusst als das = blitzschnell
+const LANGSAM_MS = 10000; // länger überlegt als das = richtig, aber unsicher
 
-   Zuerst stand hier 1000. Das war zu knapp: Florentina fand, sie habe
-   zu wenig Zeit, und hat kaum noch gespielt. Eine Ziffer unter zehn
-   gemischten zu finden dauert bei einem Kind eher zwei Sekunden als
-   eine — und die Uhr soll das Rechnen messen, nicht das Suchen. */
-const SUCHZEIT_MS = 2000;  // je Ziffer der Antwort
+/* ============================================================
+   ERST DENKEN, DANN TIPPEN
+
+   Die Uhr hat lange Denken und Tippen zusammen gemessen. Seit die
+   Tasten wandern, hiess das: sie mass vor allem das Suchen. Erst gab
+   es dafür eine Sekunde Zugabe je Ziffer, dann zwei — Florentina fand
+   trotzdem, sie habe zu wenig Zeit, und mit der Zugabe reichte die
+   Zeit auf einmal auch zum Ausrechnen statt zum Wissen.
+
+   Jetzt läuft die Uhr nur, solange die Rechnung zu sehen ist. Wer die
+   Antwort im Kopf hat, drückt "Ich weiß es!". Dann verschwindet die
+   Rechnung, die Uhr steht, und getippt wird in Ruhe. Gemessen wird
+   also das, was auch beim Abfragen ohne Tasten zählt.
+
+   Damit der Knopf kein Schlupfloch ist (sofort drücken, dann in Ruhe
+   rechnen), hat das Tippen eine grosszügige Freizeit. Wer länger
+   braucht, dem wird der Rest als Denkzeit angerechnet — ohne dass eine
+   Uhr zu sehen wäre und ohne dass daraus je ein Fehler wird.
+   ============================================================ */
+const TIPP_GRUND_MS = 2000;   // Freizeit fürs Tippen …
+const TIPP_ZIFFER_MS = 3000;  // … plus so viel je Ziffer der Antwort
 
 function ziffernZahl(n) {
   return String(Math.abs(n)).length;
 }
 
-function blitzGrenze(antwort) {
-  return BLITZ_MS + ziffernZahl(antwort) * SUCHZEIT_MS;
+function tippFrei(antwort) {
+  return TIPP_GRUND_MS + ziffernZahl(antwort) * TIPP_ZIFFER_MS;
 }
 
-function langsamGrenze(antwort) {
-  return LANGSAM_MS + ziffernZahl(antwort) * SUCHZEIT_MS;
+/* Die Grenzen gelten für die Denkzeit und sind für alle Antworten
+   gleich — das Suchen der Ziffern kostet ja nichts mehr. */
+function blitzGrenze() {
+  return BLITZ_MS;
+}
+
+function langsamGrenze() {
+  return LANGSAM_MS;
+}
+
+/* Wo steht die laufende Frage: wird noch gedacht oder schon getippt?
+   `schluessel` ändert sich mit jeder neuen Frage; dann beginnt alles
+   von vorn. Der Wechsel wird beim Zeichnen erkannt, nicht erst in
+   einem Effekt — sonst stünde für einen Augenblick noch der
+   Ziffernblock der vorigen Frage da. */
+function useDenken(schluessel, antwort) {
+  /* Die Wahrheit steht im Ref, nicht im State: Tastatur und Uhr rufen
+     diese Funktionen aus älteren Zeichnungen heraus auf und sähen im
+     State noch die Stufe von vorhin. Der State ist nur der Anstoss
+     zum Neuzeichnen. */
+  const [, anstoss] = useState(0);
+  const r = useRef({ k: null });
+  if (r.current.k !== schluessel) {
+    r.current = { k: schluessel, stufe: "denken", denk: 0, seit: Date.now(), tipp: 0 };
+  }
+  const z = r.current;
+  return {
+    stufe: z.stufe,
+    weissEs() {
+      const c = r.current;
+      if (c.stufe !== "denken") return;
+      c.denk += Date.now() - c.seit;
+      c.tipp = Date.now();
+      c.stufe = "tippen";
+      anstoss((n) => n + 1);
+    },
+    /* Doch nicht gewusst: zurück zur Rechnung. Die Zeit am
+       Ziffernblock zählt dann als Denkzeit. Gibt sie in ms zurück. */
+    dochNicht() {
+      const c = r.current;
+      if (c.stufe !== "tippen") return 0;
+      const weg = Date.now() - c.tipp;
+      c.denk += weg;
+      c.seit = Date.now();
+      c.stufe = "denken";
+      anstoss((n) => n + 1);
+      return weg;
+    },
+    /* Die Uhr neu stellen, ohne dass die Frage wechselt (nach einer
+       Einblendung etwa). */
+    neu() {
+      r.current = { k: r.current.k, stufe: "denken", denk: 0, seit: Date.now(), tipp: 0 };
+      anstoss((n) => n + 1);
+    },
+    /* Wie lange über die Freizeit hinaus getippt wurde, in ms. */
+    ueberzug() {
+      const c = r.current;
+      if (c.stufe !== "tippen") return 0;
+      return Math.max(0, Date.now() - c.tipp - tippFrei(antwort));
+    },
+    /* Denkzeit dieser Frage in ms, samt Überzug beim Tippen. */
+    dauer() {
+      const c = r.current;
+      if (c.stufe !== "tippen") return c.denk + (Date.now() - c.seit);
+      return c.denk + Math.max(0, Date.now() - c.tipp - tippFrei(antwort));
+    },
+  };
 }
 
 /* ============================================================
@@ -394,6 +472,7 @@ function gemischteTasten() {
   return [...TASTEN_STANDARD].reverse();
 }
 const RUNDE_LAENGE = 10;
+const NACHHOL_ABSTAND = 4;    // so viele Plätze später kommt ein Fehler nochmal
 const LUFT_HOLEN = 2;         // so oft darf die Uhr pro Runde anhalten
 const TRICK_KOSTEN = 5;       // ⚡ für einen Trick
 const MAX_TRICKS = 3;         // so viele kann ein Wesen lernen
@@ -403,19 +482,18 @@ const MAX_TRICKS = 3;         // so viele kann ein Wesen lernen
    Eine feste Zeit für alle wäre ungerecht: 3 · 2 und 7 · 8 sind
    nicht gleich schwer. Das Spiel weiß aber, welche Zahlen schwer
    sind — daher kommt auch die Seltenheit der Wesen. Also bekommt
-   jede Rechnung die Zeit, die sie verdient. Rund eine Sekunde davon
-   geht immer fürs Tippen drauf.
+   jede Rechnung die Zeit, die sie verdient.
    ============================================================ */
 function schwereZahl(x) {
   return x >= 6 && x <= 9; // die 10er sind leicht, die 6er bis 9er nicht
 }
 
 function blitzZeit(fakt) {
-  /* Blitzschnell ist, wer in der ersten Hälfte antwortet. Doppelte
-     Suchzeit auf die Uhr heisst also: zwei Sekunden mehr je Ziffer fürs
-     Blitzen, vier mehr bis zum Ablauf. 7 · 8 hat damit 16 Sekunden,
-     blitzschnell ist es bis 8. */
-  return grundZeit(fakt) + (2 * ziffernZahl(fakt.antwort) * SUCHZEIT_MS) / 1000;
+  /* Die Uhr misst nur noch das Denken. Zwei Sekunden kommen zur alten
+     Grundzeit dazu, fürs Lesen der Rechnung und den Weg zum Knopf:
+     6, 8 oder 10 Sekunden. Blitzschnell ist, wer in der ersten Hälfte
+     "Ich weiß es!" drückt — bei 7 · 8 also binnen 5 Sekunden. */
+  return grundZeit(fakt) + 2;
 }
 
 function grundZeit(fakt) {
@@ -638,9 +716,9 @@ function faelligIn(welt, nr, stufe) {
    aus dem Stand sagt, muss es nicht in drei Tagen nochmal sagen; wer
    bei "7 · 8" überlegen muss, schon. Also entscheidet das Tempo:
 
-     blitzschnell (< 4 s)   zwei Stufen weiter — bald lange Ruhe
-     normal                 eine Stufe weiter
-     langsam (> 10 s)       Stufe bleibt, kommt bald wieder
+     blitzschnell (< 4 s gedacht)   zwei Stufen weiter — bald lange Ruhe
+     normal                         eine Stufe weiter
+     langsam (> 10 s gedacht)       Stufe bleibt, kommt bald wieder
      mit Beere              Stufe bleibt (Hilfe kostet nichts,
                             beweist aber auch nichts)
      falsch                 eine Stufe zurück
@@ -1031,6 +1109,45 @@ function leererTrainer(bild) {
   };
 }
 
+/* ============================================================
+   DAS TAGESZIEL UND DER KLEINE BERG
+
+   Fünf Minuten am Tag bringen mehr als eine halbe Stunde am Sonntag.
+   Also gibt es ein Ziel, das immer zu schaffen ist: eine Runde. Und
+   einen Zähler der Spieltage, der nur wächst — er verfällt nie und
+   bricht nie ab. Wer drei Wochen fort war, hat nichts verloren.
+
+   Dazu gehört, dass nach einer Pause kein Berg dasteht. "37 Wesen
+   kommen dich besuchen" erschlägt; eine Runde nimmt ohnehin höchstens
+   fünf. Also nennt das Spiel nie mehr als BESUCH_MAX — der Rest wartet,
+   ohne gezählt zu werden. Im Karteikasten ändert das nichts.
+   ============================================================ */
+const BESUCH_MAX = 5;
+
+function heuteSchluessel() {
+  const d = new Date();
+  return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+}
+
+function rundenHeute(t) {
+  return t.tag === heuteSchluessel() ? t.heute || 0 : 0;
+}
+
+function spieltage(t) {
+  return t.tage || 0;
+}
+
+/* Eine Runde ist fertig: ein Streifzug oder ein Kampf. */
+function mitRunde(t) {
+  const k = heuteSchluessel();
+  if (t.tag === k) return { ...t, heute: (t.heute || 0) + 1 };
+  return { ...t, tag: k, heute: 1, tage: (t.tage || 0) + 1 };
+}
+
+function besuchZahl(n) {
+  return Math.min(n, BESUCH_MAX);
+}
+
 const KURZ = { wiese: "w", malfeld: "m" };
 
 function holF(t, welt, nr) {
@@ -1340,6 +1457,58 @@ function Ziffernblock({ wert, setWert, onOk, gesperrt, tasten }) {
   );
 }
 
+/* Unter der Rechnung steht entweder der grosse Knopf (es wird noch
+   gedacht) oder der Ziffernblock (es wird getippt). Beides ist gleich
+   hoch, damit darunter nichts springt. */
+function AntwortFeld({ denken, wert, setWert, onOk, gesperrt, tasten }) {
+  if (denken.stufe === "denken") {
+    return (
+      <div className="mx-auto max-w-xs">
+        <button
+          onClick={() => {
+            if (gesperrt) return;
+            Ton.tippen();
+            denken.weissEs();
+          }}
+          disabled={gesperrt}
+          className="kein-blau flex h-[17.5rem] w-full flex-col items-center justify-center rounded-3xl bg-amber-400 text-emerald-950 shadow-lg transition active:translate-y-px disabled:opacity-40"
+        >
+          <span className="text-5xl">💡</span>
+          <span className="mt-2 text-3xl font-black">Ich weiß es!</span>
+        </button>
+        <p className="mt-2 h-5 text-center text-xs text-emerald-400">
+          Erst denken. Die Tasten kommen danach.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="mx-auto max-w-xs">
+      <Ziffernblock wert={wert} setWert={setWert} onOk={onOk} gesperrt={gesperrt} tasten={tasten} />
+      <button
+        onClick={() => {
+          if (gesperrt) return;
+          setWert("");
+          denken.dochNicht();
+        }}
+        className={"kein-blau mt-2 h-5 w-full text-center text-xs text-emerald-400 underline " + (gesperrt ? "invisible" : "")}
+      >
+        Doch nicht — zeig mir die Rechnung nochmal
+      </button>
+    </div>
+  );
+}
+
+/* Was während des Tippens anstelle der Rechnung steht. */
+function Verdeckt({ wert }) {
+  return (
+    <>
+      <span className="text-emerald-300">🙈</span>{" "}
+      <span className="rounded-xl bg-amber-200 px-3">{wert === "" ? "?" : wert}</span>
+    </>
+  );
+}
+
 /* Rechnungen als kleine Kaertchen — nebeneinander mit "·" waere
    verwirrend, weil "·" selbst ein Rechenzeichen ist. */
 function Rechnungen({ liste, mehr }) {
@@ -1613,7 +1782,10 @@ function Streifzug({ start, welt, speichern, onEnde }) {
      Trainer laufend gespeichert wird. Für den Bericht brauchen wir
      aber den Vergleich mit dem Anfang. */
   const [anfang] = useState(start);
-  const [liste] = useState(() => baueRunde(start, welt, RUNDE_LAENGE));
+  /* Die Liste kann wachsen: eine Rechnung, die danebenging, kommt
+     ein paar Plätze später noch einmal (siehe nachholen). */
+  const [liste, setListe] = useState(() => baueRunde(start, welt, RUNDE_LAENGE));
+  const nachholen = useRef({});   // Platz in der Liste -> genau diese Rechnung
   const [tasten] = useState(() => gemischteTasten());   // einmal pro Runde
   const [pos, setPos] = useState(0);
   const [phase, setPhase] = useState("frage"); // frage | falsch | richtig | fang | bericht
@@ -1626,7 +1798,6 @@ function Streifzug({ start, welt, speichern, onEnde }) {
   const [fangArt, setFangArt] = useState("neu"); // "neu" oder "seite"
   const [bilanz, setBilanz] = useState({ richtig: 0, falsch: 0, blitze: 0, gefangen: [], seiten: [] });
   const [warBlitz, setWarBlitz] = useState(false);
-  const beginn = useRef(Date.now());
 
   useEffect(() => {
     speichern(t);
@@ -1643,21 +1814,27 @@ function Streifzug({ start, welt, speichern, onEnde }) {
   /* Ein Wesen, das sie aus der anderen Gegend schon hat, ist hier
      nicht "wild" — es zeigt ihr nur eine neue Seite. */
   const schonBekannt = wild && istGefangen(t, nr);
+  const denken = useDenken(pos + (wiederholung ? "w" : ""), fakt.antwort);
+  const tippt = phase === "frage" && denken.stufe === "tippen";
 
   useEffect(() => {
-    beginn.current = Date.now();
     setEingabe("");
     setHilfe(-1);
-    /* nach einem Fehler dieselbe Rechnung nochmal, sonst eine neue */
-    if (!wiederholung) setFakt(waehleFakt(t, welt, liste[Math.min(pos, liste.length - 1)]));
+    /* nach einem Fehler dieselbe Rechnung nochmal, sonst eine neue —
+       ausser dieser Platz ist für eine Nachhol-Rechnung vorgemerkt */
+    if (!wiederholung)
+      setFakt(nachholen.current[pos] || waehleFakt(t, welt, liste[Math.min(pos, liste.length - 1)]));
   }, [pos, wiederholung]);
 
   /* Tastatur mitbenutzen, falls eine da ist */
   useEffect(() => {
     function taste(e) {
       if (phase !== "frage") return;
-      if (/^[0-9]$/.test(e.key)) setEingabe((v) => (v.length < 3 ? (v + e.key).replace(/^0(?=\d)/, "") : v));
-      else if (e.key === "Backspace") setEingabe((v) => v.slice(0, -1));
+      if (/^[0-9]$/.test(e.key)) {
+        /* Wer auf einer echten Tastatur lostippt, weiss es offenbar. */
+        denken.weissEs();
+        setEingabe((v) => (v.length < 3 ? (v + e.key).replace(/^0(?=\d)/, "") : v));
+      } else if (e.key === "Backspace") setEingabe((v) => v.slice(0, -1));
       else if (e.key === "Enter") pruefen();
     }
     window.addEventListener("keydown", taste);
@@ -1677,7 +1854,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
 
   function weiter() {
     if (pos + 1 >= liste.length) {
-      setT((alt) => ({ ...alt, stat: { ...alt.stat, runden: alt.stat.runden + 1 } }));
+      setT((alt) => mitRunde({ ...alt, stat: { ...alt.stat, runden: alt.stat.runden + 1 } }));
       setPhase("bericht");
     } else {
       setPos(pos + 1);
@@ -1687,9 +1864,13 @@ function Streifzug({ start, welt, speichern, onEnde }) {
   }
 
   function pruefen() {
-    if (eingabe === "" || phase !== "frage") return;
+    if (phase !== "frage") return;
+    if (eingabe === "") {
+      denken.weissEs();
+      return;
+    }
     const richtig = Number(eingabe) === fakt.antwort;
-    const dauer = Date.now() - beginn.current;
+    const dauer = denken.dauer();
     const mitHilfe = hilfe >= 0;
 
     /* Wichtig: der neue Stand wird hier ausgerechnet, nicht erst in
@@ -1703,6 +1884,20 @@ function Streifzug({ start, welt, speichern, onEnde }) {
       else n = nachWiedersehen(n, "falsch", welt, nr);
       const neu = mitF(t, welt, nr, n);
       setT({ ...neu, stat: { ...neu.stat, falsch: neu.stat.falsch + 1 } });
+      /* Dieselbe Rechnung kommt in dieser Runde noch einmal, ein paar
+         Plätze später — dann ist die Lösung nicht mehr vor Augen und
+         es zeigt sich, ob sie hängen geblieben ist. Jede Rechnung nur
+         einmal, sonst nähme die Runde kein Ende. */
+      if (!wiederholung && !nachholen.current[pos]) {
+        const platz = Math.min(liste.length, pos + NACHHOL_ABSTAND);
+        const verschoben = {};
+        Object.keys(nachholen.current).forEach((k) => {
+          verschoben[+k >= platz ? +k + 1 : +k] = nachholen.current[k];
+        });
+        verschoben[platz] = fakt;
+        nachholen.current = verschoben;
+        setListe([...liste.slice(0, platz), nr, ...liste.slice(platz)]);
+      }
       setPhase("falsch");
       return;
     }
@@ -1877,8 +2072,12 @@ function Streifzug({ start, welt, speichern, onEnde }) {
           )}
           <p className="mt-3 text-sm text-emerald-300">
             {morgen.length > 0
-              ? morgen.length + " Wesen wollen dich morgen wiedersehen."
+              ? (morgen.length === 1 ? "Ein Wesen will" : besuchZahl(morgen.length) + " Wesen wollen") +
+                " dich morgen wiedersehen."
               : "Im Moment wartet niemand auf dich. Fang neue Wesen!"}
+          </p>
+          <p className="mt-3 rounded-2xl bg-amber-400/15 p-2 text-sm font-black text-amber-200">
+            ✅ Heute geschafft! · 🗓️ {spieltage(t)} {spieltage(t) === 1 ? "Spieltag" : "Spieltage"}
           </p>
 
           <div className="mt-5 space-y-2">
@@ -1985,23 +2184,18 @@ function Streifzug({ start, welt, speichern, onEnde }) {
         </span>
       </div>
 
-      {/* Wer ist gerade dran */}
+      {/* Wer ist gerade dran. Solange gefragt wird, zeigt sich nur
+          ein Schattenriss: Bild und Name SIND die Antwort. Wer "Rexi
+          ist 56" kennt, bräuchte die Rechnung sonst gar nicht zu
+          lesen. Erst nach der Antwort tritt das Wesen hervor. */}
       <div className="flex items-center gap-3 rounded-2xl bg-emerald-900/60 p-3">
-        {wild && !schonBekannt ? (
+        {phase === "frage" ? (
           <Schatten t={t} nr={nr} />
         ) : (
-          <div className="text-4xl">{wBild(t, nr)}</div>
+          <div className="a-auftauchen text-4xl">{wBild(t, nr)}</div>
         )}
         <div className="min-w-0 flex-1">
-          {schonBekannt ? (
-            <>
-              <p className="text-sm font-black text-amber-300">{wName(t, nr)}</p>
-              <p className="text-xs text-emerald-300">
-                zeigt dir eine neue Seite —{" "}
-                {welt === "malfeld" ? "im Malfeld" : "auf dem Wiesenweg"}
-              </p>
-            </>
-          ) : wild ? (
+          {wild && !schonBekannt ? (
             <>
               <p className="text-sm font-black text-amber-300">Ein wildes Wesen!</p>
               <p className="text-xs text-emerald-300">
@@ -2010,12 +2204,15 @@ function Streifzug({ start, welt, speichern, onEnde }) {
             </>
           ) : (
             <>
-              {/* Bewusst ohne Nummer: die Nummer IST das Ergebnis der
-                  Rechnung, die gerade gefragt wird. */}
-              <p className="text-sm font-black text-amber-300">{wName(t, nr)}</p>
+              <p className="text-sm font-black text-amber-300">
+                {phase === "frage" ? "Wer kommt da?" : wName(t, nr) + "!"}
+              </p>
               <p className="text-xs text-emerald-300">
-                {neueRechnung
-                  ? "zeigt dir eine neue Rechnung ✨"
+                {schonBekannt
+                  ? "Du kennst es schon — von " +
+                    (welt === "malfeld" ? "dem Wiesenweg" : "dem Malfeld")
+                  : neueRechnung
+                  ? "bringt eine neue Rechnung mit ✨"
                   : "❤️".repeat(f.s) + " will dich wiedersehen"}
               </p>
             </>
@@ -2039,7 +2236,9 @@ function Streifzug({ start, welt, speichern, onEnde }) {
       {/* Die Rechnung */}
       <div className="mt-3 rounded-3xl bg-gradient-to-b from-emerald-50 to-white p-5 text-center shadow-2xl">
         <p className={"text-4xl font-black text-emerald-950 sm:text-5xl " + (phase === "falsch" ? "a-zittern" : "")}>
-          {fakt.umkehr ? (
+          {tippt ? (
+            <Verdeckt wert={eingabe} />
+          ) : fakt.umkehr ? (
             <>
               {fakt.a} {fakt.op}{" "}
               {phase === "falsch" ? (
@@ -2065,9 +2264,14 @@ function Streifzug({ start, welt, speichern, onEnde }) {
             </>
           )}
         </p>
-        {fakt.umkehr && phase === "frage" && (
+        {fakt.umkehr && phase === "frage" && !tippt && (
           <p className="mt-1 text-xs font-bold uppercase tracking-widest text-emerald-600">
             Rückwärts gefragt — welche Zahl fehlt?
+          </p>
+        )}
+        {tippt && (
+          <p className="mt-1 text-xs font-bold uppercase tracking-widest text-emerald-600">
+            Tipp deine Zahl — ganz in Ruhe
           </p>
         )}
         {phase === "falsch" && (
@@ -2081,7 +2285,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
             <p className="mt-3 text-sm text-emerald-800">{tipps[tipps.length - 1].text}</p>
           </div>
         )}
-        {phase === "frage" && hilfe >= 0 && (
+        {phase === "frage" && !tippt && hilfe >= 0 && (
           <div className="a-rutschen mt-4 rounded-2xl bg-amber-100 p-3 text-left">
             <p className="text-sm font-black text-emerald-900">
               {tipps[hilfe].bild} {tipps[hilfe].name}
@@ -2108,6 +2312,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
               setWiederholung(true);
               setPhase("frage");
               setEingabe("");
+              denken.neu();
             }}
           >
             Nochmal — jetzt weiß ich es
@@ -2116,7 +2321,8 @@ function Streifzug({ start, welt, speichern, onEnde }) {
       ) : (
         <>
           <div className="mt-4">
-            <Ziffernblock
+            <AntwortFeld
+              denken={denken}
               wert={eingabe}
               setWert={setEingabe}
               onOk={pruefen}
@@ -2124,7 +2330,9 @@ function Streifzug({ start, welt, speichern, onEnde }) {
               tasten={tasten}
             />
           </div>
-          <div className="mt-3 flex gap-2">
+          {/* Beeren zeigen den Weg zur Rechnung — also nur, solange
+              die Rechnung zu sehen ist. */}
+          <div className={"mt-3 flex gap-2 " + (denken.stufe === "tippen" ? "invisible" : "")}>
             {tipps.map((b, i) => (
               <button
                 key={i}
@@ -2142,9 +2350,6 @@ function Streifzug({ start, welt, speichern, onEnde }) {
               </button>
             ))}
           </div>
-          <p className="mt-2 text-center text-xs text-emerald-400">
-            Beeren kosten nichts. Nimm so viele du willst.
-          </p>
         </>
       )}
     </div>
@@ -3016,7 +3221,10 @@ function KampfErklaerung({ onWeiter, zurueck }) {
           Bereit für einen Kampf?
         </p>
         <p className="mt-1">
-          Zwölf Rechnungen, und die Uhr läuft. Für jede richtige Antwort stürmt
+          Zwölf Rechnungen, und die Uhr läuft — aber nur, solange du
+          nachdenkst. Hast du die Zahl im Kopf, drück{" "}
+          <b className="text-amber-200">Ich weiß es!</b> Dann steht die Uhr
+          und du tippst in Ruhe. Für jede richtige Antwort stürmt
           ein Wesen los — und zwar genau das, das die Antwort <i>ist</i>. Steht
           da 8 · 7 = 56, dann kommt Rexi. Wesen mit Tricks hauen fester zu.
         </p>
@@ -3025,8 +3233,8 @@ function KampfErklaerung({ onWeiter, zurueck }) {
         <p>★★ kein Fehler, dazu genug Punkte — Meister</p>
         <p>★★★ kein Fehler und alles blitzschnell</p>
         <p className="mt-2 text-emerald-300">
-          Sei schnell! Wer in der ersten Hälfte der Zeit antwortet, bekommt eine
-          ⚡ dazu. Damit bringst du deinen Wesen neue Tricks bei.
+          Wer es in der ersten Hälfte der Zeit weiß, bekommt eine ⚡ dazu.
+          Damit bringst du deinen Wesen neue Tricks bei.
         </p>
         <p className="mt-3 font-bold text-amber-200">Und dann gibt es den Pokal:</p>
         <p>
@@ -3336,6 +3544,9 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   const frage = fragen[Math.min(i, fragen.length - 1)];
   const dauer = blitzZeit(frage);
   const tipps = beeren(frage);
+  const denken = useDenken(i, frage.antwort);
+  /* Die Uhr läuft nur, solange gedacht wird. */
+  const tippt = phase === "kampf" && denken.stufe === "tippen";
   /* Ein Titelkampf zählt ab der Meister-Schwelle — dieselbe wie für
      den zweiten Stern. Scheitern kostet nichts, nur die Pokalstufe
      bleibt dann liegen. */
@@ -3369,23 +3580,30 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   }, [i]);
 
   useEffect(() => {
-    if (phase !== "kampf" || pause) return;
+    if (phase !== "kampf" || pause || tippt) return;
     const u = setInterval(
       () => setZeit((z) => Math.max(0, Math.round((z - 0.1) * 10) / 10)),
       100
     );
     return () => clearInterval(u);
-  }, [i, phase, pause]);
+  }, [i, phase, pause, tippt]);
 
   useEffect(() => {
-    if (phase === "kampf" && !pause && zeit <= 0) bewerten("langsam", 0);
-  }, [zeit, phase, pause]);
+    if (phase === "kampf" && !pause && !tippt && zeit <= 0) bewerten("langsam", 0);
+  }, [zeit, phase, pause, tippt]);
 
   useEffect(() => {
     function taste(e) {
       if (phase !== "kampf") return;
-      if (/^[0-9]$/.test(e.key)) setEingabe((v) => (v.length < 3 ? (v + e.key).replace(/^0(?=\d)/, "") : v));
-      else if (e.key === "Backspace") setEingabe((v) => v.slice(0, -1));
+      if (/^[0-9]$/.test(e.key)) {
+        if (denken.stufe === "denken") {
+          /* Lostippen auf einer echten Tastatur heisst "Ich weiß es" —
+             und hebt wie der Knopf eine Pause auf. */
+          setPause(false);
+          denken.weissEs();
+        }
+        setEingabe((v) => (v.length < 3 ? (v + e.key).replace(/^0(?=\d)/, "") : v));
+      } else if (e.key === "Backspace") setEingabe((v) => v.slice(0, -1));
       else if (e.key === "Enter") pruefen();
     }
     window.addEventListener("keydown", taste);
@@ -3452,10 +3670,18 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
       if (richtig && geholfen) n = nachWiedersehen(n, "hilfe", welt, nr);
       else if (art === "schnell" && n.f <= Date.now()) n = nachWiedersehen(n, "blitz", welt, nr);
       else if (art === "richtig" && n.f <= Date.now()) n = nachWiedersehen(n, "normal", welt, nr);
-      else if (!richtig || art === "langsam") {
-        /* gezögert oder daneben: bald wiedersehen, Stufe bleibt bzw.
-           fällt — dieselbe Regel wie im Streifzug */
+      else if ((!richtig || art === "langsam") && n.f <= Date.now()) {
+        /* Ein fälliges Wesen: gezögert oder daneben heisst bald
+           wiedersehen, Stufe bleibt bzw. fällt — wie im Streifzug. */
         n = nachWiedersehen(n, art === "falsch" ? "falsch" : "langsam", welt, nr);
+      } else if (!richtig || art === "langsam") {
+        /* Ein Wesen, das noch gar nicht dran gewesen wäre: die Arena
+           nimmt ihm keine Stufe weg. Früher tat sie das — ein
+           abgelaufener Kampf liess dann den Berg der Wiedersehen
+           wachsen, und zwar bei Wesen, die im Streifzug sassen. Es
+           kommt nur früher wieder vorbei, spätestens in einem Tag;
+           dort zeigt sich dann, ob es wirklich wackelt. */
+        n.f = Math.min(n.f, faelligIn(welt, nr, 2));
       }
       const neu = mitF(t, welt, nr, n);
       setT({
@@ -3506,16 +3732,40 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   }
 
   function pruefen() {
-    if (eingabe === "" || phase !== "kampf") return;
+    if (phase !== "kampf") return;
+    if (eingabe === "") {
+      weissEs();
+      return;
+    }
     const richtig = Number(eingabe) === frage.antwort;
     if (!richtig) return bewerten("falsch", zeit);
-    /* blitzschnell = in der ersten Hälfte der Zeit und ohne Luft holen */
-    const schnell = !geschnauft && !geholfen && zeit > dauer / 2;
+    /* blitzschnell = in der ersten Hälfte der Zeit "Ich weiß es!"
+       gedrückt, ohne Luft holen und ohne Beere. Wer danach am
+       Ziffernblock weit über die Freizeit hinaus braucht, hat wohl
+       noch gerechnet — das geht von der Restzeit ab. Ein Fehler wird
+       daraus nie: richtig bleibt richtig. */
+    const rest = zeit - denken.ueberzug() / 1000;
+    const schnell = !geschnauft && !geholfen && rest > dauer / 2;
     bewerten(schnell ? "schnell" : "richtig", zeit);
   }
 
+  function weissEs() {
+    if (phase !== "kampf") return;
+    setPause(false);
+    denken.weissEs();
+  }
+
+  /* Doch nicht gewusst: die Rechnung kommt zurück, und die Zeit am
+     Ziffernblock geht von der Uhr ab. */
+  function dochNicht() {
+    if (phase !== "kampf") return;
+    const weg = denken.dochNicht();
+    setEingabe("");
+    setZeit((z) => Math.max(0, Math.round((z - weg / 1000) * 10) / 10));
+  }
+
   function luftHolen() {
-    if (luft <= 0 || pause || phase !== "kampf") return;
+    if (luft <= 0 || pause || tippt || phase !== "kampf") return;
     setLuft(luft - 1);
     setGeschnauft(true);
     setPause(true);
@@ -3523,7 +3773,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   }
 
   function beereNehmen() {
-    if (beerenRest <= 0 || geholfen || phase !== "kampf") return;
+    if (beerenRest <= 0 || geholfen || tippt || phase !== "kampf") return;
     setBeerenRest(beerenRest - 1);
     setGeholfen(true);
     setTipp(0);
@@ -3544,6 +3794,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
   /* Am Ende: Orden und Rekord festhalten */
   useEffect(() => {
     if (phase !== "ende") return;
+    setT((alt) => mitRunde(alt));   // ein Kampf zählt fürs Tagesziel
     const neu2 = sterneFuer(punkte, treffer, schnellZahl, fragen.length, arena);
     /* Der Orden ist genau der erste Stern — nicht mehr eine eigene,
        allein punktbasierte Schwelle daneben. */
@@ -3576,6 +3827,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
         onWeiter={() => {
           setT((alt2) => ({ ...alt2, gesehen: { ...(alt2.gesehen || {}), kampf: true } }));
           setZeit(dauer);
+          denken.neu();
           setPhase("kampf");
         }}
       />
@@ -3901,19 +4153,26 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
         <p className="text-4xl font-black text-emerald-950 sm:text-5xl">
           {offen ? (
             <Loesung text={frage.text} getippt={eingabe} richtig={frage.antwort} />
+          ) : tippt ? (
+            <Verdeckt wert={eingabe} />
           ) : (
             <>
               {frage.text} = {eingabe === "" ? "?" : eingabe}
             </>
           )}
         </p>
+        {tippt && (
+          <p className="mt-1 text-xs font-bold uppercase tracking-widest text-emerald-600">
+            Uhr steht — tipp deine Zahl
+          </p>
+        )}
         {pause && phase === "kampf" && (
           <p className="a-rutschen mt-2 text-sm font-black text-sky-700">
             Uhr angehalten — lass dir Zeit.
           </p>
         )}
         {/* Die Beere zeigt den Weg, direkt unter der Rechnung. */}
-        {geholfen && phase === "kampf" && (
+        {geholfen && phase === "kampf" && !tippt && (
           <div className="a-rutschen mt-3 rounded-2xl bg-emerald-100 p-3 text-left">
             <div className="flex flex-wrap gap-1">
               {tipps.map((b2, k) => (
@@ -3987,7 +4246,8 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
       </div>
 
       <div className="mt-4">
-        <Ziffernblock
+        <AntwortFeld
+          denken={{ stufe: denken.stufe, weissEs, dochNicht }}
           wert={eingabe}
           setWert={setEingabe}
           onOk={pruefen}
@@ -4002,10 +4262,10 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
       <div className="mt-3 grid grid-cols-2 gap-2">
         <button
           onClick={beereNehmen}
-          disabled={beerenRest <= 0 || geholfen || phase !== "kampf"}
+          disabled={beerenRest <= 0 || geholfen || tippt || phase !== "kampf"}
           className={
             "kein-blau rounded-2xl border-2 py-3 text-sm font-black transition " +
-            (beerenRest > 0 && !geholfen && phase === "kampf"
+            (beerenRest > 0 && !geholfen && !tippt && phase === "kampf"
               ? "border-amber-400/60 text-amber-200 active:translate-y-px"
               : "border-emerald-800 text-emerald-700")
           }
@@ -4014,10 +4274,10 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
         </button>
         <button
           onClick={luftHolen}
-          disabled={luft <= 0 || pause || phase !== "kampf"}
+          disabled={luft <= 0 || pause || tippt || phase !== "kampf"}
           className={
             "kein-blau rounded-2xl border-2 py-3 text-sm font-black transition " +
-            (luft > 0 && !pause && phase === "kampf"
+            (luft > 0 && !pause && !tippt && phase === "kampf"
               ? "border-sky-400/60 text-sky-200 active:translate-y-px"
               : "border-emerald-800 text-emerald-700")
           }
@@ -4025,13 +4285,6 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
           😮‍💨 Luft holen {"●".repeat(luft)}{"○".repeat(LUFT_HOLEN - luft)}
         </button>
       </div>
-      <p className="mt-2 text-center text-xs text-emerald-400">
-        Schnell sein lohnt sich: In der ersten Hälfte der Zeit gibt es
-        +{PUNKTE_TEMPO} Punkte und eine ⚡. Luft holen stoppt die Uhr — dann
-        zählt die Rechnung, aber nicht als blitzschnell. Die Beere zeigt dir
-        den Weg: {PUNKTE_BEERE} Punkte statt {PUNKTE_GRUND}, dafür weißt du
-        es beim nächsten Mal selber.
-      </p>
     </div>
   );
 }
@@ -4110,14 +4363,18 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
   const [letzte, setLetzte] = useState(null);
   const [wurf] = useState(() => Math.floor(Math.random() * 97));
   const [tasten] = useState(() => gemischteTasten());   // einmal pro Duell
-  const beginn = useRef(Date.now());
   const dran = zug % 2;
   const runde = Math.floor(zug / 2);
   const spieler = lauf.spieler[dran];
   const fertig = zug >= 12;
+  const nr = spieler.liste[runde % spieler.liste.length];
+  const fk = fakten(spieler.welt, nr);
+  /* wurf verschiebt die Auswahl je Duell, damit nicht immer dieselben
+     Rechnungen kommen — pro Zug bleibt sie aber stabil */
+  const fakt = fk[(runde * 3 + dran * 2 + wurf) % fk.length];
+  const denken = useDenken(zug, fakt.antwort);
 
   useEffect(() => {
-    beginn.current = Date.now();
     setEingabe("");
   }, [zug]);
 
@@ -4162,16 +4419,16 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
     );
   }
 
-  const nr = spieler.liste[runde % spieler.liste.length];
-  const fk = fakten(spieler.welt, nr);
-  /* wurf verschiebt die Auswahl je Duell, damit nicht immer dieselben
-     Rechnungen kommen — pro Zug bleibt sie aber stabil */
-  const fakt = fk[(runde * 3 + dran * 2 + wurf) % fk.length];
+  const tippt = phase === "frage" && denken.stufe === "tippen";
 
   function pruefen() {
-    if (eingabe === "" || phase !== "frage") return;
+    if (phase !== "frage") return;
+    if (eingabe === "") {
+      denken.weissEs();
+      return;
+    }
     const richtig = Number(eingabe) === fakt.antwort;
-    const schnell = Date.now() - beginn.current <= blitzGrenze(fakt.antwort);
+    const schnell = denken.dauer() <= blitzGrenze();
     setLetzte(richtig ? (schnell ? 2 : 1) : 0);
     if (richtig) {
       const p = [...punkte];
@@ -4207,6 +4464,8 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
         <p className="text-4xl font-black text-emerald-950 sm:text-5xl">
           {phase === "kurz" && letzte === 0 ? (
             <Loesung text={fakt.text} getippt={eingabe} richtig={fakt.antwort} />
+          ) : tippt ? (
+            <Verdeckt wert={eingabe} />
           ) : (
             <>
               {fakt.text} = {eingabe === "" ? "?" : eingabe}
@@ -4227,7 +4486,8 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
         )}
       </div>
       <div className="mt-4">
-        <Ziffernblock
+        <AntwortFeld
+          denken={denken}
           wert={eingabe}
           setWert={setEingabe}
           onOk={pruefen}
@@ -4236,7 +4496,7 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
         />
       </div>
       <p className="mt-2 text-center text-xs text-emerald-400">
-        Wer blitzschnell ist, bekommt doppelt: zwei Punkte!
+        Wer es blitzschnell weiß, bekommt doppelt: zwei Punkte!
       </p>
       <button onClick={onEnde} className="mt-2 w-full text-center text-xs text-emerald-500">
         Duell abbrechen
@@ -4346,7 +4606,7 @@ function naechsterSchritt(t) {
       bild: "✨",
       text:
         n === 1
-          ? WESEN[warten.bereit[0].nr].name + " wartet auf einen neuen Trick."
+          ? wName(t, warten.bereit[0].nr) + " wartet auf einen neuen Trick."
           : n + " Wesen warten auf einen neuen Trick.",
       knopf: "Ins Trickbuch 📕",
       ziel: "trickbuch",
@@ -4355,12 +4615,19 @@ function naechsterSchritt(t) {
   /* 2. Wiedersehen — der Kern des Ganzen. */
   const dran = faelligeZahl(t, "wiese") + faelligeZahl(t, "malfeld");
   if (dran > 0) {
+    /* Nie mehr als BESUCH_MAX nennen — siehe oben beim Tagesziel. Wer
+       heute schon gespielt hat, liest eine Einladung, keine Pflicht. */
+    const n = besuchZahl(dran);
     return {
       bild: "🌿",
       text:
-        dran === 1
+        rundenHeute(t) > 0
+          ? n === 1
+            ? "Wenn du magst: ein Wesen wartet noch auf dich."
+            : "Wenn du magst: " + n + " Wesen warten noch auf dich."
+          : n === 1
           ? "Ein Wesen kommt dich heute besuchen."
-          : dran + " Wesen kommen dich heute besuchen.",
+          : n + " Wesen kommen dich heute besuchen.",
       knopf: "Auf Streifzug 🌿",
       ziel: "welt",
       art: "wiedersehen",
@@ -4502,12 +4769,49 @@ function TastenErklaerung({ onWeiter }) {
           dann die 6.
         </p>
         <p className="mt-2 text-emerald-300">
-          Keine Sorge: Fürs Suchen bekommst du mehr Zeit. Und wenn es am Anfang
+          Keine Sorge: Fürs Suchen hast du alle Zeit. Und wenn es am Anfang
           holpert, ist das ganz normal — deine Wesen kommen dann einfach öfter
           vorbei, bis es sitzt.
         </p>
         <div className="mt-5">
           <Knopf onClick={onWeiter}>Ich bin bereit! 🔀</Knopf>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Einmal für alle, die den Zahlodex noch mit der Uhr beim Tippen
+   kannten. */
+function DenkErklaerung({ onWeiter }) {
+  return (
+    <div className="mx-auto max-w-md p-4">
+      <div className="a-auftauchen rounded-3xl border-2 border-amber-400/60 bg-emerald-900/80 p-5 text-emerald-100">
+        <div className="text-center text-5xl">💡</div>
+        <p className="mt-2 text-center text-2xl font-black text-amber-300">
+          Neu: Erst denken, dann tippen
+        </p>
+        <p className="mt-3">
+          Du hattest zu wenig Zeit zum Tippen? Das ist vorbei.
+        </p>
+        <p className="mt-2">
+          Ab jetzt siehst du zuerst nur die Rechnung. Hast du die Zahl im
+          Kopf, drückst du <b className="text-amber-200">Ich weiß es!</b>
+        </p>
+        <p className="mt-2">
+          Dann kommen die Tasten — und die Uhr steht. Such die Ziffern ganz in
+          Ruhe.
+        </p>
+        <p className="mt-2 font-bold text-amber-200">
+          Blitzschnell bist du, wenn du es schnell <i>weißt</i>. Nicht, wenn
+          du schnell tippst.
+        </p>
+        <p className="mt-2 text-emerald-300">
+          Und noch etwas: Deine Wesen verstecken sich jetzt, bis du geantwortet
+          hast. Rechne — dann siehst du, wer es war!
+        </p>
+        <div className="mt-5">
+          <Knopf onClick={onWeiter}>Alles klar! 💡</Knopf>
         </div>
       </div>
     </div>
@@ -4552,10 +4856,12 @@ function SpielErklaerung({ onWeiter, zurueck }) {
         <p className="mt-3 font-black text-amber-200">⚔️ Duell</p>
         <p>Zu zweit an einem Gerät. Wer weiß es zuerst?</p>
 
-        <p className="mt-3 font-black text-amber-200">🔀 Und aufgepasst:</p>
+        <p className="mt-3 font-black text-amber-200">💡 Erst denken, dann tippen</p>
         <p>
-          Die Tasten wandern! Jede Runde liegen die Zahlen woanders. Also erst
-          die Zahl im Kopf haben — dann suchen.
+          Zuerst siehst du nur die Rechnung. Hast du die Zahl im Kopf, drück{" "}
+          <b className="text-amber-200">Ich weiß es!</b> Erst dann kommen die
+          Tasten — und die wandern: jede Runde liegen die Zahlen woanders.
+          Fürs Suchen hast du alle Zeit.
         </p>
 
         <div className="mt-5">
@@ -5399,7 +5705,9 @@ function Weltwahl({ t, waehle, zurueck }) {
               </div>
               <p className="mt-1 text-xs text-emerald-300">
                 {hab} von {welt.nrs.length} Wesen ·{" "}
-                {dran > 0 ? dran + " freuen sich auf dich" : "nichts fällig"}
+                {dran > 0
+                  ? (dran === 1 ? "eines freut sich" : besuchZahl(dran) + " freuen sich") + " auf dich"
+                  : "niemand wartet"}
               </p>
               {/* Gefangen heißt noch nicht gekonnt: hier steht, bei wie
                   vielen Wesen wirklich jede Rechnung schon saß. */}
@@ -5671,7 +5979,7 @@ function App() {
             if (!(t.gesehen && t.gesehen.start))
               speichereTrainer({
                 ...t,
-                gesehen: { ...(t.gesehen || {}), start: true, tasten: true },
+                gesehen: { ...(t.gesehen || {}), start: true, tasten: true, denken: true },
               });
           }}
         />
@@ -5689,6 +5997,21 @@ function App() {
         <TastenErklaerung
           onWeiter={() =>
             speichereTrainer({ ...t, gesehen: { ...(t.gesehen || {}), tasten: true } })
+          }
+        />
+      </>
+    );
+  }
+
+  /* Und wer noch die Uhr beim Tippen kannte, erfährt einmal, dass sie
+     jetzt nur noch beim Denken läuft. */
+  if (!(t.gesehen && t.gesehen.denken)) {
+    return (
+      <>
+        <Stile />
+        <DenkErklaerung
+          onWeiter={() =>
+            speichereTrainer({ ...t, gesehen: { ...(t.gesehen || {}), denken: true } })
           }
         />
       </>
@@ -5778,11 +6101,19 @@ function App() {
             Los
           </button>
         </div>
-        {dranGesamt > 5 && schritt.art === "wiedersehen" && (
-          <p className="mt-1 text-center text-[11px] text-emerald-400">
-            Eine Runde nimmt höchstens fünf davon — kein Stress.
+        {/* Das Tagesziel: eine Runde. Immer zu schaffen, und die
+            Spieltage daneben wachsen nur. */}
+        <div className="mt-2 flex items-center justify-between rounded-2xl bg-emerald-900/60 px-3 py-2">
+          <p className="text-sm font-black text-emerald-100">
+            {rundenHeute(t) > 0
+              ? "✅ Heute geschafft!" +
+                (rundenHeute(t) > 1 ? " Schon " + rundenHeute(t) + " Runden." : "")
+              : "⬜ Heute: eine Runde"}
           </p>
-        )}
+          <p className="text-xs font-bold text-emerald-300">
+            🗓️ {spieltage(t)} {spieltage(t) === 1 ? "Spieltag" : "Spieltage"}
+          </p>
+        </div>
 
         {/* Jeder Weg sagt jetzt, wofür er da ist. */}
         <div className="mt-4 space-y-2">
@@ -5791,7 +6122,7 @@ function App() {
             titel="Auf Streifzug gehen 🌿"
             unter="Hier werden deine Wesen stark. Nur hier."
             zahl={
-              (dranGesamt > 0 ? dranGesamt + " warten · " : "") +
+              (dranGesamt > 0 ? besuchZahl(dranGesamt) + " warten · " : "") +
               (offeneRechnungen > 1
                 ? offeneRechnungen + " Rechnungen noch unentdeckt"
                 : offeneRechnungen === 1
