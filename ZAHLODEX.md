@@ -98,9 +98,22 @@ Sichtbar ist ein Sammelspiel. Darunter arbeitet ein Karteikasten (Leitner):
   herleiten" und "kann sie". Wer zögert, wird nicht bestraft — das Wesen meldet
   sich nur gleich wieder statt erst in Tagen.
 * **Zeit nach Schwierigkeit**: 3 · 2 und 7 · 8 sind nicht gleich schwer, also
-  bekommen sie nicht dieselbe Zeit. Vier Sekunden für kleine Zahlen, sechs wenn
-  eine Zahl zwischen 6 und 9 liegt, acht für die legendären. Beim Plus und Minus
-  entscheidet der Zehnerübergang. Rund eine Sekunde geht immer fürs Tippen drauf.
+  bekommen sie nicht dieselbe Zeit. In der Arena sind es sechs Sekunden für
+  kleine Zahlen, acht wenn eine schwere Zahl dabei ist, zehn bei zweien; bei
+  Plus und Minus entscheidet der Zehnerübergang.
+* **Erst denken, dann tippen**: die Uhr läuft nur, solange die Rechnung zu sehen
+  ist. Wer die Antwort im Kopf hat, drückt „Ich weiß es!“; dann verschwindet die
+  Rechnung, die Uhr steht, und getippt wird in Ruhe auf den wandernden Tasten.
+  Gemessen wird also das Wissen, nicht das Suchen — und genau das, was beim
+  Abfragen ohne Tasten zählt. Wer am Ziffernblock sehr lange braucht, verliert
+  nur den Blitz, nie die Rechnung.
+* **Das Wesen versteckt sich**: während der Frage steht nur ein Schattenriss
+  da. Bild und Name sind die Antwort; sie zeigen sich erst danach.
+* **Fehler kommen wieder**: im Streifzug steht eine verpatzte Rechnung ein paar
+  Plätze später noch einmal da.
+* **Eine Runde am Tag**: das Tagesziel ist klein und immer zu schaffen, die
+  Spieltage werden gezählt und verfallen nie. Nach einer Pause nennt das Spiel
+  höchstens fünf wartende Wesen — kein Berg.
 * **Luft holen**: zweimal pro Blitzrunde darf die Uhr stehenbleiben. Die Rechnung
   zählt dann als richtig, aber nicht als blitzschnell. Damit bleibt die Messung
   ehrlich und der Druck trotzdem aushaltbar — und das Kind lernt nebenbei, selbst

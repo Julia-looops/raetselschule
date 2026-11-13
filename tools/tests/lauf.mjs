@@ -699,7 +699,7 @@ async function oberflaeche(p, url) {
     await p.locator("button:has-text('🫐 Beere ')").click();
     await p.waitForTimeout(400);
     if (!(await p.getByText("Uhr angehalten").isVisible())) return "Uhr läuft weiter";
-    const tipps = await p.locator(".bg-emerald-100 button").allInnerTexts();
+    const tipps = await p.locator(".bg-sky-50 button").allInnerTexts();
     if (tipps.length === 0) return "keine Tipps zu sehen";
     if (!(await p.locator("button:has-text('🫐 Beere ')").isDisabled())) return "Beere lässt sich nochmal nehmen";
     /* richtig antworten: darf nur halbe Punkte und keinen Blitz geben */

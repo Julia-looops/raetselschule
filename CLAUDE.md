@@ -58,10 +58,12 @@ seinen eigenen Dateiserver mit und braucht sonst nur Playwright mit Chromium
 (in der Cloud-Umgebung global unter `/opt/node22/lib/node_modules/playwright`).
 
 Die Oberflächengruppe dauert ein paar Minuten, weil sie echte Runden spielt und
-an einer Stelle bewusst die Uhr ablaufen lässt. Vor jedem Push beide laufen
+an einer Stelle bewusst die Uhr ablaufen lässt. Die Tests antworten über die
+Tastatur; die erste Ziffer gilt dabei als „Ich weiß es!“. Rückwärts-Fragen
+(„6 · ? = 42“) löst der Helfer `loese` mit. Vor jedem Push beide laufen
 lassen.
 
-Testspielstände brauchen `gesehen: { kampf, start, tasten }` alle auf `true`,
+Testspielstände brauchen `gesehen: { kampf, start, tasten, denken }` alle auf `true`,
 sonst schiebt sich eine Einblendung vor alles andere (`standSetzen` erledigt
 das).
 
@@ -101,7 +103,7 @@ und meldet zurück):
 - **Eine laufende Fassungsnummer** muss sichtbar bleiben, sonst lässt sich nicht
   prüfen, ob ein Update angekommen ist.
 
-**Drei Lehren aus diesem Projekt:**
+**Vier Lehren aus diesem Projekt:**
 
 1. **Anzeigen, die aus einer losenden Funktion gespeist werden.** `arenaTeam`
    rief für die Super-Arena `superFakten()` auf — bei jedem Neuzeichnen kam eine
@@ -119,6 +121,13 @@ und meldet zurück):
    wandern die Tasten jetzt jede Runde, und es gibt einen Abfrage-Modus ohne
    Tasten. Bei jeder neuen Mechanik fragen: lässt sie sich schaffen, ohne die
    Rechnung zu können?
+
+4. **Die Uhr misst alles, was zwischen Frage und Antwort liegt.** Mit den
+   wandernden Tasten mass sie vor allem das Suchen. Mehr Zeit zu geben war
+   die falsche Antwort: Florentina fand es trotzdem zu knapp, und zugleich
+   reichte die Zeit auf einmal zum Ausrechnen. Jetzt läuft die Uhr nur bis
+   zum Knopf „Ich weiß es!“, getippt wird ohne Uhr. Wer eine Uhr einbaut,
+   muss sagen können, was genau sie misst.
 
 Die Einzelheiten zu allen Stellschrauben stehen in **`BUILD.md`**, das Konzept
 hinter dem Zahlodex in **`ZAHLODEX.md`**. Beide beim Ändern mitpflegen.

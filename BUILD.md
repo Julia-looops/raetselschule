@@ -136,13 +136,35 @@ von dort genommen — ab dann baut es auch ohne Internet.
   Belegung beim Betreten per `useState` fest, nie beim Neuzeichnen. Anlass:
   Florentina hat sich die Rechnungen als Fingerweg gemerkt (7 · 8 = "Mitte, dann
   rechts daneben") und wusste sie ohne Tastatur nicht.
-- **Suchzeit**: `SUCHZEIT_MS` (2000) je Ziffer der Antwort. `blitzGrenze` und
-  `langsamGrenze` rechnen sie auf `BLITZ_MS` und `LANGSAM_MS` auf (Streifzug,
-  Duell); die Arena-Uhr `blitzZeit` bekommt die doppelte Suchzeit, weil dort die
-  erste Haelfte der Uhr das Blitzfenster ist. `grundZeit` ist die alte Uhr ohne
-  Zugabe. Beispiel 7 · 8: Arena-Uhr 16 s, blitzschnell bis 8 s; im Streifzug
-  blitzschnell bis 8 s, "langsam" ab 14 s. Der erste Wert (1000) war zu knapp —
-  Florentina hat danach kaum noch gespielt.
+- **Erst denken, dann tippen** (`useDenken`, `AntwortFeld`, `Verdeckt`): in
+  Streifzug, Kampf und Duell steht zuerst nur die Rechnung da und der Knopf
+  „Ich weiß es!“. Erst danach kommt der Ziffernblock; die Rechnung ist dann
+  verdeckt und die Uhr steht. Gemessen wird die Zeit bis zum Knopf.
+  `blitzGrenze` / `langsamGrenze` geben `BLITZ_MS` (4 s) und `LANGSAM_MS`
+  (10 s) Denkzeit zurück, für alle Antworten gleich. Die Arena-Uhr `blitzZeit`
+  ist `grundZeit` + 2, also 6, 8 oder 10 s; blitzschnell ist die erste Hälfte
+  (7 · 8: bis 5 s). Gegen „sofort drücken, dann rechnen“ hat das Tippen eine
+  Freizeit (`tippFrei`: `TIPP_GRUND_MS` 2 s + `TIPP_ZIFFER_MS` 3 s je Ziffer);
+  was darüber liegt, zählt als Denkzeit — ohne sichtbare Uhr, und ein Fehler
+  wird daraus nie. „Doch nicht“ bringt die Rechnung zurück, die Zeit am
+  Ziffernblock geht dann von der Denkzeit ab. Auf einer echten Tastatur gilt
+  die erste Ziffer als „Ich weiß es“ (so spielen auch die Tests).
+  `useDenken` hält die Stufe im Ref, nicht im State: Tastatur- und Uhr-Handler
+  stammen aus älteren Zeichnungen und sähen sonst die Stufe von vorhin.
+  Vorgeschichte: erst eine feste Zugabe fürs Tastensuchen (`SUCHZEIT_MS` 1000,
+  dann 2000). Das nahm den Druck nicht und liess zugleich Zeit zum Ausrechnen.
+- **Das Wesen zeigt sich erst nach der Antwort**: im Streifzug steht während
+  der Frage ein `Schatten` und „Wer kommt da?“. Bild und Name sind die Antwort
+  — wer „Rexi ist 56“ kennt, musste 7 · 8 sonst nicht lesen.
+- **Fehler kommen wieder** (`NACHHOL_ABSTAND` 4, `nachholen` im `Streifzug`):
+  eine falsch beantwortete Rechnung steht vier Plätze später noch einmal da,
+  genau einmal je Rechnung. Die Runde wächst dabei (10 → 11). Nur im
+  Streifzug; in der Arena hängen die Sterne an der Fragenzahl.
+- **Tagesziel und kleiner Berg**: `mitRunde` zählt jede fertige Runde
+  (Streifzug oder Kampf) in `t.tag` / `t.heute` / `t.tage`. `rundenHeute` und
+  `spieltage` lesen das; die Spieltage wachsen nur und verfallen nie.
+  `BESUCH_MAX` (5) deckelt jede Zahl wartender Wesen, die das Kind zu sehen
+  bekommt (`besuchZahl`) — im Karteikasten ändert sich dadurch nichts.
 - **Abfragen** (`Abfrage`, im Elternbereich unter ⚙️): keine Tasten, keine Uhr.
   Das Kind sagt die Antwort laut, ein Erwachsener tippt ⚡ sofort (wirkt wie
   blitz), ✅ gewusst (normal) oder ❌ nicht gewusst (falsch). `abfrageRunde`
@@ -158,9 +180,12 @@ von dort genommen — ab dann baut es auch ohne Internet.
 - **Der Kampf** (`ArenaKampf`) ist der einzige Modus mit Uhr — die frühere
   Blitzrunde steckt darin. `KAMPF_FRAGEN` (12), `ORDEN_PUNKTE` (110),
   `PUNKTE_GRUND` / `PUNKTE_TEMPO` / `PUNKTE_TRICK` / `PUNKTE_KOMBO`,
-  `LUFT_HOLEN`. Wie viel Zeit eine Rechnung bekommt, rechnet `blitzZeit` aus
-  (4, 6 oder 8 Sekunden je nach Schwierigkeit); wer in der ersten Hälfte
-  antwortet, bekommt Tempobonus und eine ⚡.
+  `LUFT_HOLEN`. Wie viel Denkzeit eine Rechnung bekommt, rechnet `blitzZeit`
+  aus (6, 8 oder 10 Sekunden je nach Schwierigkeit); wer in der ersten Hälfte
+  „Ich weiß es!“ drückt, bekommt Tempobonus und eine ⚡. Ein Fehler oder
+  Uhrablauf senkt die Stufe nur bei Wesen, die ohnehin fällig waren; die
+  anderen kommen bloss früher vorbei (binnen eines Tages). Früher fiel die
+  Stufe immer — ein verpatzter Kampf liess den Berg der Wiedersehen wachsen.
 - **Sterne und Liga**: `sterneFuer` vergibt je Kampf 0-3 Sterne. Zuerst zaehlen
   die Treffer, erst danach die Punkte: ★ hoechstens `ORDEN_FEHLER` Fehler
   (plus `ordenPunkte`), ★★ und ★★★ nur fehlerfrei. Rein punktbasierte
@@ -211,6 +236,17 @@ von dort genommen — ab dann baut es auch ohne Internet.
   wie viele Wesen gleichzeitig Neues zeigen, `ENTDECKER_PLAETZE` wie oft eines
   davon je Runde drankommen darf — beides zusammen entscheidet, wie schnell
   Wesen fertig werden und wie abwechslungsreich die Runde bleibt.
+
+## Der Look
+
+Seit November 2026 ist der Zahlodex hell: Grund `#f3f9fd`, weisse Karten mit
+`ring-1 ring-sky-200`, Schrift `sky-950` / `sky-700`, Hauptfarbe `sky-400`
+(Hellblau). Vorher war alles Dunkelgrün mit Gelb. Farbe trägt an vier Stellen
+Bedeutung und wurde dort nicht umgefärbt: die Sterne (`amber-400`), der
+Zeitbalken (gelb = läuft, blau = steht, rot = zweite Hälfte), die Punktefelder
+im `Rechenbild` (gelb/blau trennt die Teile) und die Seltenheit der Wesen
+(`RANG_FARBE`, Rahmen der `WesenKarte`). Die Rätselschule (`index.html`) hat
+ihren eigenen Look behalten.
 
 ## Zurück zur Ursprungsfassung
 

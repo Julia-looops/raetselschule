@@ -153,12 +153,12 @@ function seltenheit(n) {
 }
 
 const RANG_FARBE = {
-  wiese: "text-lime-300",
-  einzel: "text-lime-200",
-  haeufig: "text-emerald-200",
-  selten: "text-sky-300",
-  legendaer: "text-amber-300",
-  meister: "text-fuchsia-300",
+  wiese: "text-lime-700",
+  einzel: "text-lime-600",
+  haeufig: "text-sky-700",
+  selten: "text-teal-600",
+  legendaer: "text-amber-600",
+  meister: "text-fuchsia-600",
 };
 
 /* Entwicklungslinie = Verdoppeln. 7 → 14 → 28 → 56 */
@@ -852,7 +852,7 @@ const Ton = {
 function Stile() {
   return (
     <style>{`
-      html,body{background:#062e26;}
+      html,body{background:#f3f9fd;}
       @keyframes wackel{0%,100%{transform:rotate(0)}20%{transform:rotate(-18deg)}
         40%{transform:rotate(16deg)}60%{transform:rotate(-12deg)}80%{transform:rotate(8deg)}}
       @keyframes auftauchen{from{opacity:0;transform:scale(.4) translateY(20px)}
@@ -909,7 +909,7 @@ function Punktefeld({ a, b }) {
 function Zwanzigerfeld({ voll, dazu, weg }) {
   const felder = [];
   for (let i = 0; i < 20; i++) {
-    let farbe = "bg-emerald-950 border-emerald-700";
+    let farbe = "bg-white border-sky-200";
     if (i < voll) farbe = "bg-amber-300 border-amber-300";
     else if (i < voll + (dazu || 0)) farbe = "bg-sky-300 border-sky-300";
     if (weg && i >= voll - weg && i < voll) farbe = "bg-rose-400/40 border-rose-300 border-dashed";
@@ -1371,9 +1371,9 @@ function Sterne({ n }) {
 
 function Knopf({ children, onClick, art = "haupt", klein }) {
   const stile = {
-    haupt: "bg-amber-400 text-emerald-950 hover:bg-amber-300",
-    ruhig: "border-2 border-emerald-500/50 text-emerald-100 hover:bg-emerald-800/50",
-    gruen: "bg-emerald-500 text-emerald-950 hover:bg-emerald-400",
+    haupt: "bg-sky-400 text-sky-950 hover:bg-sky-400",
+    ruhig: "border-2 border-sky-300 text-sky-950 hover:bg-sky-100",
+    gruen: "bg-emerald-500 text-sky-950 hover:bg-emerald-400",
   };
   return (
     <button
@@ -1396,14 +1396,14 @@ function Kopf({ titel, unter, onZurueck, rechts }) {
       {onZurueck && (
         <button
           onClick={onZurueck}
-          className="kein-blau rounded-xl border-2 border-emerald-500/50 px-3 py-2 text-lg text-emerald-100"
+          className="kein-blau rounded-xl border-2 border-sky-300 px-3 py-2 text-lg text-sky-950"
         >
           ‹
         </button>
       )}
       <div className="min-w-0 flex-1">
-        <h2 className="truncate text-xl font-black text-amber-300">{titel}</h2>
-        {unter && <p className="truncate text-xs text-emerald-300">{unter}</p>}
+        <h2 className="truncate text-xl font-black text-sky-600">{titel}</h2>
+        {unter && <p className="truncate text-xs text-sky-700">{unter}</p>}
       </div>
       {rechts}
     </div>
@@ -1429,27 +1429,27 @@ function Ziffernblock({ wert, setWert, onOk, gesperrt, tasten }) {
         <button
           key={z}
           onClick={() => tippe(z)}
-          className="kein-blau rounded-2xl bg-emerald-800/70 py-4 text-2xl font-black text-emerald-50 active:bg-emerald-700"
+          className="kein-blau rounded-2xl bg-white py-4 text-2xl font-black text-sky-950 shadow-sm ring-1 ring-sky-200 active:bg-sky-100"
         >
           {z}
         </button>
       ))}
       <button
         onClick={() => tippe("weg")}
-        className="kein-blau rounded-2xl bg-emerald-900/70 py-4 text-xl font-black text-emerald-200 active:bg-emerald-800"
+        className="kein-blau rounded-2xl bg-white ring-1 ring-sky-200 py-4 text-xl font-black text-sky-900 active:bg-sky-100"
       >
         ←
       </button>
       <button
         onClick={() => tippe(unten)}
-        className="kein-blau rounded-2xl bg-emerald-800/70 py-4 text-2xl font-black text-emerald-50 active:bg-emerald-700"
+        className="kein-blau rounded-2xl bg-white py-4 text-2xl font-black text-sky-950 shadow-sm ring-1 ring-sky-200 active:bg-sky-100"
       >
         {unten}
       </button>
       <button
         onClick={onOk}
         disabled={gesperrt || wert === ""}
-        className="kein-blau rounded-2xl bg-amber-400 py-4 text-2xl font-black text-emerald-950 disabled:opacity-40 active:bg-amber-300"
+        className="kein-blau rounded-2xl bg-sky-400 py-4 text-2xl font-black text-sky-950 disabled:opacity-40 active:bg-sky-400"
       >
         ✓
       </button>
@@ -1471,12 +1471,12 @@ function AntwortFeld({ denken, wert, setWert, onOk, gesperrt, tasten }) {
             denken.weissEs();
           }}
           disabled={gesperrt}
-          className="kein-blau flex h-[17.5rem] w-full flex-col items-center justify-center rounded-3xl bg-amber-400 text-emerald-950 shadow-lg transition active:translate-y-px disabled:opacity-40"
+          className="kein-blau flex h-[17.5rem] w-full flex-col items-center justify-center rounded-3xl bg-sky-400 text-sky-950 shadow-lg transition active:translate-y-px disabled:opacity-40"
         >
           <span className="text-5xl">💡</span>
           <span className="mt-2 text-3xl font-black">Ich weiß es!</span>
         </button>
-        <p className="mt-2 h-5 text-center text-xs text-emerald-400">
+        <p className="mt-2 h-5 text-center text-xs text-sky-600">
           Erst denken. Die Tasten kommen danach.
         </p>
       </div>
@@ -1491,7 +1491,7 @@ function AntwortFeld({ denken, wert, setWert, onOk, gesperrt, tasten }) {
           setWert("");
           denken.dochNicht();
         }}
-        className={"kein-blau mt-2 h-5 w-full text-center text-xs text-emerald-400 underline " + (gesperrt ? "invisible" : "")}
+        className={"kein-blau mt-2 h-5 w-full text-center text-xs text-sky-600 underline " + (gesperrt ? "invisible" : "")}
       >
         Doch nicht — zeig mir die Rechnung nochmal
       </button>
@@ -1503,8 +1503,8 @@ function AntwortFeld({ denken, wert, setWert, onOk, gesperrt, tasten }) {
 function Verdeckt({ wert }) {
   return (
     <>
-      <span className="text-emerald-300">🙈</span>{" "}
-      <span className="rounded-xl bg-amber-200 px-3">{wert === "" ? "?" : wert}</span>
+      <span className="text-sky-700">🙈</span>{" "}
+      <span className="rounded-xl bg-sky-100 px-3">{wert === "" ? "?" : wert}</span>
     </>
   );
 }
@@ -1517,12 +1517,12 @@ function Rechnungen({ liste, mehr }) {
       {liste.map((x, i) => (
         <span
           key={i}
-          className="rounded-lg bg-emerald-950/60 px-2 py-1 text-sm font-bold text-emerald-100"
+          className="rounded-lg bg-sky-100 px-2 py-1 text-sm font-bold text-sky-950"
         >
           {x}
         </span>
       ))}
-      {mehr && <span className="px-1 py-1 text-sm text-emerald-400">…</span>}
+      {mehr && <span className="px-1 py-1 text-sm text-sky-600">…</span>}
     </div>
   );
 }
@@ -1539,8 +1539,8 @@ function TrickReihe({ t, nr }) {
           className={
             "rounded-full px-2 py-0.5 text-xs font-bold " +
             (k < kann.length
-              ? "bg-amber-300 text-emerald-950"
-              : "bg-emerald-200/60 text-emerald-500")
+              ? "bg-sky-400 text-sky-950"
+              : "bg-sky-100 text-sky-600")
           }
         >
           {k < kann.length ? tr.bild + " " + aName(t, nr, k, tr) : "🔒 " + tr.name}
@@ -1557,23 +1557,23 @@ function WesenKarte({ nr, gross, t }) {
   return (
     <div
       className={
-        "rounded-3xl border-4 p-4 text-center shadow-2xl " +
+        "rounded-3xl border-4 p-4 text-center shadow-sm ring-1 ring-sky-200 " +
         (s.rang === "legendaer"
-          ? "border-amber-400 bg-gradient-to-b from-amber-100 to-amber-50"
+          ? "border-sky-400 bg-gradient-to-b from-amber-100 to-amber-50"
           : s.rang === "meister"
           ? "border-fuchsia-400 bg-gradient-to-b from-fuchsia-100 to-amber-50"
-          : "border-emerald-300 bg-gradient-to-b from-emerald-50 to-white")
+          : "border-sky-200 bg-gradient-to-b from-white to-white")
       }
     >
-      <p className="text-xs font-black uppercase tracking-widest text-emerald-700">
+      <p className="text-xs font-black uppercase tracking-widest text-sky-700">
         Nr. {nr}
       </p>
       <div className={gross ? "text-8xl" : "text-6xl"}>{wBild(t, nr)}</div>
-      <p className="mt-1 text-2xl font-black text-emerald-950">{wName(t, nr)}</p>
+      <p className="mt-1 text-2xl font-black text-sky-950">{wName(t, nr)}</p>
       {eigenerName(t, nr) && (
-        <p className="-mt-0.5 text-[11px] text-emerald-500">eigentlich {w.name}</p>
+        <p className="-mt-0.5 text-[11px] text-sky-600">eigentlich {w.name}</p>
       )}
-      <p className="text-sm font-bold text-emerald-700">
+      <p className="text-sm font-bold text-sky-700">
         {s.text} <Sterne n={s.sterne} />
         {istSpiegel(nr) && " · Spiegel-Wesen"}
       </p>
@@ -1586,7 +1586,7 @@ function WesenKarte({ nr, gross, t }) {
         {typenListe.map((r) => (
           <span
             key={r}
-            className="rounded-full bg-emerald-200 px-2 py-0.5 text-xs font-bold text-emerald-900"
+            className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-950"
           >
             {r}er
           </span>
@@ -1612,10 +1612,10 @@ function Loesung({ text, getippt, richtig }) {
           <span className="text-rose-500 line-through decoration-rose-500 decoration-4">
             {getippt}
           </span>
-          <span className="mx-1 text-emerald-600">→</span>
+          <span className="mx-1 text-sky-600">→</span>
         </>
       )}
-      <span className="text-emerald-700">{richtig}</span>
+      <span className="text-sky-700">{richtig}</span>
     </>
   );
 }
@@ -1625,13 +1625,13 @@ function Ball({ klasse }) {
   return (
     <div
       className={
-        "relative mx-auto h-24 w-24 overflow-hidden rounded-full border-4 border-emerald-950 bg-white shadow-xl " +
+        "relative mx-auto h-24 w-24 overflow-hidden rounded-full border-4 border-sky-950 bg-white shadow-xl " +
         (klasse || "")
       }
     >
       <div className="absolute inset-x-0 top-0 h-1/2 bg-rose-500" />
-      <div className="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 bg-emerald-950" />
-      <div className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-emerald-950 bg-white" />
+      <div className="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 bg-sky-950" />
+      <div className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-sky-950 bg-white" />
     </div>
   );
 }
@@ -1696,8 +1696,8 @@ function Taufe({ t, nr, speichern, onFertig, knopf }) {
   const [name, setName] = useState(eigen.name || "");
   const [bild, setBild] = useState(eigen.bild || "");
   return (
-    <div className="rounded-2xl border-2 border-amber-400/60 bg-emerald-900/70 p-3 text-left">
-      <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+    <div className="rounded-2xl border-2 border-sky-300 bg-white ring-1 ring-sky-200 p-3 text-left">
+      <p className="text-xs font-bold uppercase tracking-widest text-sky-600">
         Wie soll es heißen?
       </p>
       <div className="mt-2 flex gap-2">
@@ -1705,16 +1705,16 @@ function Taufe({ t, nr, speichern, onFertig, knopf }) {
           value={bild}
           onChange={(e) => setBild(e.target.value.slice(0, 8))}
           placeholder={WESEN[nr] ? WESEN[nr].bild : "✨"}
-          className="w-16 rounded-xl border-2 border-emerald-600 bg-emerald-950 px-2 py-2 text-center text-2xl outline-none focus:border-amber-400"
+          className="w-16 rounded-xl border-2 border-sky-300 bg-sky-100 px-2 py-2 text-center text-2xl outline-none focus:border-sky-400"
         />
         <input
           value={name}
           onChange={(e) => setName(e.target.value.slice(0, 16))}
           placeholder={WESEN[nr] ? WESEN[nr].name : "Name"}
-          className="min-w-0 flex-1 rounded-xl border-2 border-emerald-600 bg-emerald-950 px-3 py-2 font-black text-emerald-50 outline-none focus:border-amber-400"
+          className="min-w-0 flex-1 rounded-xl border-2 border-sky-300 bg-sky-100 px-3 py-2 font-black text-sky-950 outline-none focus:border-sky-400"
         />
       </div>
-      <p className="mt-1 text-[11px] text-emerald-400">
+      <p className="mt-1 text-[11px] text-sky-600">
         Leer lassen = {WESEN[nr] ? WESEN[nr].bild + " " + WESEN[nr].name : "Vorgabe"}
       </p>
       <div className="mt-3 grid grid-cols-2 gap-2">
@@ -1737,17 +1737,17 @@ function Taufe({ t, nr, speichern, onFertig, knopf }) {
 function AngriffTaufe({ t, nr, i, trick, speichern, onFertig }) {
   const [name, setName] = useState(aName(t, nr, i, null) || "");
   return (
-    <div className="rounded-2xl border-2 border-amber-400/60 bg-emerald-900/70 p-3 text-left">
-      <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+    <div className="rounded-2xl border-2 border-sky-300 bg-white ring-1 ring-sky-200 p-3 text-left">
+      <p className="text-xs font-bold uppercase tracking-widest text-sky-600">
         Wie soll der Angriff heißen?
       </p>
       <input
         value={name}
         onChange={(e) => setName(e.target.value.slice(0, 20))}
         placeholder={trick ? trick.name : "Angriff"}
-        className="mt-2 w-full rounded-xl border-2 border-emerald-600 bg-emerald-950 px-3 py-2 font-black text-emerald-50 outline-none focus:border-amber-400"
+        className="mt-2 w-full rounded-xl border-2 border-sky-300 bg-sky-100 px-3 py-2 font-black text-sky-950 outline-none focus:border-sky-400"
       />
-      <p className="mt-1 text-[11px] text-emerald-400">
+      <p className="mt-1 text-[11px] text-sky-600">
         Leer lassen = {trick ? trick.bild + " " + trick.name : "Vorgabe"}
       </p>
       <div className="mt-3 grid grid-cols-2 gap-2">
@@ -1981,36 +1981,36 @@ function Streifzug({ start, welt, speichern, onEnde }) {
     });
     return (
       <div className="mx-auto max-w-md p-5">
-        <div className="a-auftauchen rounded-3xl bg-emerald-900/70 p-5 text-center">
+        <div className="a-auftauchen rounded-3xl bg-white ring-1 ring-sky-200 p-5 text-center">
           <div className="text-5xl">🎒</div>
-          <h2 className="mt-2 text-2xl font-black text-amber-300">Runde geschafft!</h2>
+          <h2 className="mt-2 text-2xl font-black text-sky-600">Runde geschafft!</h2>
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-2xl bg-emerald-800/70 p-3">
-              <p className="text-2xl font-black text-emerald-100">{bilanz.richtig}</p>
-              <p className="text-xs text-emerald-300">richtig</p>
+            <div className="rounded-2xl bg-sky-100 p-3">
+              <p className="text-2xl font-black text-sky-950">{bilanz.richtig}</p>
+              <p className="text-xs text-sky-700">richtig</p>
             </div>
-            <div className="rounded-2xl bg-emerald-800/70 p-3">
-              <p className="text-2xl font-black text-emerald-100">{bilanz.blitze}</p>
-              <p className="text-xs text-emerald-300">blitzschnell ⚡</p>
+            <div className="rounded-2xl bg-sky-100 p-3">
+              <p className="text-2xl font-black text-sky-950">{bilanz.blitze}</p>
+              <p className="text-xs text-sky-700">blitzschnell ⚡</p>
             </div>
-            <div className="rounded-2xl bg-emerald-800/70 p-3">
-              <p className="text-2xl font-black text-emerald-100">
+            <div className="rounded-2xl bg-sky-100 p-3">
+              <p className="text-2xl font-black text-sky-950">
                 {bilanz.gefangen.length + bilanz.seiten.length}
               </p>
-              <p className="text-xs text-emerald-300">gefangen</p>
+              <p className="text-xs text-sky-700">gefangen</p>
             </div>
           </div>
 
           {bilanz.seiten.length > 0 && (
-            <div className="mt-4 rounded-2xl border-2 border-emerald-400/40 p-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-emerald-300">
+            <div className="mt-4 rounded-2xl border-2 border-sky-200 p-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-sky-700">
                 Neue Seite entdeckt
               </p>
               <div className="mt-2 flex flex-wrap justify-center gap-3">
                 {bilanz.seiten.map((x) => (
                   <div key={x} className="text-center">
                     <div className="text-4xl">{wBild(t, x)}</div>
-                    <p className="text-xs font-bold text-emerald-100">{wName(t, x)}</p>
+                    <p className="text-xs font-bold text-sky-950">{wName(t, x)}</p>
                   </div>
                 ))}
               </div>
@@ -2018,15 +2018,15 @@ function Streifzug({ start, welt, speichern, onEnde }) {
           )}
 
           {bilanz.gefangen.length > 0 && (
-            <div className="mt-4 rounded-2xl border-2 border-amber-400/50 p-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+            <div className="mt-4 rounded-2xl border-2 border-sky-300 p-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-sky-600">
                 Neu im Zahlodex
               </p>
               <div className="mt-2 flex flex-wrap justify-center gap-3">
                 {bilanz.gefangen.map((x) => (
                   <div key={x} className="text-center">
                     <div className="text-4xl">{wBild(t, x)}</div>
-                    <p className="text-xs font-bold text-emerald-100">{wName(t, x)}</p>
+                    <p className="text-xs font-bold text-sky-950">{wName(t, x)}</p>
                   </div>
                 ))}
               </div>
@@ -2034,11 +2034,11 @@ function Streifzug({ start, welt, speichern, onEnde }) {
           )}
 
           {neuErforscht.length > 0 && (
-            <div className="mt-4 rounded-2xl border-2 border-emerald-400/40 p-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-emerald-300">
+            <div className="mt-4 rounded-2xl border-2 border-sky-200 p-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-sky-700">
                 Vollständig erforscht ✨
               </p>
-              <p className="mt-1 text-sm text-emerald-100">
+              <p className="mt-1 text-sm text-sky-950">
                 {neuErforscht.map((x) => wName(t, x)).join(", ")} — jede Rechnung
                 hat gesessen.
               </p>
@@ -2046,37 +2046,37 @@ function Streifzug({ start, welt, speichern, onEnde }) {
           )}
 
           {jetztReif.length > 0 && (
-            <div className="mt-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+            <div className="mt-3 rounded-2xl border-2 border-sky-300 bg-sky-50 p-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-sky-600">
                 Reif für einen neuen Trick
               </p>
               <div className="mt-2 flex flex-wrap justify-center gap-3">
                 {jetztReif.map((x) => (
                   <div key={x} className="text-center">
                     <div className="text-3xl">{wBild(t, x)}</div>
-                    <p className="text-xs font-bold text-emerald-100">{wName(t, x)}</p>
+                    <p className="text-xs font-bold text-sky-950">{wName(t, x)}</p>
                   </div>
                 ))}
               </div>
-              <p className="mt-2 text-xs text-amber-200">
+              <p className="mt-2 text-xs text-sky-700">
                 Nimm sie mit in die Arena — wer dort blitzschnell ist, darf lernen.
               </p>
             </div>
           )}
 
           {bilanz.falsch > 0 && (
-            <p className="mt-4 text-sm text-emerald-200">
+            <p className="mt-4 text-sm text-sky-900">
               {bilanz.falsch === 1 ? "Eine Rechnung" : bilanz.falsch + " Rechnungen"} ist dir
               entwischt. Macht nichts — sie kommt wieder.
             </p>
           )}
-          <p className="mt-3 text-sm text-emerald-300">
+          <p className="mt-3 text-sm text-sky-700">
             {morgen.length > 0
               ? (morgen.length === 1 ? "Ein Wesen will" : besuchZahl(morgen.length) + " Wesen wollen") +
                 " dich morgen wiedersehen."
               : "Im Moment wartet niemand auf dich. Fang neue Wesen!"}
           </p>
-          <p className="mt-3 rounded-2xl bg-amber-400/15 p-2 text-sm font-black text-amber-200">
+          <p className="mt-3 rounded-2xl bg-sky-100 p-2 text-sm font-black text-sky-700">
             ✅ Heute geschafft! · 🗓️ {spieltage(t)} {spieltage(t) === 1 ? "Spieltag" : "Spieltage"}
           </p>
 
@@ -2094,7 +2094,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
       <div className="mx-auto max-w-md p-5 text-center">
         {wackel < 4 ? (
           <div className="pt-10">
-            <p className="text-sm font-bold uppercase tracking-widest text-amber-300">
+            <p className="text-sm font-bold uppercase tracking-widest text-sky-600">
               Ball geworfen!
             </p>
             <div className="mt-10">
@@ -2105,7 +2105,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
                 <div
                   key={i}
                   className={
-                    "h-3 w-3 rounded-full " + (wackel >= i ? "bg-amber-300" : "bg-emerald-800")
+                    "h-3 w-3 rounded-full " + (wackel >= i ? "bg-sky-400" : "bg-sky-100")
                   }
                 />
               ))}
@@ -2113,11 +2113,11 @@ function Streifzug({ start, welt, speichern, onEnde }) {
           </div>
         ) : (
           <div className="a-auftauchen">
-            <p className="text-sm font-black uppercase tracking-widest text-amber-300">
+            <p className="text-sm font-black uppercase tracking-widest text-sky-600">
               {fangArt === "seite" ? "Neue Seite!" : "Gefangen!"}
             </p>
             {fangArt === "seite" && (
-              <p className="mt-1 text-emerald-200">
+              <p className="mt-1 text-sky-900">
                 {wName(t, neuGefangen)} kennt sich auch{" "}
                 {welt === "malfeld" ? "im Malfeld" : "auf dem Wiesenweg"} aus.
               </p>
@@ -2125,8 +2125,8 @@ function Streifzug({ start, welt, speichern, onEnde }) {
             <div className="mt-3">
               <WesenKarte nr={neuGefangen} gross t={t} />
             </div>
-            <div className="mt-4 rounded-2xl bg-emerald-900/70 p-3 text-left">
-              <p className="text-xs font-bold uppercase tracking-widest text-emerald-300">
+            <div className="mt-4 rounded-2xl bg-white ring-1 ring-sky-200 p-3 text-left">
+              <p className="text-xs font-bold uppercase tracking-widest text-sky-700">
                 Rechnungen, die {wName(t, neuGefangen)} rufen
               </p>
               <Rechnungen
@@ -2147,7 +2147,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
             ) : (
               <button
                 onClick={() => setTaufeOffen(true)}
-                className="kein-blau mt-4 w-full rounded-2xl border-2 border-amber-400/60 py-2 text-sm font-bold text-amber-200"
+                className="kein-blau mt-4 w-full rounded-2xl border-2 border-sky-300 py-2 text-sm font-bold text-sky-700"
               >
                 ✏️ Willst du ihm einen Namen geben?
               </button>
@@ -2169,17 +2169,17 @@ function Streifzug({ start, welt, speichern, onEnde }) {
       <div className="mb-3 flex items-center gap-2">
         <button
           onClick={onEnde}
-          className="kein-blau rounded-xl border-2 border-emerald-500/50 px-3 py-1 text-emerald-100"
+          className="kein-blau rounded-xl border-2 border-sky-300 px-3 py-1 text-sky-950"
         >
           ‹
         </button>
-        <div className="h-2 flex-1 overflow-hidden rounded-full bg-emerald-900">
+        <div className="h-2 flex-1 overflow-hidden rounded-full bg-white ring-1 ring-sky-200">
           <div
-            className="h-full rounded-full bg-amber-400 transition-all"
+            className="h-full rounded-full bg-sky-400 transition-all"
             style={{ width: ((pos / liste.length) * 100).toFixed(0) + "%" }}
           />
         </div>
-        <span className="text-xs font-bold text-emerald-300">
+        <span className="text-xs font-bold text-sky-700">
           {pos + 1}/{liste.length}
         </span>
       </div>
@@ -2188,7 +2188,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
           ein Schattenriss: Bild und Name SIND die Antwort. Wer "Rexi
           ist 56" kennt, bräuchte die Rechnung sonst gar nicht zu
           lesen. Erst nach der Antwort tritt das Wesen hervor. */}
-      <div className="flex items-center gap-3 rounded-2xl bg-emerald-900/60 p-3">
+      <div className="flex items-center gap-3 rounded-2xl bg-white ring-1 ring-sky-200 p-3">
         {phase === "frage" ? (
           <Schatten t={t} nr={nr} />
         ) : (
@@ -2197,17 +2197,17 @@ function Streifzug({ start, welt, speichern, onEnde }) {
         <div className="min-w-0 flex-1">
           {wild && !schonBekannt ? (
             <>
-              <p className="text-sm font-black text-amber-300">Ein wildes Wesen!</p>
-              <p className="text-xs text-emerald-300">
+              <p className="text-sm font-black text-sky-600">Ein wildes Wesen!</p>
+              <p className="text-xs text-sky-700">
                 Fang es mit {FANG_TREFFER} richtigen Rechnungen.
               </p>
             </>
           ) : (
             <>
-              <p className="text-sm font-black text-amber-300">
+              <p className="text-sm font-black text-sky-600">
                 {phase === "frage" ? "Wer kommt da?" : wName(t, nr) + "!"}
               </p>
-              <p className="text-xs text-emerald-300">
+              <p className="text-xs text-sky-700">
                 {schonBekannt
                   ? "Du kennst es schon — von " +
                     (welt === "malfeld" ? "dem Wiesenweg" : "dem Malfeld")
@@ -2224,8 +2224,8 @@ function Streifzug({ start, welt, speichern, onEnde }) {
               <div
                 key={i}
                 className={
-                  "h-3 w-3 rounded-full border-2 border-emerald-700 " +
-                  ((f.h || 0) >= i ? "bg-amber-300" : "bg-emerald-950")
+                  "h-3 w-3 rounded-full border-2 border-sky-200 " +
+                  ((f.h || 0) >= i ? "bg-sky-400" : "bg-sky-100")
                 }
               />
             ))}
@@ -2234,8 +2234,8 @@ function Streifzug({ start, welt, speichern, onEnde }) {
       </div>
 
       {/* Die Rechnung */}
-      <div className="mt-3 rounded-3xl bg-gradient-to-b from-emerald-50 to-white p-5 text-center shadow-2xl">
-        <p className={"text-4xl font-black text-emerald-950 sm:text-5xl " + (phase === "falsch" ? "a-zittern" : "")}>
+      <div className="mt-3 rounded-3xl bg-gradient-to-b from-white to-white p-5 text-center shadow-sm ring-1 ring-sky-200">
+        <p className={"text-4xl font-black text-sky-950 sm:text-5xl " + (phase === "falsch" ? "a-zittern" : "")}>
           {tippt ? (
             <Verdeckt wert={eingabe} />
           ) : fakt.umkehr ? (
@@ -2246,13 +2246,13 @@ function Streifzug({ start, welt, speichern, onEnde }) {
                   <span className="text-rose-500 line-through decoration-rose-500 decoration-4">
                     {eingabe}
                   </span>
-                  <span className="mx-1 text-emerald-600">→</span>
-                  <span className="rounded-xl bg-amber-200 px-2 text-emerald-700">
+                  <span className="mx-1 text-sky-600">→</span>
+                  <span className="rounded-xl bg-sky-100 px-2 text-sky-700">
                     {fakt.antwort}
                   </span>
                 </>
               ) : (
-                <span className="rounded-xl bg-amber-200 px-2">{anzeige}</span>
+                <span className="rounded-xl bg-sky-100 px-2">{anzeige}</span>
               )}{" "}
               = {fakt.ergebnis}
             </>
@@ -2264,14 +2264,15 @@ function Streifzug({ start, welt, speichern, onEnde }) {
             </>
           )}
         </p>
-        {fakt.umkehr && phase === "frage" && !tippt && (
-          <p className="mt-1 text-xs font-bold uppercase tracking-widest text-emerald-600">
-            Rückwärts gefragt — welche Zahl fehlt?
-          </p>
-        )}
-        {tippt && (
-          <p className="mt-1 text-xs font-bold uppercase tracking-widest text-emerald-600">
-            Tipp deine Zahl — ganz in Ruhe
+        {/* Die Zeile steht immer da, auch leer — sonst rückt alles
+            darunter, sobald der Ziffernblock kommt. */}
+        {phase === "frage" && (
+          <p className="mt-1 min-h-4 text-xs font-bold uppercase tracking-widest text-sky-600">
+            {tippt
+              ? "Tipp deine Zahl — ganz in Ruhe"
+              : fakt.umkehr
+              ? "Rückwärts gefragt — welche Zahl fehlt?"
+              : ""}
           </p>
         )}
         {phase === "falsch" && (
@@ -2282,15 +2283,15 @@ function Streifzug({ start, welt, speichern, onEnde }) {
             <div className="mt-3 flex justify-center">
               <Rechenbild fakt={fakt} />
             </div>
-            <p className="mt-3 text-sm text-emerald-800">{tipps[tipps.length - 1].text}</p>
+            <p className="mt-3 text-sm text-sky-800">{tipps[tipps.length - 1].text}</p>
           </div>
         )}
         {phase === "frage" && !tippt && hilfe >= 0 && (
           <div className="a-rutschen mt-4 rounded-2xl bg-amber-100 p-3 text-left">
-            <p className="text-sm font-black text-emerald-900">
+            <p className="text-sm font-black text-sky-950">
               {tipps[hilfe].bild} {tipps[hilfe].name}
             </p>
-            <p className="text-sm text-emerald-800">{tipps[hilfe].text}</p>
+            <p className="text-sm text-sky-800">{tipps[hilfe].text}</p>
             {tipps[hilfe].bild2 && (
               <div className="mt-2 flex justify-center">
                 <Rechenbild fakt={fakt} />
@@ -2299,7 +2300,7 @@ function Streifzug({ start, welt, speichern, onEnde }) {
           </div>
         )}
         {phase === "richtig" && (
-          <p className="a-rutschen mt-2 font-black text-emerald-700">
+          <p className="a-rutschen mt-2 font-black text-sky-700">
             {warBlitz ? "Blitzschnell! ⚡" : "Richtig!"}
           </p>
         )}
@@ -2340,8 +2341,8 @@ function Streifzug({ start, welt, speichern, onEnde }) {
                 className={
                   "kein-blau flex-1 rounded-2xl border-2 py-2 text-xs font-bold transition " +
                   (hilfe === i
-                    ? "border-amber-400 bg-amber-400/20 text-amber-200"
-                    : "border-emerald-600/60 text-emerald-200")
+                    ? "border-sky-400 bg-sky-100 text-sky-700"
+                    : "border-sky-300 text-sky-900")
                 }
               >
                 <span className="text-lg">{b.bild}</span>
@@ -2389,7 +2390,7 @@ function Trickbuch({ t, speichern, onZurueck }) {
         unter={habe + " von " + moeglich + " Tricks · " + punkte + " ⚡"}
         onZurueck={onZurueck}
       />
-      <p className="mb-3 rounded-2xl bg-emerald-900/60 p-3 text-sm text-emerald-200">
+      <p className="mb-3 rounded-2xl bg-white ring-1 ring-sky-200 p-3 text-sm text-sky-900">
         Jeder Trick macht dein Wesen stärker: <b>+{PUNKTE_TRICK} Punkte</b> bei
         jedem Angriff. Die ⚡ dafür holst du dir im Kampf — stark genug zum
         Lernen werden deine Wesen aber nur, wenn du sie auf dem Streifzug
@@ -2397,8 +2398,8 @@ function Trickbuch({ t, speichern, onZurueck }) {
       </p>
 
       {gelernt && (
-        <div className="a-auftauchen mb-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3">
-          <p className="text-center font-black text-amber-200">
+        <div className="a-auftauchen mb-3 rounded-2xl border-2 border-sky-300 bg-sky-50 p-3">
+          <p className="text-center font-black text-sky-700">
             {wBild(t, gelernt.nr)} {wName(t, gelernt.nr)} kann jetzt{" "}
             {gelernt.trick.bild} {aName(t, gelernt.nr, gelernt.i, gelernt.trick)}!
           </p>
@@ -2416,7 +2417,7 @@ function Trickbuch({ t, speichern, onZurueck }) {
           ) : (
             <button
               onClick={() => setAngriffTaufe(true)}
-              className="kein-blau mt-2 w-full rounded-xl border-2 border-amber-400/50 py-1.5 text-xs font-bold text-amber-200"
+              className="kein-blau mt-2 w-full rounded-xl border-2 border-sky-300 py-1.5 text-xs font-bold text-sky-700"
             >
               ✏️ Angriff umbenennen
             </button>
@@ -2425,8 +2426,8 @@ function Trickbuch({ t, speichern, onZurueck }) {
       )}
 
       {bereit.length > 0 && (
-        <div className="mb-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3">
-          <p className="text-center text-xs font-bold uppercase tracking-widest text-amber-300">
+        <div className="mb-3 rounded-2xl border-2 border-sky-300 bg-sky-50 p-3">
+          <p className="text-center text-xs font-bold uppercase tracking-widest text-sky-600">
             {bereit.length === 1
               ? "Ein Wesen wartet auf einen Trick"
               : bereit.length + " Wesen warten auf einen Trick"}
@@ -2443,15 +2444,15 @@ function Trickbuch({ t, speichern, onZurueck }) {
                   className={
                     "kein-blau rounded-2xl p-2 text-center transition " +
                     (reicht
-                      ? "bg-emerald-800/70 hover:bg-emerald-700 active:translate-y-px"
-                      : "bg-emerald-900/50 opacity-50")
+                      ? "bg-sky-100 hover:bg-sky-200 active:translate-y-px"
+                      : "bg-white ring-1 ring-sky-200 opacity-50")
                   }
                 >
                   <div className="text-3xl">{wBild(t, nr)}</div>
-                  <p className="truncate text-xs font-bold text-emerald-50">
+                  <p className="truncate text-xs font-bold text-sky-950">
                     {wName(t, nr)}
                   </p>
-                  <p className="mt-1 text-[10px] leading-tight text-amber-300">
+                  <p className="mt-1 text-[10px] leading-tight text-sky-600">
                     lernt {naechster.bild}
                     <br />
                     {naechster.name}
@@ -2460,7 +2461,7 @@ function Trickbuch({ t, speichern, onZurueck }) {
               );
             })}
           </div>
-          <p className="mt-2 text-center text-xs text-amber-200">
+          <p className="mt-2 text-center text-xs text-sky-700">
             {punkte >= TRICK_KOSTEN
               ? "Ein Trick kostet " + TRICK_KOSTEN + " ⚡ — du hast " + punkte + "."
               : "Noch " + (TRICK_KOSTEN - punkte) + " ⚡, dann kannst du."}
@@ -2472,29 +2473,29 @@ function Trickbuch({ t, speichern, onZurueck }) {
           annehmen konnte — und nirgends stand, woran das liegt. Wer
           nichts einlösen kann, soll wenigstens wissen, wofür. */}
       {bereit.length === 0 && (
-        <div className="mb-3 rounded-2xl border-2 border-emerald-700 p-3">
-          <p className="text-center font-black text-amber-300">
+        <div className="mb-3 rounded-2xl border-2 border-sky-200 p-3">
+          <p className="text-center font-black text-sky-600">
             {punkte} ⚡ warten auf dich
           </p>
-          <p className="mt-1 text-center text-xs text-emerald-300">
+          <p className="mt-1 text-center text-xs text-sky-700">
             Gerade kann sie niemand annehmen. ⚡ verfallen aber nicht — sie
             bleiben liegen, bis jemand so weit ist.
           </p>
-          <p className="mt-3 text-xs font-bold uppercase tracking-widest text-emerald-300">
+          <p className="mt-3 text-xs font-bold uppercase tracking-widest text-sky-700">
             So bekommt ein Wesen den nächsten Trick
           </p>
-          <div className="mt-2 space-y-1.5 text-sm text-emerald-100">
+          <div className="mt-2 space-y-1.5 text-sm text-sky-950">
             <p>
-              <b className="text-amber-300">1.</b> In der Arena kämpfen und bei
+              <b className="text-sky-600">1.</b> In der Arena kämpfen und bei
               diesem Wesen <b>blitzschnell</b> antworten. Dann lädt es dich ein.
             </p>
             <p>
-              <b className="text-amber-300">2.</b> Das Wesen muss stark genug
+              <b className="text-sky-600">2.</b> Das Wesen muss stark genug
               sein — das wird es nur auf dem Streifzug.
               {spaeter.length > 0 && " Wem noch was fehlt, steht gleich hier drunter."}
             </p>
             <p>
-              <b className="text-amber-300">3.</b> Dann hierher kommen und{" "}
+              <b className="text-sky-600">3.</b> Dann hierher kommen und{" "}
               {TRICK_KOSTEN} ⚡ ausgeben. Der Rest bleibt dir.
             </p>
           </div>
@@ -2502,38 +2503,38 @@ function Trickbuch({ t, speichern, onZurueck }) {
       )}
 
       {spaeter.length > 0 && (
-        <div className="mb-3 rounded-2xl bg-emerald-900/60 p-3">
-          <p className="text-xs font-bold uppercase tracking-widest text-emerald-300">
+        <div className="mb-3 rounded-2xl bg-white ring-1 ring-sky-200 p-3">
+          <p className="text-xs font-bold uppercase tracking-widest text-sky-700">
             Die brauchen noch etwas
           </p>
           {spaeter.map(({ nr, bed }) => (
-            <p key={nr} className="mt-1 text-sm text-emerald-200">
+            <p key={nr} className="mt-1 text-sm text-sky-900">
               <span className="text-lg">{wBild(t, nr)}</span>{" "}
               <b>{wName(t, nr)}</b> — {bed.was}
             </p>
           ))}
-          <p className="mt-2 text-xs text-emerald-400">
+          <p className="mt-2 text-xs text-sky-600">
             Nimm sie mit auf den Streifzug. Ein Trick will verdient sein!
           </p>
         </div>
       )}
       {koennen.length === 0 ? (
-        <p className="rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200">
+        <p className="rounded-2xl bg-white ring-1 ring-sky-200 p-4 text-center text-sky-900">
           Noch kann keines deiner Wesen einen Trick. Hol dir ⚡ in der Arena —
           und bring sie dann einem Wesen bei, das dort blitzschnell war.
         </p>
       ) : (
         <>
-        <p className="mb-2 text-center text-xs text-emerald-400">
+        <p className="mb-2 text-center text-xs text-sky-600">
           Tipp auf einen Angriff, wenn er anders heißen soll ✏️
         </p>
         <div className="space-y-2">
           {koennen.map((nr) => (
-            <div key={nr} className="rounded-2xl bg-emerald-900/60 p-3">
+            <div key={nr} className="rounded-2xl bg-white ring-1 ring-sky-200 p-3">
               <div className="flex items-center gap-3">
                 <span className="text-3xl">{wBild(t, nr)}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="font-black text-emerald-50">{wName(t, nr)}</p>
+                  <p className="font-black text-sky-950">{wName(t, nr)}</p>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {trickListe(nr).map((tr, k) => {
                       const kann = k < trickZahl(t, nr);
@@ -2543,7 +2544,7 @@ function Trickbuch({ t, speichern, onZurueck }) {
                         return (
                           <span
                             key={k}
-                            className="rounded-full bg-emerald-800 px-2 py-0.5 text-[11px] font-bold text-emerald-500"
+                            className="rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-bold text-sky-600"
                           >
                             🔒 {tr.name}
                           </span>
@@ -2561,8 +2562,8 @@ function Trickbuch({ t, speichern, onZurueck }) {
                           className={
                             "kein-blau rounded-full px-2 py-0.5 text-[11px] font-bold transition " +
                             (bearbeiten && bearbeiten.nr === nr && bearbeiten.k === k
-                              ? "bg-amber-200 text-emerald-950 ring-2 ring-amber-400"
-                              : "bg-amber-300 text-emerald-950")
+                              ? "bg-sky-100 text-sky-950 ring-2 ring-sky-400"
+                              : "bg-sky-400 text-sky-950")
                           }
                         >
                           {tr.bild} {aName(t, nr, k, tr)} ✏️
@@ -2571,7 +2572,7 @@ function Trickbuch({ t, speichern, onZurueck }) {
                     })}
                   </div>
                 </div>
-                <span className="text-lg font-black text-amber-300">
+                <span className="text-lg font-black text-sky-600">
                   +{trickZahl(t, nr) * PUNKTE_TRICK}
                 </span>
               </div>
@@ -2609,7 +2610,7 @@ function Zahlodex({ t, speichern, onZurueck, startBuch }) {
   for (let n = 1; n <= 100; n++) {
     const w = WESEN[n];
     if (!w) {
-      zellen.push(<div key={n} className="aspect-square rounded-lg bg-emerald-950/60" />);
+      zellen.push(<div key={n} className="aspect-square rounded-lg bg-sky-50" />);
       continue;
     }
     const hab = istGefangen(t, n);
@@ -2619,7 +2620,7 @@ function Zahlodex({ t, speichern, onZurueck, startBuch }) {
         onClick={() => setGewaehlt(n)}
         className={
           "kein-blau relative aspect-square rounded-lg text-lg leading-none transition sm:text-xl " +
-          (hab ? "bg-emerald-700/70 hover:bg-emerald-600" : "bg-emerald-900/80")
+          (hab ? "bg-sky-200 hover:bg-sky-300" : "bg-white ring-1 ring-sky-200")
         }
       >
         {hab ? (
@@ -2630,7 +2631,7 @@ function Zahlodex({ t, speichern, onZurueck, startBuch }) {
             )}
           </>
         ) : (
-          <span className="text-[10px] font-bold text-emerald-600">{n}</span>
+          <span className="text-[10px] font-bold text-sky-600">{n}</span>
         )}
       </button>
     );
@@ -2643,7 +2644,7 @@ function Zahlodex({ t, speichern, onZurueck, startBuch }) {
         unter={gefangen + " von " + ALLE_NR.length + " Wesen gefunden"}
         onZurueck={onZurueck}
       />
-      <div className="rounded-3xl bg-emerald-900/50 p-3">
+      <div className="rounded-3xl bg-white ring-1 ring-sky-200 p-3">
         <div className="grid grid-cols-10 gap-1">{zellen}</div>
       </div>
       <div className="mt-3">
@@ -2652,26 +2653,26 @@ function Zahlodex({ t, speichern, onZurueck, startBuch }) {
           {wartend > 0 ? " · " + wartend + (wartend === 1 ? " wartet!" : " warten!") : ""}
         </Knopf>
       </div>
-      <p className="mt-3 text-center text-xs text-emerald-400">
-        Jedes Feld ist eine Zahl. Auf den dunklen wohnt niemand — die kommen im
+      <p className="mt-3 text-center text-xs text-sky-600">
+        Jedes Feld ist eine Zahl. Auf den leeren wohnt niemand — die kommen im
         Einmaleins gar nicht vor.
       </p>
-      <div className="mt-4 rounded-2xl bg-emerald-900/50 p-3 text-sm text-emerald-200">
-        <p className="font-black text-amber-300">Wie selten ist ein Wesen?</p>
+      <div className="mt-4 rounded-2xl bg-white ring-1 ring-sky-200 p-3 text-sm text-sky-900">
+        <p className="font-black text-sky-600">Wie selten ist ein Wesen?</p>
         <p className="mt-1">
-          <span className="text-emerald-200">Häufig</span> — zu dieser Zahl führen
+          <span className="text-sky-900">Häufig</span> — zu dieser Zahl führen
           viele Wege. Zu 24 kommst du über 3·8 und über 4·6.
         </p>
         <p>
-          <span className="text-sky-300">Selten ✦✦</span> — es gibt nur einen
+          <span className="text-sky-700">Selten ✦✦</span> — es gibt nur einen
           einzigen Weg. Zu 35 nur über 5·7.
         </p>
         <p>
-          <span className="text-lime-200">Einzelgänger ✦</span> — da hilft nur die
+          <span className="text-lime-700">Einzelgänger ✦</span> — da hilft nur die
           1er-Reihe. 7 = 1·7, mehr geht nicht.
         </p>
         <p>
-          <span className="text-amber-300">Legendär ✦✦✦</span> — nur mit zwei
+          <span className="text-sky-600">Legendär ✦✦✦</span> — nur mit zwei
           großen Zahlen zu erreichen. Die neun schwersten Brocken im ganzen
           Malfeld. Wer die hat, kann was.
         </p>
@@ -2684,11 +2685,11 @@ function Zahlodex({ t, speichern, onZurueck, startBuch }) {
 function TrickZiel({ t, welt, nr }) {
   const habe = trickZahl(t, nr);
   if (habe >= trickListe(nr).length)
-    return <p className="mt-1 text-xs font-bold text-amber-300">kann alle Tricks ✨</p>;
+    return <p className="mt-1 text-xs font-bold text-sky-600">kann alle Tricks ✨</p>;
   const bed = trickBedingung(t, welt, nr);
   const naechster = trickListe(nr)[habe];
   return (
-    <p className={"mt-1 text-xs " + (bed.ok ? "font-bold text-amber-300" : "text-emerald-400")}>
+    <p className={"mt-1 text-xs " + (bed.ok ? "font-bold text-sky-600" : "text-sky-600")}>
       {bed.ok
         ? "reif für " + naechster.bild + " " + naechster.name + " — ab in die Arena!"
         : "bis " + naechster.bild + " " + naechster.name + ": " + bed.was}
@@ -2705,10 +2706,10 @@ function WesenDetail({ t, nr, speichern, onZurueck }) {
   const hab = istGefangen(t, nr);
 
   function stand(f, welt) {
-    if (!f) return <span className="text-emerald-500">noch nie getroffen</span>;
+    if (!f) return <span className="text-sky-600">noch nie getroffen</span>;
     if (f.s === 0)
       return (
-        <span className="text-amber-300">
+        <span className="text-sky-600">
           angeschlagen — {f.h || 0}/{FANG_TREFFER} Treffer
         </span>
       );
@@ -2718,10 +2719,10 @@ function WesenDetail({ t, nr, speichern, onZurueck }) {
       min <= 0 ? "wartet jetzt auf dich" : min < 90 ? "in " + min + " Min wieder" :
       "in " + Math.round(min / 1440) + " Tagen wieder";
     return (
-      <span className="text-emerald-200">
+      <span className="text-sky-900">
         Freundschaft {"❤️".repeat(f.s)} · {wann}
         <br />
-        <span className={ab.hab >= ab.ziel ? "text-amber-300" : "text-emerald-400"}>
+        <span className={ab.hab >= ab.ziel ? "text-sky-600" : "text-sky-600"}>
           {ab.hab >= ab.ziel
             ? "vollständig erforscht ✨ — jede Rechnung saß schon"
             : ab.hab + " von " + ab.ziel + " Rechnungen saßen schon"}
@@ -2743,19 +2744,19 @@ function WesenDetail({ t, nr, speichern, onZurueck }) {
           ) : (
             <button
               onClick={() => setTaufe(true)}
-              className="kein-blau mt-2 w-full rounded-2xl border-2 border-emerald-600 py-2 text-sm font-bold text-emerald-200"
+              className="kein-blau mt-2 w-full rounded-2xl border-2 border-sky-300 py-2 text-sm font-bold text-sky-900"
             >
               ✏️ Umbenennen
               {eigenerName(t, nr) && (
-                <span className="text-emerald-400"> · heißt eigentlich {WESEN[nr].name}</span>
+                <span className="text-sky-600"> · heißt eigentlich {WESEN[nr].name}</span>
               )}
             </button>
           )}
           {/* Auch die Angriffe, die es schon kann — jederzeit, nicht nur
               im Moment des Lernens. */}
           {trickZahl(t, nr) > 0 && (
-            <div className="mt-2 rounded-2xl bg-emerald-900/60 p-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+            <div className="mt-2 rounded-2xl bg-white ring-1 ring-sky-200 p-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-sky-600">
                 Angriffe umbenennen
               </p>
               <div className="mt-2 flex flex-wrap gap-1">
@@ -2766,8 +2767,8 @@ function WesenDetail({ t, nr, speichern, onZurueck }) {
                     className={
                       "kein-blau rounded-full px-2 py-1 text-xs font-bold transition " +
                       (angriff && angriff.k === k
-                        ? "bg-amber-200 text-emerald-950 ring-2 ring-amber-400"
-                        : "bg-amber-300 text-emerald-950")
+                        ? "bg-sky-100 text-sky-950 ring-2 ring-sky-400"
+                        : "bg-sky-400 text-sky-950")
                     }
                   >
                     {tr.bild} {aName(t, nr, k, tr)} ✏️
@@ -2790,44 +2791,44 @@ function WesenDetail({ t, nr, speichern, onZurueck }) {
           )}
         </>
       ) : (
-        <div className="rounded-3xl border-4 border-emerald-700 bg-emerald-900/60 p-8 text-center">
+        <div className="rounded-3xl border-4 border-sky-200 bg-white ring-1 ring-sky-200 p-8 text-center">
           <Schatten t={t} nr={nr} gross />
-          <p className="mt-3 font-black text-emerald-300">Noch nicht gefangen</p>
-          <p className="text-sm text-emerald-400">Rechne dich hin — dann zeigt es sich.</p>
+          <p className="mt-3 font-black text-sky-700">Noch nicht gefangen</p>
+          <p className="text-sm text-sky-600">Rechne dich hin — dann zeigt es sich.</p>
         </div>
       )}
 
       <div className="mt-4 space-y-3">
-        <div className="rounded-2xl bg-emerald-900/60 p-3">
-          <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+        <div className="rounded-2xl bg-white ring-1 ring-sky-200 p-3">
+          <p className="text-xs font-bold uppercase tracking-widest text-sky-600">
             Entwicklung — Verdoppeln
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {l.map((x, i) => (
               <React.Fragment key={x}>
-                {i > 0 && <span className="text-emerald-500">→</span>}
+                {i > 0 && <span className="text-sky-600">→</span>}
                 <div
                   className={
                     "rounded-xl px-2 py-1 text-center " +
-                    (x === nr ? "bg-amber-400/20 ring-2 ring-amber-400" : "bg-emerald-800/60")
+                    (x === nr ? "bg-sky-100 ring-2 ring-sky-400" : "bg-sky-100")
                   }
                 >
                   <div className="text-2xl">
                     {istGefangen(t, x) ? wBild(t, x) : <span className="opacity-30 grayscale brightness-0">{wBild(t, x)}</span>}
                   </div>
-                  <p className="text-[10px] font-bold text-emerald-200">{x}</p>
+                  <p className="text-[10px] font-bold text-sky-900">{x}</p>
                 </div>
               </React.Fragment>
             ))}
           </div>
           {l.length === 1 && (
-            <p className="mt-1 text-xs text-emerald-400">Dieses Wesen entwickelt sich nicht.</p>
+            <p className="mt-1 text-xs text-sky-600">Dieses Wesen entwickelt sich nicht.</p>
           )}
         </div>
 
         {paare(nr).length > 0 && (
-          <div className="rounded-2xl bg-emerald-900/60 p-3">
-            <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+          <div className="rounded-2xl bg-white ring-1 ring-sky-200 p-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-sky-600">
               Im Malfeld ✖️
             </p>
             <Rechnungen liste={paareUngeordnet(nr).map(([a, b]) => a + " · " + b)} />
@@ -2837,8 +2838,8 @@ function WesenDetail({ t, nr, speichern, onZurueck }) {
         )}
 
         {nr <= 20 && (
-          <div className="rounded-2xl bg-emerald-900/60 p-3">
-            <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+          <div className="rounded-2xl bg-white ring-1 ring-sky-200 p-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-sky-600">
               Auf dem Wiesenweg 🌿
             </p>
             <Rechnungen
@@ -3215,41 +3216,41 @@ function arenaAufgaben(a, anzahl) {
 function KampfErklaerung({ onWeiter, zurueck }) {
   return (
     <div className="mx-auto max-w-md p-4">
-      <div className="a-auftauchen rounded-3xl border-2 border-amber-400/60 bg-emerald-900/80 p-5 text-emerald-100">
+      <div className="a-auftauchen rounded-3xl border-2 border-sky-300 bg-white p-5 text-sky-950">
         <div className="text-center text-5xl">⚔️</div>
-        <p className="mt-2 text-center text-2xl font-black text-amber-300">
+        <p className="mt-2 text-center text-2xl font-black text-sky-600">
           Bereit für einen Kampf?
         </p>
         <p className="mt-1">
           Zwölf Rechnungen, und die Uhr läuft — aber nur, solange du
           nachdenkst. Hast du die Zahl im Kopf, drück{" "}
-          <b className="text-amber-200">Ich weiß es!</b> Dann steht die Uhr
+          <b className="text-sky-700">Ich weiß es!</b> Dann steht die Uhr
           und du tippst in Ruhe. Für jede richtige Antwort stürmt
           ein Wesen los — und zwar genau das, das die Antwort <i>ist</i>. Steht
           da 8 · 7 = 56, dann kommt Rexi. Wesen mit Tricks hauen fester zu.
         </p>
-        <p className="mt-2 font-bold text-amber-200">Dafür gibt es Sterne:</p>
+        <p className="mt-2 font-bold text-sky-700">Dafür gibt es Sterne:</p>
         <p>★ höchstens {ORDEN_FEHLER === 1 ? "ein Fehler" : ORDEN_FEHLER + " Fehler"} — der Orden gehört dir</p>
         <p>★★ kein Fehler, dazu genug Punkte — Meister</p>
         <p>★★★ kein Fehler und alles blitzschnell</p>
-        <p className="mt-2 text-emerald-300">
+        <p className="mt-2 text-sky-700">
           Wer es in der ersten Hälfte der Zeit weiß, bekommt eine ⚡ dazu.
           Damit bringst du deinen Wesen neue Tricks bei.
         </p>
-        <p className="mt-3 font-bold text-amber-200">Und dann gibt es den Pokal:</p>
+        <p className="mt-3 font-bold text-sky-700">Und dann gibt es den Pokal:</p>
         <p>
           Wer alle drei Sterne hat, darf um den Pokal kämpfen — 🥉, dann 🥈,
           dann 🥇. Dazwischen liegt aber immer eine Pause: {POKAL_PAUSE[0]},{" "}
           {POKAL_PAUSE[1]} und {POKAL_PAUSE[2]} Tage. Denn der Pokal fragt
           nicht, ob du es heute kannst — sondern ob du es in drei Wochen noch
           kannst. Und ein Titel zählt nur, wenn du{" "}
-          <b className="text-amber-200">jede Rechnung richtig und jede
+          <b className="text-sky-700">jede Rechnung richtig und jede
           blitzschnell</b> hast — genau wie beim dritten Stern. Wer nach drei
           Wochen erst überlegen muss, weiß es eben nicht mehr aus dem Stand.
           Daneben? Macht nichts — du darfst sofort wieder antreten. Kämpfen
           darfst du sowieso jederzeit.
         </p>
-        <p className="mt-2 text-emerald-300">
+        <p className="mt-2 text-sky-700">
           Und wenn du irgendwo feststeckst: Du hast {BEERE_KAMPF === 1 ? "eine" : BEERE_KAMPF}{" "}
           🫐 Beere dabei. Sie hält die Uhr an und zeigt dir den Weg. Die
           Rechnung zählt dann {PUNKTE_BEERE} statt {PUNKTE_GRUND} Punkte —
@@ -3276,7 +3277,7 @@ function ArenaListe({ t, onKampf, onZurueck }) {
         rechts={
           <button
             onClick={() => setErklaert(true)}
-            className="kein-blau rounded-xl border-2 border-emerald-500/50 px-3 py-2 text-emerald-100"
+            className="kein-blau rounded-xl border-2 border-sky-300 px-3 py-2 text-sky-950"
           >
             ?
           </button>
@@ -3303,21 +3304,21 @@ function ArenaListe({ t, onKampf, onZurueck }) {
                 "kein-blau flex w-full items-center gap-3 rounded-2xl p-3 text-left transition " +
                 (a.art === "liga" || a.art === "super"
                   ? offen
-                    ? "bg-gradient-to-r from-amber-500/30 to-fuchsia-500/20 ring-2 ring-amber-300"
-                    : "bg-emerald-900/50 opacity-60"
+                    ? "bg-gradient-to-r from-amber-500/30 to-fuchsia-500/20 ring-2 ring-sky-400"
+                    : "bg-white ring-1 ring-sky-200 opacity-60"
                   : hat
-                  ? "bg-amber-400/20 ring-2 ring-amber-400"
+                  ? "bg-sky-100 ring-2 ring-sky-400"
                   : offen
-                  ? "bg-emerald-800/70 hover:bg-emerald-700"
-                  : "bg-emerald-900/50 opacity-60")
+                  ? "bg-sky-100 hover:bg-sky-200"
+                  : "bg-white ring-1 ring-sky-200 opacity-60")
               }
             >
               <div className="text-4xl">
                 {offen ? (a.art === "liga" ? "🏆" : a.art === "super" ? "🌈" : wBild(t, leiter)) : "🔒"}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-black text-emerald-50">{a.name}</p>
-                <p className="text-xs text-emerald-300">
+                <p className="font-black text-sky-950">{a.name}</p>
+                <p className="text-xs text-sky-700">
                   {a.art === "super"
                     ? offen
                       ? "Alles auf einmal: mal, geteilt, plus, minus. Zwanzig Rechnungen."
@@ -3333,7 +3334,7 @@ function ArenaListe({ t, onKampf, onZurueck }) {
                       reif.hab + "/" + reif.noetig + ")"}
                 </p>
                 {offen && (
-                  <p className="text-xs text-amber-300">
+                  <p className="text-xs text-sky-600">
                     {rekord > 0 ? "Rekord " + rekord + " · " : ""}
                     {teamTricks(t, a) > 0
                       ? teamTricks(t, a) + (teamTricks(t, a) === 1 ? " Trick" : " Tricks") + " im Team"
@@ -3356,7 +3357,7 @@ function ArenaListe({ t, onKampf, onZurueck }) {
               pk.offen ? (
                 <button
                   onClick={() => onKampf({ ...a, titel: true })}
-                  className="a-funkeln kein-blau mt-1 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-300 px-3 py-2 text-sm font-black text-emerald-950 shadow-lg active:translate-y-px"
+                  className="a-funkeln kein-blau mt-1 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-300 px-3 py-2 text-sm font-black text-sky-950 shadow-lg active:translate-y-px"
                 >
                   🏆 Titelkampf um {POKAL[pk.stufe]}
                   <span className="block text-[11px] font-bold opacity-80">
@@ -3364,14 +3365,14 @@ function ArenaListe({ t, onKampf, onZurueck }) {
                   </span>
                 </button>
               ) : (
-                <p className="mt-1 text-center text-[11px] text-emerald-500">
+                <p className="mt-1 text-center text-[11px] text-sky-600">
                   {POKAL[pk.stufe]} Titelkampf in {tageBis(pk.freiAb)}{" "}
                   {tageBis(pk.freiAb) === 1 ? "Tag" : "Tagen"}
                 </p>
               )
             )}
             {offen && pk.fertig && (
-              <p className="mt-1 text-center text-[11px] font-bold text-amber-300">
+              <p className="mt-1 text-center text-[11px] font-bold text-sky-600">
                 🥇 Gold — diese Arena gehört dir.
               </p>
             )}
@@ -3456,8 +3457,8 @@ function sterneGesamt(t) {
 function Sterne3({ n }) {
   return (
     <span className="tracking-tight">
-      <span className="text-amber-300">{"★".repeat(n)}</span>
-      <span className="text-emerald-700">{"☆".repeat(3 - n)}</span>
+      <span className="text-amber-400">{"★".repeat(n)}</span>
+      <span className="text-sky-700">{"☆".repeat(3 - n)}</span>
     </span>
   );
 }
@@ -3479,7 +3480,7 @@ function ArenaBank({ t, arena, aktiv, team }) {
             key={nr}
             className={
               "relative rounded-lg px-1 py-0.5 transition " +
-              (aktiv === nr ? "scale-125 bg-amber-400/30 ring-2 ring-amber-400" : "")
+              (aktiv === nr ? "scale-125 bg-sky-100 ring-2 ring-sky-400" : "")
             }
           >
             <span className={"text-lg " + (hab ? "" : "opacity-25 grayscale brightness-0")}>
@@ -3850,9 +3851,9 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
           onZurueck={onEnde}
         />
         {gelehrt.length > 0 && (
-          <div className="a-auftauchen mb-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3">
+          <div className="a-auftauchen mb-3 rounded-2xl border-2 border-sky-300 bg-sky-50 p-3">
             {gelehrt.map((g, k) => (
-              <p key={k} className="text-center font-black text-amber-200">
+              <p key={k} className="text-center font-black text-sky-700">
                 {wBild(t, g.nr)} {wName(t, g.nr)} kann jetzt {g.trick.bild}{" "}
                 {aName(t, g.nr, g.i, g.trick)}!
               </p>
@@ -3860,13 +3861,13 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
           </div>
         )}
 
-        <p className="mb-2 text-sm text-emerald-200">
+        <p className="mb-2 text-sm text-sky-900">
           Ein Trick macht dein Wesen stärker: <b>+{PUNKTE_TRICK} Punkte</b> bei
           jedem Angriff. Such dir aus, wer ihn lernen soll!
         </p>
 
         {bereit.length === 0 && nochNicht.length === 0 ? (
-          <p className="rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200">
+          <p className="rounded-2xl bg-white ring-1 ring-sky-200 p-4 text-center text-sky-900">
             Lernen dürfen nur Wesen, die im Kampf blitzschnell waren. Diesmal war
             keines dabei — deine ⚡ bleiben dir aber erhalten.
           </p>
@@ -3885,15 +3886,15 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
                       className={
                         "kein-blau rounded-2xl p-2 text-center transition " +
                         (reicht
-                          ? "bg-emerald-800/70 hover:bg-emerald-700 active:translate-y-px"
-                          : "bg-emerald-900/50 opacity-50")
+                          ? "bg-sky-100 hover:bg-sky-200 active:translate-y-px"
+                          : "bg-white ring-1 ring-sky-200 opacity-50")
                       }
                     >
                       <div className="text-3xl">{wBild(t, nr)}</div>
-                      <p className="truncate text-xs font-bold text-emerald-50">
+                      <p className="truncate text-xs font-bold text-sky-950">
                         {wName(t, nr)}
                       </p>
-                      <p className="mt-1 text-[10px] leading-tight text-amber-300">
+                      <p className="mt-1 text-[10px] leading-tight text-sky-600">
                         lernt {naechster.bild}
                         <br />
                         {naechster.name}
@@ -3905,24 +3906,24 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
             )}
 
             {nochNicht.length > 0 && (
-              <div className="mt-4 rounded-2xl bg-emerald-900/60 p-3">
-                <p className="text-xs font-bold uppercase tracking-widest text-emerald-300">
+              <div className="mt-4 rounded-2xl bg-white ring-1 ring-sky-200 p-3">
+                <p className="text-xs font-bold uppercase tracking-widest text-sky-700">
                   Die brauchen noch etwas
                 </p>
                 {nochNicht.map(({ nr, bed }) => (
-                  <p key={nr} className="mt-1 text-sm text-emerald-200">
+                  <p key={nr} className="mt-1 text-sm text-sky-900">
                     <span className="text-lg">{wBild(t, nr)}</span>{" "}
                     <b>{wName(t, nr)}</b> — {bed.was}
                   </p>
                 ))}
-                <p className="mt-2 text-xs text-emerald-400">
+                <p className="mt-2 text-xs text-sky-600">
                   Nimm sie mit auf den Streifzug. Ein Trick will verdient sein!
                 </p>
               </div>
             )}
           </>
         )}
-        <p className="mt-4 text-center text-xs text-emerald-400">
+        <p className="mt-4 text-center text-xs text-sky-600">
           Du musst dich nicht jetzt entscheiden: Wer hier blitzschnell war,
           wartet im Trickbuch auf dich, bis du genug ⚡ hast.
         </p>
@@ -3949,7 +3950,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
     const liste = Object.entries(beitrag).sort((a, b) => b[1] - a[1]);
     return (
       <div className="mx-auto max-w-md p-4 text-center">
-        <div className="a-auftauchen rounded-3xl bg-emerald-900/70 p-5">
+        <div className="a-auftauchen rounded-3xl bg-white ring-1 ring-sky-200 p-5">
           <div className="text-6xl">
             {titelGewonnen
               ? POKAL[vorherPokal]
@@ -3959,17 +3960,17 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
               ? "🌈"
               : wBild(t, leiterNr)}
           </div>
-          <p className="mt-2 text-5xl font-black text-amber-300">{punkte}</p>
-          <p className="text-xs uppercase tracking-widest text-emerald-300">Punkte</p>
+          <p className="mt-2 text-5xl font-black text-sky-600">{punkte}</p>
+          <p className="text-xs uppercase tracking-widest text-sky-700">Punkte</p>
           {/* Ohne den Namen weiß niemand, für welche Arena die Sterne sind. */}
-          <p className="mt-3 text-sm font-black uppercase tracking-widest text-amber-200">
+          <p className="mt-3 text-sm font-black uppercase tracking-widest text-sky-700">
             {arena.name}
           </p>
           <div className="text-3xl">
             <Sterne3 n={Math.max(vorherSterne, jetztSterne)} />
           </div>
           {titel && (
-            <p className={"mt-1 text-sm font-black " + (titelGewonnen ? "text-amber-200" : "text-emerald-400")}>
+            <p className={"mt-1 text-sm font-black " + (titelGewonnen ? "text-sky-700" : "text-sky-600")}>
               {titelGewonnen
                 ? "🏆 Titel geholt — " + POKAL[vorherPokal] + " gehört dir!"
                 : fehlerZahl > 0
@@ -3981,16 +3982,16 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
             </p>
           )}
           {titelGewonnen && vorherPokal + 1 < POKAL.length && (
-            <p className="text-[11px] text-emerald-400">
+            <p className="text-[11px] text-sky-600">
               {POKAL[vorherPokal + 1]} ist in {POKAL_PAUSE[vorherPokal + 1]} Tagen dran.
             </p>
           )}
           {titelGewonnen && vorherPokal + 1 >= POKAL.length && (
-            <p className="a-funkeln text-[11px] font-bold text-amber-300">
+            <p className="a-funkeln text-[11px] font-bold text-sky-600">
               Gold! Diese Arena gehört dir für immer.
             </p>
           )}
-          <h2 className="mt-1 text-xl font-black text-emerald-50">
+          <h2 className="mt-1 text-xl font-black text-sky-950">
             {jetztSterne > vorherSterne
               ? jetztSterne === 3
                 ? "Perfekt! Dritter Stern!"
@@ -4004,18 +4005,18 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
               : "Knapp daneben"}
           </h2>
           {!gewonnen && vorherSterne >= 1 && (
-            <p className="text-xs text-emerald-400">
+            <p className="text-xs text-sky-600">
               Dein Orden bleibt dir — aber verteidigt ist er heute nicht.
             </p>
           )}
-          <p className="mt-1 text-sm text-emerald-300">
+          <p className="mt-1 text-sm text-sky-700">
             {treffer} von {fragen.length} richtig · {schnellZahl} blitzschnell
           </p>
           {/* Was fehlt zum nächsten Stern? Seit die Treffer zählen und
               nicht mehr nur die Punkte, muss auch hier das Richtige
               stehen — sonst sucht sie den Fehler bei den Punkten. */}
           {Math.max(vorherSterne, jetztSterne) < 3 && (
-            <p className="mt-1 text-xs text-amber-200">
+            <p className="mt-1 text-xs text-sky-700">
               {Math.max(vorherSterne, jetztSterne) === 0
                 ? fehlerZahl > ORDEN_FEHLER
                   ? "★ mit höchstens " + ORDEN_FEHLER + " Fehler — du hattest " + fehlerZahl
@@ -4029,42 +4030,42 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
             </p>
           )}
           {neuerRekord && (
-            <p className="a-funkeln mt-2 font-black text-amber-200">
+            <p className="a-funkeln mt-2 font-black text-sky-700">
               ✨ Neuer Rekord!{vorherRekord > 0 ? " Vorher " + vorherRekord : ""}
             </p>
           )}
           {!neuerRekord && vorherRekord > 0 && (
-            <p className="mt-2 text-sm text-emerald-400">Dein Rekord hier: {vorherRekord}</p>
+            <p className="mt-2 text-sm text-sky-600">Dein Rekord hier: {vorherRekord}</p>
           )}
 
           {liste.length > 0 && (
-            <div className="mt-4 rounded-2xl bg-emerald-950/50 p-3 text-left">
-              <p className="text-center text-xs font-bold uppercase tracking-widest text-emerald-300">
+            <div className="mt-4 rounded-2xl bg-sky-100 p-3 text-left">
+              <p className="text-center text-xs font-bold uppercase tracking-widest text-sky-700">
                 Wer wie viel geholt hat
               </p>
               <div className="mt-2 space-y-1">
                 {liste.map(([nr, p2]) => (
                   <div key={nr} className="flex items-center gap-2 text-sm">
                     <span className="text-xl">{WESEN[nr] ? wBild(t, nr) : "✨"}</span>
-                    <span className="flex-1 truncate text-emerald-100">
+                    <span className="flex-1 truncate text-sky-950">
                       {WESEN[nr] ? wName(t, nr) : "Nr. " + nr}
                       {trickZahl(t, Number(nr)) > 0 && (
-                        <span className="text-amber-300">
+                        <span className="text-sky-600">
                           {" "}
                           {"✨".repeat(trickZahl(t, Number(nr)))}
                         </span>
                       )}
                     </span>
-                    <span className="font-black text-amber-300">{p2}</span>
+                    <span className="font-black text-sky-600">{p2}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          <div className="mt-3 rounded-2xl bg-emerald-950/50 p-3">
-            <p className="text-2xl font-black text-amber-300">+{verdient} ⚡</p>
-            <p className="text-xs text-emerald-300">
+          <div className="mt-3 rounded-2xl bg-sky-100 p-3">
+            <p className="text-2xl font-black text-sky-600">+{verdient} ⚡</p>
+            <p className="text-xs text-sky-700">
               je blitzschnelle Antwort eine · macht {trickPunkte(t)} ⚡
             </p>
           </div>
@@ -4089,15 +4090,15 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
       <div className="flex items-center gap-2">
         <button
           onClick={onEnde}
-          className="kein-blau rounded-xl border-2 border-emerald-500/50 px-3 py-1 text-emerald-100"
+          className="kein-blau rounded-xl border-2 border-sky-300 px-3 py-1 text-sky-950"
         >
           ‹
         </button>
         <div className="flex-1 text-center">
-          <p className="text-sm font-black text-amber-300">
+          <p className="text-sm font-black text-sky-600">
             {titel ? "🏆 Titelkampf · " : ""}{arena.name}
           </p>
-          <p className="text-[11px] text-emerald-300">
+          <p className="text-[11px] text-sky-700">
             {titel
               ? titelWeg
                 ? "Titel futsch — spiel ruhig zu Ende, du darfst sofort wieder ran"
@@ -4107,23 +4108,23 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
               : "gegen " + wName(t, leiterNr) + " · Orden ab " + ordenPunkte(arena)}
           </p>
         </div>
-        <span className="text-xs font-bold text-emerald-300">
+        <span className="text-xs font-bold text-sky-700">
           {i + 1}/{fragen.length}
         </span>
       </div>
 
       {/* Punktestand */}
       <div className="mt-2 flex items-end justify-center gap-3">
-        <p className="text-3xl font-black text-amber-300">{punkte}</p>
+        <p className="text-3xl font-black text-sky-600">{punkte}</p>
         {kombo >= KOMBO_LAENGE - 1 && phase === "kampf" && (
-          <p className="pb-1 text-xs font-bold text-emerald-300">
+          <p className="pb-1 text-xs font-bold text-sky-700">
             {kombo % KOMBO_LAENGE === KOMBO_LAENGE - 1 ? "nächste gibt Kombo!" : "Kombo " + kombo}
           </p>
         )}
       </div>
-      <div className="mt-1 h-2 overflow-hidden rounded-full bg-emerald-900">
+      <div className="mt-1 h-2 overflow-hidden rounded-full bg-white ring-1 ring-sky-200">
         <div
-          className="h-full bg-amber-400 transition-all"
+          className="h-full bg-sky-400 transition-all"
           style={{ width: Math.min(100, (punkte / ordenPunkte(arena)) * 100) + "%" }}
         />
       </div>
@@ -4139,18 +4140,18 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
       </div>
 
       {/* Zeit */}
-      <div className="mt-2 h-3 overflow-hidden rounded-full bg-emerald-900">
+      <div className="mt-2 h-3 overflow-hidden rounded-full bg-white ring-1 ring-sky-200">
         <div
           className={
             "h-full transition-all " +
-            (pause ? "bg-sky-300" : zeit > dauer / 2 ? "bg-amber-400" : "bg-rose-400")
+            (pause || tippt ? "bg-sky-300" : zeit > dauer / 2 ? "bg-amber-400" : "bg-rose-400")
           }
           style={{ width: (zeit / dauer) * 100 + "%" }}
         />
       </div>
 
-      <div className="mt-3 rounded-3xl bg-gradient-to-b from-emerald-50 to-white p-6 text-center shadow-2xl">
-        <p className="text-4xl font-black text-emerald-950 sm:text-5xl">
+      <div className="mt-3 rounded-3xl bg-gradient-to-b from-white to-white p-6 text-center shadow-sm ring-1 ring-sky-200">
+        <p className="text-4xl font-black text-sky-950 sm:text-5xl">
           {offen ? (
             <Loesung text={frage.text} getippt={eingabe} richtig={frage.antwort} />
           ) : tippt ? (
@@ -4161,9 +4162,9 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
             </>
           )}
         </p>
-        {tippt && (
-          <p className="mt-1 text-xs font-bold uppercase tracking-widest text-emerald-600">
-            Uhr steht — tipp deine Zahl
+        {phase === "kampf" && (
+          <p className="mt-1 min-h-4 text-xs font-bold uppercase tracking-widest text-sky-600">
+            {tippt ? "Uhr steht — tipp deine Zahl" : ""}
           </p>
         )}
         {pause && phase === "kampf" && (
@@ -4173,7 +4174,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
         )}
         {/* Die Beere zeigt den Weg, direkt unter der Rechnung. */}
         {geholfen && phase === "kampf" && !tippt && (
-          <div className="a-rutschen mt-3 rounded-2xl bg-emerald-100 p-3 text-left">
+          <div className="a-rutschen mt-3 rounded-2xl bg-sky-50 p-3 text-left">
             <div className="flex flex-wrap gap-1">
               {tipps.map((b2, k) => (
                 <button
@@ -4182,8 +4183,8 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
                   className={
                     "kein-blau rounded-xl border-2 px-2 py-1 text-[11px] font-bold transition " +
                     (tipp === k
-                      ? "border-amber-500 bg-amber-300/50 text-emerald-900"
-                      : "border-emerald-300 text-emerald-700")
+                      ? "border-sky-500 bg-sky-200 text-sky-950"
+                      : "border-sky-200 text-sky-700")
                   }
                 >
                   {b2.bild} {b2.name}
@@ -4192,7 +4193,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
             </div>
             {tipps[tipp] && (
               <>
-                <p className="mt-2 text-sm font-bold leading-snug text-emerald-900">
+                <p className="mt-2 text-sm font-bold leading-snug text-sky-950">
                   {tipps[tipp].text}
                 </p>
                 {/* Das Punktefeld ist die stärkste Hilfe von allen —
@@ -4210,7 +4211,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
           <div className="a-rutschen mt-3">
             {angriff ? (
               <>
-                <p className="font-black text-emerald-700">
+                <p className="font-black text-sky-700">
                   <span className="text-2xl">{WESEN[angriff.nr] ? wBild(t, angriff.nr) : "✨"}</span>{" "}
                   {WESEN[angriff.nr] ? wName(t, angriff.nr) : "Treffer"}
                   {angriff.mitBeere
@@ -4222,7 +4223,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
                 <p className="mt-1 text-lg font-black text-amber-600">
                   +{angriff.punkte}
                   {angriff.kombo > 0 && (
-                    <span className="text-sm text-emerald-700"> · Kombo {angriff.kombo}!</span>
+                    <span className="text-sm text-sky-700"> · Kombo {angriff.kombo}!</span>
                   )}
                 </p>
               </>
@@ -4231,7 +4232,7 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
                 <p className="font-black text-rose-700">
                   {letzte === "langsam" ? "Zu langsam!" : "Daneben!"}
                 </p>
-                <p className="mt-1 text-sm text-emerald-700">
+                <p className="mt-1 text-sm text-sky-700">
                   Schau sie dir in Ruhe an — die Uhr steht.
                 </p>
                 <div className="mt-3">
@@ -4266,8 +4267,8 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
           className={
             "kein-blau rounded-2xl border-2 py-3 text-sm font-black transition " +
             (beerenRest > 0 && !geholfen && !tippt && phase === "kampf"
-              ? "border-amber-400/60 text-amber-200 active:translate-y-px"
-              : "border-emerald-800 text-emerald-700")
+              ? "border-sky-300 text-sky-700 active:translate-y-px"
+              : "border-sky-200 text-sky-700")
           }
         >
           🫐 Beere {"●".repeat(beerenRest)}{"○".repeat(BEERE_KAMPF - beerenRest)}
@@ -4278,8 +4279,8 @@ function ArenaKampf({ start, arena, speichern, onEnde }) {
           className={
             "kein-blau rounded-2xl border-2 py-3 text-sm font-black transition " +
             (luft > 0 && !pause && !tippt && phase === "kampf"
-              ? "border-sky-400/60 text-sky-200 active:translate-y-px"
-              : "border-emerald-800 text-emerald-700")
+              ? "border-sky-300 text-sky-700 active:translate-y-px"
+              : "border-sky-200 text-sky-700")
           }
         >
           😮‍💨 Luft holen {"●".repeat(luft)}{"○".repeat(LUFT_HOLEN - luft)}
@@ -4306,15 +4307,15 @@ function Duell({ stand, onZurueck, speichern }) {
       <div className="mx-auto max-w-md p-4">
         <Kopf titel="Duell" unter="Zwei Trainer, ein Gerät" onZurueck={onZurueck} />
         {namen.length < 2 ? (
-          <p className="rounded-2xl bg-emerald-900/60 p-4 text-emerald-200">
+          <p className="rounded-2xl bg-white ring-1 ring-sky-200 p-4 text-sky-900">
             Zum Duell gehören zwei! Leg auf der Startseite noch eine
             Trainerkarte an — für eine Freundin oder einen Freund.
           </p>
         ) : (
           <>
             {[["Trainer 1", a, setA], ["Trainer 2", b, setB]].map(([titel, wert, setzen]) => (
-              <div key={titel} className="mb-3 rounded-2xl bg-emerald-900/60 p-3">
-                <p className="text-xs font-bold uppercase tracking-widest text-amber-300">{titel}</p>
+              <div key={titel} className="mb-3 rounded-2xl bg-white ring-1 ring-sky-200 p-3">
+                <p className="text-xs font-bold uppercase tracking-widest text-sky-600">{titel}</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {namen.map((n) => (
                     <button
@@ -4322,7 +4323,7 @@ function Duell({ stand, onZurueck, speichern }) {
                       onClick={() => setzen(n)}
                       className={
                         "kein-blau rounded-xl px-3 py-2 text-sm font-bold " +
-                        (wert === n ? "bg-amber-400 text-emerald-950" : "bg-emerald-800 text-emerald-100")
+                        (wert === n ? "bg-sky-400 text-sky-950" : "bg-sky-100 text-sky-950")
                       }
                     >
                       {stand.trainer[n].bild} {n}
@@ -4393,21 +4394,21 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
     const gewinner = punkte[0] === punkte[1] ? null : punkte[0] > punkte[1] ? 0 : 1;
     return (
       <div className="mx-auto max-w-md p-5 text-center">
-        <div className="a-auftauchen rounded-3xl bg-emerald-900/70 p-6">
+        <div className="a-auftauchen rounded-3xl bg-white ring-1 ring-sky-200 p-6">
           <div className="text-6xl">{gewinner === null ? "🤝" : "🏆"}</div>
-          <h2 className="mt-2 text-2xl font-black text-amber-300">
+          <h2 className="mt-2 text-2xl font-black text-sky-600">
             {gewinner === null ? "Unentschieden!" : lauf.spieler[gewinner].name + " gewinnt!"}
           </h2>
           <div className="mt-4 grid grid-cols-2 gap-3">
             {lauf.spieler.map((s, i) => (
-              <div key={i} className="rounded-2xl bg-emerald-800/70 p-3">
+              <div key={i} className="rounded-2xl bg-sky-100 p-3">
                 <p className="text-3xl">{s.t.bild}</p>
-                <p className="font-bold text-emerald-100">{s.name}</p>
-                <p className="text-2xl font-black text-amber-300">{punkte[i]}</p>
+                <p className="font-bold text-sky-950">{s.name}</p>
+                <p className="text-2xl font-black text-sky-600">{punkte[i]}</p>
               </div>
             ))}
           </div>
-          <p className="mt-3 text-xs text-emerald-400">
+          <p className="mt-3 text-xs text-sky-600">
             Jeder hat seine eigenen Aufgaben bekommen. Deshalb kann auch
             gewinnen, wer noch nicht so weit ist.
           </p>
@@ -4448,20 +4449,20 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
             key={i}
             className={
               "rounded-2xl p-2 text-center " +
-              (i === dran ? "bg-amber-400/20 ring-2 ring-amber-400" : "bg-emerald-900/60")
+              (i === dran ? "bg-sky-100 ring-2 ring-sky-400" : "bg-white ring-1 ring-sky-200")
             }
           >
             <p className="text-2xl">{s.t.bild}</p>
-            <p className="truncate text-xs font-bold text-emerald-100">{s.name}</p>
-            <p className="text-xl font-black text-amber-300">{punkte[i]}</p>
+            <p className="truncate text-xs font-bold text-sky-950">{s.name}</p>
+            <p className="text-xl font-black text-sky-600">{punkte[i]}</p>
           </div>
         ))}
       </div>
-      <p className="mt-3 text-center text-sm font-black text-amber-300">
+      <p className="mt-3 text-center text-sm font-black text-sky-600">
         {spieler.name} ist dran · Frage {runde + 1} von 6
       </p>
-      <div className="mt-2 rounded-3xl bg-gradient-to-b from-emerald-50 to-white p-6 text-center shadow-2xl">
-        <p className="text-4xl font-black text-emerald-950 sm:text-5xl">
+      <div className="mt-2 rounded-3xl bg-gradient-to-b from-white to-white p-6 text-center shadow-sm ring-1 ring-sky-200">
+        <p className="text-4xl font-black text-sky-950 sm:text-5xl">
           {phase === "kurz" && letzte === 0 ? (
             <Loesung text={fakt.text} getippt={eingabe} richtig={fakt.antwort} />
           ) : tippt ? (
@@ -4473,7 +4474,7 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
           )}
         </p>
         {phase === "kurz" && (
-          <p className={"mt-2 font-black " + (letzte ? "text-emerald-700" : "text-rose-700")}>
+          <p className={"mt-2 font-black " + (letzte ? "text-sky-700" : "text-rose-700")}>
             {letzte === 2 ? "Blitzschnell! +2" : letzte === 1 ? "Richtig! +1" : "Daneben"}
           </p>
         )}
@@ -4495,10 +4496,10 @@ function DuellLauf({ lauf, onEnde, stand, speichern }) {
           tasten={tasten}
         />
       </div>
-      <p className="mt-2 text-center text-xs text-emerald-400">
+      <p className="mt-2 text-center text-xs text-sky-600">
         Wer es blitzschnell weiß, bekommt doppelt: zwei Punkte!
       </p>
-      <button onClick={onEnde} className="mt-2 w-full text-center text-xs text-emerald-500">
+      <button onClick={onEnde} className="mt-2 w-full text-center text-xs text-sky-600">
         Duell abbrechen
       </button>
     </div>
@@ -4533,11 +4534,11 @@ function fortschritt(t) {
 
 function Kachel({ oben, unten, hell }) {
   return (
-    <div className="rounded-xl bg-emerald-950/50 p-2">
-      <p className={"text-sm font-black " + (hell ? "text-amber-300" : "text-emerald-100")}>
+    <div className="rounded-xl bg-sky-100 p-2">
+      <p className={"text-sm font-black " + (hell ? "text-sky-600" : "text-sky-950")}>
         {oben}
       </p>
-      <p className="text-[10px] text-emerald-400">{unten}</p>
+      <p className="text-[10px] text-sky-600">{unten}</p>
     </div>
   );
 }
@@ -4546,7 +4547,7 @@ function Trainerkarte({ name, t, onBild }) {
   const gefangen = anzahlGefangen(t);
   const f = fortschritt(t);
   return (
-    <div className="rounded-3xl border-2 border-amber-400/60 bg-gradient-to-br from-emerald-800 to-emerald-900 p-4">
+    <div className="rounded-3xl border-2 border-sky-300 bg-gradient-to-br from-white to-sky-50 p-4">
       <div className="flex items-center gap-3">
         <button
           onClick={onBild}
@@ -4556,25 +4557,25 @@ function Trainerkarte({ name, t, onBild }) {
           {t.bild}
         </button>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+          <p className="text-xs font-bold uppercase tracking-widest text-sky-600">
             Trainerkarte
           </p>
-          <p className="truncate text-2xl font-black text-emerald-50">{name}</p>
+          <p className="truncate text-2xl font-black text-sky-950">{name}</p>
         </div>
         <div className="text-right">
-          <p className="text-2xl font-black text-amber-300">{gefangen}</p>
-          <p className="text-[10px] text-emerald-300">von {ALLE_NR.length}</p>
+          <p className="text-2xl font-black text-sky-600">{gefangen}</p>
+          <p className="text-[10px] text-sky-700">von {ALLE_NR.length}</p>
         </div>
       </div>
       <div className="mt-3 grid grid-cols-5 gap-1 text-center">
-        <Kachel oben={f.sterne[0] + "/" + f.sterne[1]} unten="Sterne ★" />
-        <Kachel oben={f.pokale[0] + "/" + f.pokale[1]} unten="Pokale 🏆" />
-        <Kachel oben={f.rechnungen[0] + "/" + f.rechnungen[1]} unten="Rechnungen" />
-        <Kachel oben={f.tricks[0] + "/" + f.tricks[1]} unten="Tricks ✨" />
+        <Kachel oben={f.sterne[0] + "/" + f.sterne[1]} unten="Sterne" />
+        <Kachel oben={f.pokale[0] + "/" + f.pokale[1]} unten="Pokale" />
+        <Kachel oben={f.rechnungen[0] + "/" + f.rechnungen[1]} unten="Aufgaben" />
+        <Kachel oben={f.tricks[0] + "/" + f.tricks[1]} unten="Tricks" />
         <Kachel oben={trickPunkte(t)} unten="⚡ übrig" hell />
       </div>
       {meisterkrone(t) && (
-        <p className="a-funkeln mt-2 text-center text-sm font-black text-amber-300">
+        <p className="a-funkeln mt-2 text-center text-sm font-black text-sky-600">
           👑 Meisterkrone — alle zwölf Arenen in Gold.
         </p>
       )}
@@ -4721,18 +4722,18 @@ function Weg({ titel, unter, zahl, haupt, onClick }) {
       className={
         "kein-blau w-full rounded-2xl px-4 text-left shadow-lg transition active:translate-y-px " +
         (haupt
-          ? "bg-amber-400 py-3 hover:bg-amber-300"
-          : "border-2 border-emerald-500/50 py-2.5 hover:bg-emerald-800/50")
+          ? "bg-sky-400 py-3 hover:bg-sky-400"
+          : "border-2 border-sky-300 py-2.5 hover:bg-sky-100")
       }
     >
-      <p className={"font-black " + (haupt ? "text-lg text-emerald-950" : "text-sm text-emerald-100")}>
+      <p className={"font-black " + (haupt ? "text-lg text-sky-950" : "text-sm text-sky-950")}>
         {titel}
       </p>
-      <p className={"text-[11px] leading-snug " + (haupt ? "text-emerald-900/75" : "text-emerald-400")}>
+      <p className={"text-[11px] leading-snug " + (haupt ? "text-sky-950/75" : "text-sky-600")}>
         {unter}
       </p>
       {zahl && (
-        <p className={"text-[11px] font-bold " + (haupt ? "text-emerald-900/60" : "text-amber-300")}>
+        <p className={"text-[11px] font-bold " + (haupt ? "text-sky-950/60" : "text-sky-600")}>
           {zahl}
         </p>
       )}
@@ -4748,9 +4749,9 @@ function TastenErklaerung({ onWeiter }) {
   const [vorschau] = useState(() => gemischteTasten());
   return (
     <div className="mx-auto max-w-md p-4">
-      <div className="a-auftauchen rounded-3xl border-2 border-amber-400/60 bg-emerald-900/80 p-5 text-emerald-100">
+      <div className="a-auftauchen rounded-3xl border-2 border-sky-300 bg-white p-5 text-sky-950">
         <div className="text-center text-5xl">🔀</div>
-        <p className="mt-2 text-center text-2xl font-black text-amber-300">
+        <p className="mt-2 text-center text-2xl font-black text-sky-600">
           Die Tasten sind verzaubert!
         </p>
         <p className="mt-3">
@@ -4764,11 +4765,11 @@ function TastenErklaerung({ onWeiter }) {
           Wer sich nur merkt, <b>wo</b> er hintippt, kommt jetzt ins Stolpern.
           Wer die Zahl im Kopf hat, findet sie überall.
         </p>
-        <p className="mt-2 font-bold text-amber-200">
+        <p className="mt-2 font-bold text-sky-700">
           Also: erst denken — 7 · 8 ist sechsundfünfzig. Dann die 5 suchen,
           dann die 6.
         </p>
-        <p className="mt-2 text-emerald-300">
+        <p className="mt-2 text-sky-700">
           Keine Sorge: Fürs Suchen hast du alle Zeit. Und wenn es am Anfang
           holpert, ist das ganz normal — deine Wesen kommen dann einfach öfter
           vorbei, bis es sitzt.
@@ -4786,9 +4787,9 @@ function TastenErklaerung({ onWeiter }) {
 function DenkErklaerung({ onWeiter }) {
   return (
     <div className="mx-auto max-w-md p-4">
-      <div className="a-auftauchen rounded-3xl border-2 border-amber-400/60 bg-emerald-900/80 p-5 text-emerald-100">
+      <div className="a-auftauchen rounded-3xl border-2 border-sky-300 bg-white p-5 text-sky-950">
         <div className="text-center text-5xl">💡</div>
-        <p className="mt-2 text-center text-2xl font-black text-amber-300">
+        <p className="mt-2 text-center text-2xl font-black text-sky-600">
           Neu: Erst denken, dann tippen
         </p>
         <p className="mt-3">
@@ -4796,17 +4797,17 @@ function DenkErklaerung({ onWeiter }) {
         </p>
         <p className="mt-2">
           Ab jetzt siehst du zuerst nur die Rechnung. Hast du die Zahl im
-          Kopf, drückst du <b className="text-amber-200">Ich weiß es!</b>
+          Kopf, drückst du <b className="text-sky-700">Ich weiß es!</b>
         </p>
         <p className="mt-2">
           Dann kommen die Tasten — und die Uhr steht. Such die Ziffern ganz in
           Ruhe.
         </p>
-        <p className="mt-2 font-bold text-amber-200">
+        <p className="mt-2 font-bold text-sky-700">
           Blitzschnell bist du, wenn du es schnell <i>weißt</i>. Nicht, wenn
           du schnell tippst.
         </p>
-        <p className="mt-2 text-emerald-300">
+        <p className="mt-2 text-sky-700">
           Und noch etwas: Deine Wesen verstecken sich jetzt, bis du geantwortet
           hast. Rechne — dann siehst du, wer es war!
         </p>
@@ -4821,9 +4822,9 @@ function DenkErklaerung({ onWeiter }) {
 function SpielErklaerung({ onWeiter, zurueck }) {
   return (
     <div className="mx-auto max-w-md p-4">
-      <div className="a-auftauchen rounded-3xl border-2 border-amber-400/60 bg-emerald-900/80 p-5 text-emerald-100">
+      <div className="a-auftauchen rounded-3xl border-2 border-sky-300 bg-white p-5 text-sky-950">
         <div className="text-center text-5xl">🗺️</div>
-        <p className="mt-2 text-center text-2xl font-black text-amber-300">
+        <p className="mt-2 text-center text-2xl font-black text-sky-600">
           So läuft das hier
         </p>
         <p className="mt-2">
@@ -4831,35 +4832,35 @@ function SpielErklaerung({ onWeiter, zurueck }) {
           gemeint. Wer rechnet, fängt es.
         </p>
 
-        <p className="mt-4 font-black text-amber-200">🌿 Streifzug</p>
+        <p className="mt-4 font-black text-sky-700">🌿 Streifzug</p>
         <p>
           Dein Trainingsplatz. Hier fängst du neue Wesen — und hier werden sie
           stark. Jedes Wesen kennt mehrere Rechnungen und zeigt dir nach und
           nach alle. Wer eine Weile nicht dran war, kommt von selbst wieder
-          vorbei. <b className="text-amber-200">Gefangen heißt noch nicht
+          vorbei. <b className="text-sky-700">Gefangen heißt noch nicht
           gekonnt:</b> stark werden deine Wesen nur hier.
         </p>
 
-        <p className="mt-3 font-black text-amber-200">🏅 Arenen</p>
+        <p className="mt-3 font-black text-sky-700">🏅 Arenen</p>
         <p>
           Die Bühne. Zwölf Rechnungen gegen einen Arenaleiter — für jede
           richtige stürmt eines deiner Wesen los. Es gibt Orden und bis zu drei
           Sterne pro Arena. Wer blitzschnell antwortet, sammelt ⚡.
         </p>
 
-        <p className="mt-3 font-black text-amber-200">📕 Zahlodex</p>
+        <p className="mt-3 font-black text-sky-700">📕 Zahlodex</p>
         <p>
           Deine Sammlung. Hier siehst du jedes Wesen, seine Tricks und welche
           Rechnungen ihm noch fehlen. Und hier gibst du ⚡ aus.
         </p>
 
-        <p className="mt-3 font-black text-amber-200">⚔️ Duell</p>
+        <p className="mt-3 font-black text-sky-700">⚔️ Duell</p>
         <p>Zu zweit an einem Gerät. Wer weiß es zuerst?</p>
 
-        <p className="mt-3 font-black text-amber-200">💡 Erst denken, dann tippen</p>
+        <p className="mt-3 font-black text-sky-700">💡 Erst denken, dann tippen</p>
         <p>
           Zuerst siehst du nur die Rechnung. Hast du die Zahl im Kopf, drück{" "}
-          <b className="text-amber-200">Ich weiß es!</b> Erst dann kommen die
+          <b className="text-sky-700">Ich weiß es!</b> Erst dann kommen die
           Tasten — und die wandern: jede Runde liegen die Zahlen woanders.
           Fürs Suchen hast du alle Zeit.
         </p>
@@ -5087,14 +5088,14 @@ function Abfrage({ t, name, speichern, onZurueck }) {
     return (
       <div className="mx-auto max-w-md p-4">
         <Kopf titel="Abfragen 🗣️" unter="Zu zweit, ganz ohne Tasten" onZurueck={onZurueck} />
-        <div className="rounded-2xl bg-emerald-900/60 p-4 text-sm leading-relaxed text-emerald-100">
-          <p className="font-black text-amber-300">So geht's</p>
+        <div className="rounded-2xl bg-white ring-1 ring-sky-200 p-4 text-sm leading-relaxed text-sky-950">
+          <p className="font-black text-sky-600">So geht's</p>
           <p className="mt-1">
             Lies die Rechnung vor oder zeig sie her. {name} sagt die Antwort
             laut — ohne Tasten, ohne Hilfe. Dann tippst du auf „Lösung zeigen"
             und sagst, wie es war.
           </p>
-          <p className="mt-2 text-emerald-300">
+          <p className="mt-2 text-sky-700">
             ⚡ <b>Sofort gewusst</b> zählt wie blitzschnell im Spiel, ✅{" "}
             <b>Gewusst</b> wie eine normale richtige Antwort. Was nicht gewusst
             wurde, kommt in den nächsten Tagen öfter dran.
@@ -5110,13 +5111,13 @@ function Abfrage({ t, name, speichern, onZurueck }) {
                 onClick={() => starte(w)}
                 className={
                   "kein-blau w-full rounded-2xl p-4 text-left transition " +
-                  (zahl > 0 ? "bg-emerald-800/70 hover:bg-emerald-700" : "bg-emerald-900/50 opacity-50")
+                  (zahl > 0 ? "bg-sky-100 hover:bg-sky-200" : "bg-white ring-1 ring-sky-200 opacity-50")
                 }
               >
-                <p className="font-black text-emerald-50">
+                <p className="font-black text-sky-950">
                   {w === "malfeld" ? "✖️ Malfeld" : "🌿 Wiesenweg"}
                 </p>
-                <p className="text-xs text-emerald-300">
+                <p className="text-xs text-sky-700">
                   {zahl > 0
                     ? zahl + " gefangene Wesen · " + Math.min(zahl, ABFRAGE_LAENGE) + " Fragen"
                     : "Noch keine Wesen gefangen"}
@@ -5136,31 +5137,31 @@ function Abfrage({ t, name, speichern, onZurueck }) {
     const offenListe = antworten.filter((a) => a.art === "falsch");
     return (
       <div className="mx-auto max-w-md p-4 text-center">
-        <div className="a-auftauchen rounded-3xl bg-emerald-900/70 p-5">
+        <div className="a-auftauchen rounded-3xl bg-white ring-1 ring-sky-200 p-5">
           <div className="text-6xl">{offenListe.length === 0 ? "🌟" : "🗣️"}</div>
-          <p className="mt-2 text-5xl font-black text-amber-300">
+          <p className="mt-2 text-5xl font-black text-sky-600">
             {gewusst}/{antworten.length}
           </p>
-          <p className="text-xs uppercase tracking-widest text-emerald-300">gewusst</p>
-          <p className="mt-2 text-sm text-emerald-200">davon {sofort} sofort ⚡</p>
+          <p className="text-xs uppercase tracking-widest text-sky-700">gewusst</p>
+          <p className="mt-2 text-sm text-sky-900">davon {sofort} sofort ⚡</p>
           {offenListe.length > 0 ? (
-            <div className="mt-4 rounded-2xl bg-emerald-950/50 p-3 text-left">
-              <p className="text-center text-xs font-bold uppercase tracking-widest text-emerald-300">
+            <div className="mt-4 rounded-2xl bg-sky-100 p-3 text-left">
+              <p className="text-center text-xs font-bold uppercase tracking-widest text-sky-700">
                 Die üben wir noch
               </p>
               <div className="mt-2 flex flex-wrap justify-center gap-2">
                 {offenListe.map(({ fakt }, k) => (
-                  <span key={k} className="rounded-xl bg-emerald-800/70 px-3 py-1 font-black text-emerald-50">
+                  <span key={k} className="rounded-xl bg-sky-100 px-3 py-1 font-black text-sky-950">
                     {loesungsText(fakt)}
                   </span>
                 ))}
               </div>
-              <p className="mt-2 text-center text-xs text-emerald-400">
+              <p className="mt-2 text-center text-xs text-sky-600">
                 Die Wesen dazu kommen jetzt öfter vorbei.
               </p>
             </div>
           ) : (
-            <p className="mt-3 font-black text-amber-200">Alles gewusst — ohne eine einzige Taste!</p>
+            <p className="mt-3 font-black text-sky-700">Alles gewusst — ohne eine einzige Taste!</p>
           )}
           <div className="mt-4 space-y-2">
             <Knopf onClick={() => starte(welt)}>Noch eine Runde</Knopf>
@@ -5180,32 +5181,32 @@ function Abfrage({ t, name, speichern, onZurueck }) {
         unter={(welt === "malfeld" ? "Malfeld" : "Wiesenweg") + " · " + (pos + 1) + " von " + runde.length}
         onZurueck={onZurueck}
       />
-      <div className="rounded-3xl bg-gradient-to-b from-emerald-50 to-white p-8 text-center shadow-2xl">
-        <p className="text-5xl font-black text-emerald-950">
+      <div className="rounded-3xl bg-gradient-to-b from-white to-white p-8 text-center shadow-sm ring-1 ring-sky-200">
+        <p className="text-5xl font-black text-sky-950">
           {offen ? loesungsText(fakt) : frageText(fakt)}
         </p>
         {!offen && (
-          <p className="mt-4 text-sm font-bold text-emerald-700">Sag die Antwort laut! 🗣️</p>
+          <p className="mt-4 text-sm font-bold text-sky-700">Sag die Antwort laut! 🗣️</p>
         )}
       </div>
 
       {!offen ? (
         <div className="mt-6">
           <Knopf onClick={() => { setOffen(true); Ton.tippen(); }}>👀 Lösung zeigen</Knopf>
-          <p className="mt-2 text-center text-xs text-emerald-400">
+          <p className="mt-2 text-center text-xs text-sky-600">
             Erst wenn {name} geantwortet hat.
           </p>
         </div>
       ) : (
         <div className="a-rutschen mt-6 space-y-2">
-          <p className="text-center text-xs font-bold uppercase tracking-widest text-emerald-300">
+          <p className="text-center text-xs font-bold uppercase tracking-widest text-sky-700">
             Wie war's?
           </p>
           <Knopf onClick={() => bewerte("blitz")}>⚡ Sofort gewusst</Knopf>
           <Knopf art="gruen" onClick={() => bewerte("normal")}>✅ Gewusst, mit Überlegen</Knopf>
           <button
             onClick={() => bewerte("falsch")}
-            className="kein-blau w-full rounded-2xl border-2 border-rose-400/60 px-5 py-4 text-lg font-black text-rose-200 active:translate-y-px"
+            className="kein-blau w-full rounded-2xl border-2 border-rose-400/60 px-5 py-4 text-lg font-black text-rose-700 active:translate-y-px"
           >
             ❌ Nicht gewusst
           </button>
@@ -5266,23 +5267,23 @@ function Einstellungen({ t, speichern, onZurueck, onSicherung, onAbfrage }) {
           ob die Rechnungen wirklich sitzen. */}
       <button
         onClick={onAbfrage}
-        className="kein-blau mb-3 w-full rounded-2xl bg-amber-400 p-4 text-left shadow-lg active:translate-y-px"
+        className="kein-blau mb-3 w-full rounded-2xl bg-sky-400 p-4 text-left shadow-lg active:translate-y-px"
       >
-        <p className="text-lg font-black text-emerald-950">🗣️ Abfragen — ohne Tasten</p>
-        <p className="text-xs text-emerald-900/80">
+        <p className="text-lg font-black text-sky-950">🗣️ Abfragen — ohne Tasten</p>
+        <p className="text-xs text-sky-950/80">
           Du fragst, dein Kind antwortet laut, du tippst, wie es war. Zeigt, ob
           die Zahl wirklich im Kopf ist — und zählt im Karteikasten mit.
         </p>
       </button>
 
-      <div className="rounded-2xl bg-emerald-900/60 p-4">
-        <p className="text-sm font-black text-amber-300">Namen der Wesen</p>
-        <p className="mt-1 text-xs leading-relaxed text-emerald-300">
+      <div className="rounded-2xl bg-white ring-1 ring-sky-200 p-4">
+        <p className="text-sm font-black text-sky-600">Namen der Wesen</p>
+        <p className="mt-1 text-xs leading-relaxed text-sky-700">
           Jedes Wesen hat einen Fantasienamen als Vorgabe. Wer will, gibt ihm
           im Zahlodex einen eigenen — Name und Bild, jederzeit änderbar. Die
           Vorgabe geht dabei nie verloren.
         </p>
-        <p className="mt-2 text-sm font-bold text-emerald-100">
+        <p className="mt-2 text-sm font-bold text-sky-950">
           {eigene === 0
             ? "Zurzeit alle 46 mit Fantasienamen."
             : eigene + (eigene === 1 ? " Wesen hat" : " Wesen haben") + " einen eigenen Namen."}
@@ -5292,11 +5293,11 @@ function Einstellungen({ t, speichern, onZurueck, onSicherung, onAbfrage }) {
         {(eigene > 0 || angriffe > 0) && (
           <div className="mt-3">
             {sicherFrage ? (
-              <div className="a-rutschen rounded-2xl border-2 border-rose-400/60 bg-rose-950/40 p-3">
-                <p className="text-sm font-black text-rose-200">
+              <div className="a-rutschen rounded-2xl border-2 border-rose-400/60 bg-rose-50 p-3">
+                <p className="text-sm font-black text-rose-700">
                   Alle eigenen Namen löschen?
                 </p>
-                <p className="mt-1 text-xs text-rose-200/80">
+                <p className="mt-1 text-xs text-rose-700/80">
                   Danach heißen wieder alle wie in der Vorgabe. Sichere dir
                   vorher die Liste, wenn du sie behalten willst.
                 </p>
@@ -5324,9 +5325,9 @@ function Einstellungen({ t, speichern, onZurueck, onSicherung, onAbfrage }) {
         )}
       </div>
 
-      <div className="mt-3 rounded-2xl border-2 border-emerald-700 p-4">
-        <p className="text-sm font-black text-emerald-100">Namensliste weitergeben</p>
-        <p className="mt-1 text-xs leading-relaxed text-emerald-400">
+      <div className="mt-3 rounded-2xl border-2 border-sky-200 p-4">
+        <p className="text-sm font-black text-sky-950">Namensliste weitergeben</p>
+        <p className="mt-1 text-xs leading-relaxed text-sky-600">
           Nur die Namen, ohne Spielstand. Praktisch, um am Rechner eine Liste
           zusammenzustellen und sie hier einzusetzen.
         </p>
@@ -5339,27 +5340,27 @@ function Einstellungen({ t, speichern, onZurueck, onSicherung, onAbfrage }) {
           readOnly
           value={code}
           onFocus={(e) => e.target.select()}
-          className="mt-2 h-14 w-full rounded-xl bg-emerald-950/70 p-2 font-mono text-[10px] leading-tight text-emerald-400"
+          className="mt-2 h-14 w-full rounded-xl bg-sky-100 p-2 font-mono text-[10px] leading-tight text-sky-600"
         />
         <textarea
           value={eingabe}
           placeholder={NAMEN_KOPF + "…"}
           onChange={(e) => { setEingabe(e.target.value); if (e.target.value.trim()) pruefe(e.target.value); }}
-          className="mt-2 h-14 w-full rounded-xl bg-emerald-950/70 p-2 font-mono text-[10px] text-emerald-200 placeholder-emerald-700"
+          className="mt-2 h-14 w-full rounded-xl bg-sky-100 p-2 font-mono text-[10px] text-sky-900 placeholder-sky-300"
         />
-        {fehler && <p className="mt-2 text-xs font-bold text-rose-300">{fehler}</p>}
+        {fehler && <p className="mt-2 text-xs font-bold text-rose-700">{fehler}</p>}
         {vorschau && (
-          <div className="a-rutschen mt-2 rounded-2xl bg-emerald-950/60 p-3">
-            <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+          <div className="a-rutschen mt-2 rounded-2xl bg-sky-100 p-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-sky-600">
               Das ist drin
             </p>
-            <p className="mt-1 text-sm text-emerald-100">
+            <p className="mt-1 text-sm text-sky-950">
               {Object.keys(vorschau.namen).length} Namen
               {Object.keys(vorschau.angriffe || {}).length > 0
                 ? " · " + Object.keys(vorschau.angriffe).length + " Wesen mit eigenen Angriffen"
                 : ""}
             </p>
-            <div className="mt-1 max-h-24 overflow-y-auto text-[11px] text-emerald-400">
+            <div className="mt-1 max-h-24 overflow-y-auto text-[11px] text-sky-600">
               {Object.entries(vorschau.namen).slice(0, 30).map(([nr, e]) => (
                 <span key={nr} className="mr-2 inline-block">
                   {e.bild || ""}{e.name || ""}
@@ -5385,12 +5386,12 @@ function Einstellungen({ t, speichern, onZurueck, onSicherung, onAbfrage }) {
 
       <button
         onClick={onSicherung}
-        className="kein-blau mt-3 w-full rounded-2xl border-2 border-emerald-700 p-3 text-center text-sm font-bold text-emerald-300"
+        className="kein-blau mt-3 w-full rounded-2xl border-2 border-sky-200 p-3 text-center text-sm font-bold text-sky-700"
       >
         🔐 Sicherung des ganzen Spielstands
       </button>
 
-      <p className="mt-3 text-center text-[11px] leading-relaxed text-emerald-500">
+      <p className="mt-3 text-center text-[11px] leading-relaxed text-sky-600">
         Namen sind reine Deko. Welche Rechnung zu welchem Wesen gehört, hängt
         allein an der Zahl — daran ändert kein Name etwas.
       </p>
@@ -5465,10 +5466,10 @@ function Sicherung({ stand, setStand, onZurueck }) {
   if (fertig) {
     return (
       <div className="mx-auto max-w-md p-4 text-center">
-        <div className="a-auftauchen rounded-3xl bg-emerald-900/70 p-6">
+        <div className="a-auftauchen rounded-3xl bg-white ring-1 ring-sky-200 p-6">
           <div className="text-6xl">🎒</div>
-          <h2 className="mt-2 text-2xl font-black text-amber-300">Alles wieder da!</h2>
-          <p className="mt-1 text-sm text-emerald-300">
+          <h2 className="mt-2 text-2xl font-black text-sky-600">Alles wieder da!</h2>
+          <p className="mt-1 text-sm text-sky-700">
             {Object.keys(vorschau.trainer).join(", ")} — dein Stand ist zurück.
           </p>
           <div className="mt-4">
@@ -5483,9 +5484,9 @@ function Sicherung({ stand, setStand, onZurueck }) {
     <div className="mx-auto max-w-md p-4">
       <Kopf titel="Sicherung" unter={st.text} onZurueck={onZurueck} />
 
-      <div className="rounded-2xl bg-emerald-900/60 p-4">
-        <p className="text-sm font-black text-amber-300">Deinen Stand sichern</p>
-        <p className="mt-1 text-xs leading-relaxed text-emerald-300">
+      <div className="rounded-2xl bg-white ring-1 ring-sky-200 p-4">
+        <p className="text-sm font-black text-sky-600">Deinen Stand sichern</p>
+        <p className="mt-1 text-xs leading-relaxed text-sky-700">
           Alles, was du gesammelt hast, liegt nur in diesem Browser. Leg dir
           eine Sicherung an — als Datei oder als Code in einer Notiz. Damit
           holst du deinen Zahlodex auf jedes Gerät zurück.
@@ -5500,13 +5501,13 @@ function Sicherung({ stand, setStand, onZurueck }) {
           readOnly
           value={code}
           onFocus={(e) => e.target.select()}
-          className="mt-2 h-20 w-full rounded-xl bg-emerald-950/70 p-2 font-mono text-[10px] leading-tight text-emerald-400"
+          className="mt-2 h-20 w-full rounded-xl bg-sky-100 p-2 font-mono text-[10px] leading-tight text-sky-600"
         />
       </div>
 
-      <div className="mt-3 rounded-2xl border-2 border-emerald-700 p-4">
-        <p className="text-sm font-black text-emerald-100">Sicherung zurückholen</p>
-        <p className="mt-1 text-xs leading-relaxed text-emerald-400">
+      <div className="mt-3 rounded-2xl border-2 border-sky-200 p-4">
+        <p className="text-sm font-black text-sky-950">Sicherung zurückholen</p>
+        <p className="mt-1 text-xs leading-relaxed text-sky-600">
           Datei auswählen oder den Code hier einsetzen. Du siehst vorher, was
           drin ist.
         </p>
@@ -5514,35 +5515,35 @@ function Sicherung({ stand, setStand, onZurueck }) {
           type="file"
           accept=".txt,text/plain"
           onChange={ausDatei}
-          className="mt-2 w-full text-xs text-emerald-300 file:mr-2 file:rounded-xl file:border-0 file:bg-emerald-700 file:px-3 file:py-2 file:text-xs file:font-bold file:text-emerald-50"
+          className="mt-2 w-full text-xs text-sky-700 file:mr-2 file:rounded-xl file:border-0 file:bg-sky-200 file:px-3 file:py-2 file:text-xs file:font-bold file:text-sky-950"
         />
         <textarea
           value={eingabe}
           placeholder={CODE_KOPF + "…"}
           onChange={(e) => { setEingabe(e.target.value); if (e.target.value.trim()) pruefe(e.target.value); }}
-          className="mt-2 h-16 w-full rounded-xl bg-emerald-950/70 p-2 font-mono text-[10px] text-emerald-200 placeholder-emerald-700"
+          className="mt-2 h-16 w-full rounded-xl bg-sky-100 p-2 font-mono text-[10px] text-sky-900 placeholder-sky-300"
         />
-        {fehler && <p className="mt-2 text-xs font-bold text-rose-300">{fehler}</p>}
+        {fehler && <p className="mt-2 text-xs font-bold text-rose-700">{fehler}</p>}
         {vorschau && (
-          <div className="a-rutschen mt-3 rounded-2xl bg-emerald-950/60 p-3">
-            <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+          <div className="a-rutschen mt-3 rounded-2xl bg-sky-100 p-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-sky-600">
               Das ist drin
             </p>
             {Object.entries(vorschau.trainer).map(([n, t2]) => (
-              <p key={n} className="mt-1 text-sm text-emerald-100">
+              <p key={n} className="mt-1 text-sm text-sky-950">
                 {t2.bild} <b>{n}</b>{" "}
-                <span className="text-emerald-400">
+                <span className="text-sky-600">
                   — {anzahlGefangen(t2)} Wesen · {sterneGesamt(t2)} Sterne ·{" "}
                   {tricksGesamt(t2)} Tricks
                 </span>
               </p>
             ))}
             {vorschau.gesichert && (
-              <p className="mt-1 text-[11px] text-emerald-500">
+              <p className="mt-1 text-[11px] text-sky-600">
                 gesichert am {datumKurz(vorschau.gesichert)}
               </p>
             )}
-            <p className="mt-2 text-xs font-bold text-amber-200">
+            <p className="mt-2 text-xs font-bold text-sky-700">
               Achtung: Dein jetziger Stand wird dadurch ersetzt.
             </p>
             <div className="mt-2">
@@ -5552,7 +5553,7 @@ function Sicherung({ stand, setStand, onZurueck }) {
         )}
       </div>
 
-      <p className="mt-3 text-center text-[11px] leading-relaxed text-emerald-500">
+      <p className="mt-3 text-center text-[11px] leading-relaxed text-sky-600">
         Nichts davon verlässt dein Gerät. Die Sicherung liegt genau dort, wo du
         sie hinlegst.
       </p>
@@ -5576,17 +5577,17 @@ function TrainerWahl({ stand, waehle, lege, loesche, zurueck, onSicherung }) {
           <div key={n} className="flex items-center gap-2">
             <button
               onClick={() => waehle(n)}
-              className="kein-blau flex flex-1 items-center gap-3 rounded-2xl bg-emerald-800/70 p-3 text-left hover:bg-emerald-700"
+              className="kein-blau flex flex-1 items-center gap-3 rounded-2xl bg-sky-100 p-3 text-left hover:bg-sky-200"
             >
               <span className="text-3xl">{stand.trainer[n].bild}</span>
-              <span className="flex-1 font-black text-emerald-50">{n}</span>
-              <span className="text-sm text-emerald-300">
+              <span className="flex-1 font-black text-sky-950">{n}</span>
+              <span className="text-sm text-sky-700">
                 {anzahlGefangen(stand.trainer[n])} Wesen
               </span>
             </button>
             <button
               onClick={() => setWeg(weg === n ? null : n)}
-              className="kein-blau rounded-xl border-2 border-rose-500/40 px-3 py-3 text-xs text-rose-300"
+              className="kein-blau rounded-xl border-2 border-rose-500/40 px-3 py-3 text-xs text-rose-700"
             >
               ✕
             </button>
@@ -5595,11 +5596,11 @@ function TrainerWahl({ stand, waehle, lege, loesche, zurueck, onSicherung }) {
       </div>
 
       {weg && (
-        <div className="a-rutschen mt-3 rounded-2xl border-2 border-rose-400/60 bg-rose-950/40 p-4">
-          <p className="text-sm font-black text-rose-200">
+        <div className="a-rutschen mt-3 rounded-2xl border-2 border-rose-400/60 bg-rose-50 p-4">
+          <p className="text-sm font-black text-rose-700">
             {weg} wirklich löschen?
           </p>
-          <p className="mt-1 text-xs leading-relaxed text-rose-200/80">
+          <p className="mt-1 text-xs leading-relaxed text-rose-700/80">
             {anzahlGefangen(stand.trainer[weg])} Wesen,{" "}
             {sterneGesamt(stand.trainer[weg])} Sterne und{" "}
             {tricksGesamt(stand.trainer[weg])} Tricks sind dann weg. Das lässt
@@ -5621,20 +5622,20 @@ function TrainerWahl({ stand, waehle, lege, loesche, zurueck, onSicherung }) {
 
       <button
         onClick={onSicherung}
-        className="kein-blau mt-3 w-full rounded-2xl border-2 border-emerald-700 p-3 text-center text-sm font-bold text-emerald-300"
+        className="kein-blau mt-3 w-full rounded-2xl border-2 border-sky-200 p-3 text-center text-sm font-bold text-sky-700"
       >
         🔐 Sicherung anlegen oder zurückholen
       </button>
 
-      <div className="mt-5 rounded-2xl bg-emerald-900/60 p-3">
-        <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+      <div className="mt-5 rounded-2xl bg-white ring-1 ring-sky-200 p-3">
+        <p className="text-xs font-bold uppercase tracking-widest text-sky-600">
           Neue Trainerkarte
         </p>
         <input
           value={neu}
           onChange={(e) => setNeu(e.target.value.slice(0, 14))}
           placeholder="Name"
-          className="mt-2 w-full rounded-xl border-2 border-emerald-600 bg-emerald-950 px-3 py-2 text-emerald-50 outline-none focus:border-amber-400"
+          className="mt-2 w-full rounded-xl border-2 border-sky-300 bg-sky-100 px-3 py-2 text-sky-950 outline-none focus:border-sky-400"
         />
         <div className="mt-2 flex flex-wrap gap-2">
           {TRAINER_BILDER.map((b) => (
@@ -5643,7 +5644,7 @@ function TrainerWahl({ stand, waehle, lege, loesche, zurueck, onSicherung }) {
               onClick={() => setBild(b)}
               className={
                 "kein-blau rounded-xl px-2 py-1 text-2xl " +
-                (bild === b ? "bg-amber-400/30 ring-2 ring-amber-400" : "bg-emerald-800")
+                (bild === b ? "bg-sky-100 ring-2 ring-sky-400" : "bg-sky-100")
               }
             >
               {b}
@@ -5688,22 +5689,22 @@ function Weltwahl({ t, waehle, zurueck }) {
             <button
               key={w}
               onClick={() => waehle(w)}
-              className="kein-blau w-full rounded-3xl bg-gradient-to-br from-emerald-700 to-emerald-900 p-4 text-left transition hover:from-emerald-600"
+              className="kein-blau w-full rounded-3xl bg-gradient-to-br from-white to-sky-50 p-4 text-left transition hover:from-sky-50"
             >
               <div className="flex items-center gap-3">
                 <span className="text-5xl">{welt.bild}</span>
                 <div className="flex-1">
-                  <p className="text-xl font-black text-amber-300">{welt.name}</p>
-                  <p className="text-sm text-emerald-200">{welt.was}</p>
+                  <p className="text-xl font-black text-sky-600">{welt.name}</p>
+                  <p className="text-sm text-sky-900">{welt.was}</p>
                 </div>
               </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-emerald-950">
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-sky-100">
                 <div
-                  className="h-full bg-amber-400"
+                  className="h-full bg-sky-400"
                   style={{ width: (hab / welt.nrs.length) * 100 + "%" }}
                 />
               </div>
-              <p className="mt-1 text-xs text-emerald-300">
+              <p className="mt-1 text-xs text-sky-700">
                 {hab} von {welt.nrs.length} Wesen ·{" "}
                 {dran > 0
                   ? (dran === 1 ? "eines freut sich" : besuchZahl(dran) + " freuen sich") + " auf dich"
@@ -5711,7 +5712,7 @@ function Weltwahl({ t, waehle, zurueck }) {
               </p>
               {/* Gefangen heißt noch nicht gekonnt: hier steht, bei wie
                   vielen Wesen wirklich jede Rechnung schon saß. */}
-              <p className="mt-0.5 text-xs text-emerald-400">
+              <p className="mt-0.5 text-xs text-sky-600">
                 {erf} von {hab} erforscht
                 {offen > 0
                   ? " · " + offen + " zeigen dir noch was"
@@ -5720,7 +5721,7 @@ function Weltwahl({ t, waehle, zurueck }) {
                   : ""}
               </p>
               {bereit > 0 && (
-                <p className="mt-0.5 text-xs font-bold text-amber-300">
+                <p className="mt-0.5 text-xs font-bold text-sky-600">
                   ✨ {bereit} {bereit === 1 ? "Wesen ist" : "Wesen sind"} reif für einen
                   neuen Trick
                 </p>
@@ -5795,7 +5796,7 @@ function App() {
 
   if (!stand) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-4xl text-emerald-300">
+      <div className="flex min-h-screen items-center justify-center text-4xl text-sky-700">
         …
       </div>
     );
@@ -6023,35 +6024,35 @@ function App() {
       <Stile />
       <div className="mx-auto max-w-md p-4">
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-xs font-bold uppercase tracking-[0.3em] text-amber-400">
+          <p className="text-xs font-bold uppercase tracking-[0.3em] text-sky-500">
             Zahlodex
           </p>
           <div className="flex gap-2">
             <button
               onClick={() => setErklaerung(true)}
-              className="kein-blau rounded-xl border-2 border-emerald-600 px-3 py-1 text-sm text-emerald-200"
+              className="kein-blau rounded-xl border-2 border-sky-300 px-3 py-1 text-sm text-sky-900"
             >
               ?
             </button>
             <button
               onClick={() => setAnsicht("einstellungen")}
-              className="kein-blau rounded-xl border-2 border-emerald-600 px-3 py-1 text-sm text-emerald-200"
+              className="kein-blau rounded-xl border-2 border-sky-300 px-3 py-1 text-sm text-sky-900"
             >
               ⚙️
             </button>
             <button
               onClick={() => setTonAn(!tonAn)}
-              className="kein-blau rounded-xl border-2 border-emerald-600 px-3 py-1 text-sm text-emerald-200"
+              className="kein-blau rounded-xl border-2 border-sky-300 px-3 py-1 text-sm text-sky-900"
             >
               {tonAn ? "🔊" : "🔇"}
             </button>
           </div>
         </div>
 
-        <h1 className="text-3xl font-black leading-tight text-amber-300">
+        <h1 className="text-3xl font-black leading-tight text-sky-600">
           Die Rechen-Arena
         </h1>
-        <p className="mt-1 text-sm text-emerald-300">
+        <p className="mt-1 text-sm text-sky-700">
           Jedes Ergebnis ist ein Wesen. Wer rechnet, fängt es.
         </p>
 
@@ -6060,8 +6061,8 @@ function App() {
         </div>
 
         {bildWaehlen && (
-          <div className="a-rutschen mt-2 rounded-2xl bg-emerald-900/60 p-3">
-            <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+          <div className="a-rutschen mt-2 rounded-2xl bg-white ring-1 ring-sky-200 p-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-sky-600">
               Bild für {stand.aktiv}
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -6071,7 +6072,7 @@ function App() {
                   onClick={() => { speichereTrainer({ ...t, bild: b }); setBildWaehlen(false); }}
                   className={
                     "kein-blau rounded-xl px-2 py-1 text-3xl " +
-                    (t.bild === b ? "bg-amber-400/30 ring-2 ring-amber-400" : "bg-emerald-800")
+                    (t.bild === b ? "bg-sky-100 ring-2 ring-sky-400" : "bg-sky-100")
                   }
                 >
                   {b}
@@ -6083,34 +6084,34 @@ function App() {
 
         {/* Immer genau eine Sache — die wichtigste — statt drei Banner
             nebeneinander. Und nie eine leere Startseite. */}
-        <div className="a-rutschen mt-3 flex items-center gap-3 rounded-2xl bg-amber-400/15 p-3">
+        <div className="a-rutschen mt-3 flex items-center gap-3 rounded-2xl bg-sky-100 p-3">
           <span className="text-3xl">{schritt.bild}</span>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-sky-500">
               Heute
             </p>
-            <p className="text-sm font-bold leading-snug text-amber-100">{schritt.text}</p>
+            <p className="text-sm font-bold leading-snug text-sky-950">{schritt.text}</p>
           </div>
           <button
             onClick={() => {
               setDexBuch(schritt.ziel === "trickbuch");
               setAnsicht(schritt.ziel === "trickbuch" ? "dex" : schritt.ziel);
             }}
-            className="kein-blau shrink-0 rounded-xl bg-amber-400 px-3 py-2 text-xs font-black text-emerald-950"
+            className="kein-blau shrink-0 rounded-xl bg-sky-400 px-3 py-2 text-xs font-black text-sky-950"
           >
             Los
           </button>
         </div>
         {/* Das Tagesziel: eine Runde. Immer zu schaffen, und die
             Spieltage daneben wachsen nur. */}
-        <div className="mt-2 flex items-center justify-between rounded-2xl bg-emerald-900/60 px-3 py-2">
-          <p className="text-sm font-black text-emerald-100">
+        <div className="mt-2 flex items-center justify-between rounded-2xl bg-white ring-1 ring-sky-200 px-3 py-2">
+          <p className="text-sm font-black text-sky-950">
             {rundenHeute(t) > 0
               ? "✅ Heute geschafft!" +
                 (rundenHeute(t) > 1 ? " Schon " + rundenHeute(t) + " Runden." : "")
               : "⬜ Heute: eine Runde"}
           </p>
-          <p className="text-xs font-bold text-emerald-300">
+          <p className="text-xs font-bold text-sky-700">
             🗓️ {spieltage(t)} {spieltage(t) === 1 ? "Spieltag" : "Spieltage"}
           </p>
         </div>
@@ -6170,8 +6171,8 @@ function App() {
           className={
             "kein-blau mt-3 w-full rounded-2xl border-2 p-2 text-center text-xs font-bold transition " +
             (sicherung.dringend
-              ? "a-funkeln border-amber-400/60 bg-amber-400/15 text-amber-200"
-              : "border-emerald-800 text-emerald-500")
+              ? "a-funkeln border-sky-300 bg-sky-100 text-sky-700"
+              : "border-sky-200 text-sky-600")
           }
         >
           {sicherung.dringend ? "🔐 " + sicherung.text + " — jetzt sichern" : "⚙️ Einstellungen · " + sicherung.text}
@@ -6179,18 +6180,18 @@ function App() {
 
         <a
           href="./index.html"
-          className="mt-3 block rounded-2xl border-2 border-emerald-700 p-3 text-center text-sm text-emerald-300"
+          className="mt-3 block rounded-2xl border-2 border-sky-200 p-3 text-center text-sm text-sky-700"
         >
           🦉 Zurück zu Florentinas Rätselschule
         </a>
 
         {/* Der Satz, der die eigentliche Frage beantwortet: warum noch
             einmal in den Streifzug, wenn alle Wesen längst gefangen sind. */}
-        <p className="mt-4 text-center text-xs leading-relaxed text-emerald-400">
-          <b className="text-amber-300">Gefangen heißt noch nicht gekonnt.</b>{" "}
+        <p className="mt-4 text-center text-xs leading-relaxed text-sky-600">
+          <b className="text-sky-600">Gefangen heißt noch nicht gekonnt.</b>{" "}
           Auf dem Streifzug üben deine Wesen — in der Arena zeigen sie es.
         </p>
-        <p className="mt-3 text-center text-[11px] text-emerald-500">
+        <p className="mt-3 text-center text-[11px] text-sky-600">
           Zahlodex · Fassung {FASSUNG}
         </p>
       </div>

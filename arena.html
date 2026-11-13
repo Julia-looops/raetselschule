@@ -530,12 +530,12 @@ function seltenheit(n) {
   };
 }
 const RANG_FARBE = {
-  wiese: "text-lime-300",
-  einzel: "text-lime-200",
-  haeufig: "text-emerald-200",
-  selten: "text-sky-300",
-  legendaer: "text-amber-300",
-  meister: "text-fuchsia-300"
+  wiese: "text-lime-700",
+  einzel: "text-lime-600",
+  haeufig: "text-sky-700",
+  selten: "text-teal-600",
+  legendaer: "text-amber-600",
+  meister: "text-fuchsia-600"
 };
 
 /* Entwicklungslinie = Verdoppeln. 7 → 14 → 28 → 56 */
@@ -1307,7 +1307,7 @@ const Ton = {
    ============================================================ */
 function Stile() {
   return /*#__PURE__*/React.createElement("style", null, `
-      html,body{background:#062e26;}
+      html,body{background:#f3f9fd;}
       @keyframes wackel{0%,100%{transform:rotate(0)}20%{transform:rotate(-18deg)}
         40%{transform:rotate(16deg)}60%{transform:rotate(-12deg)}80%{transform:rotate(8deg)}}
       @keyframes auftauchen{from{opacity:0;transform:scale(.4) translateY(20px)}
@@ -1381,7 +1381,7 @@ function Zwanzigerfeld({
 }) {
   const felder = [];
   for (let i = 0; i < 20; i++) {
-    let farbe = "bg-emerald-950 border-emerald-700";
+    let farbe = "bg-white border-sky-200";
     if (i < voll) farbe = "bg-amber-300 border-amber-300";else if (i < voll + (dazu || 0)) farbe = "bg-sky-300 border-sky-300";
     if (weg && i >= voll - weg && i < voll) farbe = "bg-rose-400/40 border-rose-300 border-dashed";
     felder.push(/*#__PURE__*/React.createElement("div", {
@@ -1594,7 +1594,7 @@ function beeren(fakt) {
    Florentina und ihre Freunde dasselbe Gerät benutzen können.
    ============================================================ */
 /* wird beim Bauen ersetzt, siehe tools/build.mjs */
-const FASSUNG = "31 · 13.11.2026";
+const FASSUNG = "32 · 13.11.2026";
 const SPEICHER = "florentina-zahlodex";
 const TRAINER_BILDER = ["🐾", "🧢", "🎒", "🪄", "🛼", "🦄", "🚀", "🍀"];
 function leererTrainer(bild) {
@@ -1887,9 +1887,9 @@ function Knopf({
   klein
 }) {
   const stile = {
-    haupt: "bg-amber-400 text-emerald-950 hover:bg-amber-300",
-    ruhig: "border-2 border-emerald-500/50 text-emerald-100 hover:bg-emerald-800/50",
-    gruen: "bg-emerald-500 text-emerald-950 hover:bg-emerald-400"
+    haupt: "bg-sky-400 text-sky-950 hover:bg-sky-400",
+    ruhig: "border-2 border-sky-300 text-sky-950 hover:bg-sky-100",
+    gruen: "bg-emerald-500 text-sky-950 hover:bg-emerald-400"
   };
   return /*#__PURE__*/React.createElement("button", {
     onClick: onClick,
@@ -1908,13 +1908,13 @@ function Kopf({
     className: "mb-4 flex items-center gap-3"
   }, onZurueck && /*#__PURE__*/React.createElement("button", {
     onClick: onZurueck,
-    className: "kein-blau rounded-xl border-2 border-emerald-500/50 px-3 py-2 text-lg text-emerald-100"
+    className: "kein-blau rounded-xl border-2 border-sky-300 px-3 py-2 text-lg text-sky-950"
   }, "\u2039"), /*#__PURE__*/React.createElement("div", {
     className: "min-w-0 flex-1"
   }, /*#__PURE__*/React.createElement("h2", {
-    className: "truncate text-xl font-black text-amber-300"
+    className: "truncate text-xl font-black text-sky-600"
   }, titel), unter && /*#__PURE__*/React.createElement("p", {
-    className: "truncate text-xs text-emerald-300"
+    className: "truncate text-xs text-sky-700"
   }, unter)), rechts);
 }
 
@@ -1941,17 +1941,17 @@ function Ziffernblock({
   }, raster.map(z => /*#__PURE__*/React.createElement("button", {
     key: z,
     onClick: () => tippe(z),
-    className: "kein-blau rounded-2xl bg-emerald-800/70 py-4 text-2xl font-black text-emerald-50 active:bg-emerald-700"
+    className: "kein-blau rounded-2xl bg-white py-4 text-2xl font-black text-sky-950 shadow-sm ring-1 ring-sky-200 active:bg-sky-100"
   }, z)), /*#__PURE__*/React.createElement("button", {
     onClick: () => tippe("weg"),
-    className: "kein-blau rounded-2xl bg-emerald-900/70 py-4 text-xl font-black text-emerald-200 active:bg-emerald-800"
+    className: "kein-blau rounded-2xl bg-white ring-1 ring-sky-200 py-4 text-xl font-black text-sky-900 active:bg-sky-100"
   }, "\u2190"), /*#__PURE__*/React.createElement("button", {
     onClick: () => tippe(unten),
-    className: "kein-blau rounded-2xl bg-emerald-800/70 py-4 text-2xl font-black text-emerald-50 active:bg-emerald-700"
+    className: "kein-blau rounded-2xl bg-white py-4 text-2xl font-black text-sky-950 shadow-sm ring-1 ring-sky-200 active:bg-sky-100"
   }, unten), /*#__PURE__*/React.createElement("button", {
     onClick: onOk,
     disabled: gesperrt || wert === "",
-    className: "kein-blau rounded-2xl bg-amber-400 py-4 text-2xl font-black text-emerald-950 disabled:opacity-40 active:bg-amber-300"
+    className: "kein-blau rounded-2xl bg-sky-400 py-4 text-2xl font-black text-sky-950 disabled:opacity-40 active:bg-sky-400"
   }, "\u2713"));
 }
 
@@ -1976,13 +1976,13 @@ function AntwortFeld({
         denken.weissEs();
       },
       disabled: gesperrt,
-      className: "kein-blau flex h-[17.5rem] w-full flex-col items-center justify-center rounded-3xl bg-amber-400 text-emerald-950 shadow-lg transition active:translate-y-px disabled:opacity-40"
+      className: "kein-blau flex h-[17.5rem] w-full flex-col items-center justify-center rounded-3xl bg-sky-400 text-sky-950 shadow-lg transition active:translate-y-px disabled:opacity-40"
     }, /*#__PURE__*/React.createElement("span", {
       className: "text-5xl"
     }, "\uD83D\uDCA1"), /*#__PURE__*/React.createElement("span", {
       className: "mt-2 text-3xl font-black"
     }, "Ich wei\xDF es!")), /*#__PURE__*/React.createElement("p", {
-      className: "mt-2 h-5 text-center text-xs text-emerald-400"
+      className: "mt-2 h-5 text-center text-xs text-sky-600"
     }, "Erst denken. Die Tasten kommen danach."));
   }
   return /*#__PURE__*/React.createElement("div", {
@@ -1999,7 +1999,7 @@ function AntwortFeld({
       setWert("");
       denken.dochNicht();
     },
-    className: "kein-blau mt-2 h-5 w-full text-center text-xs text-emerald-400 underline " + (gesperrt ? "invisible" : "")
+    className: "kein-blau mt-2 h-5 w-full text-center text-xs text-sky-600 underline " + (gesperrt ? "invisible" : "")
   }, "Doch nicht \u2014 zeig mir die Rechnung nochmal"));
 }
 
@@ -2008,9 +2008,9 @@ function Verdeckt({
   wert
 }) {
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
-    className: "text-emerald-300"
+    className: "text-sky-700"
   }, "\uD83D\uDE48"), " ", /*#__PURE__*/React.createElement("span", {
-    className: "rounded-xl bg-amber-200 px-3"
+    className: "rounded-xl bg-sky-100 px-3"
   }, wert === "" ? "?" : wert));
 }
 
@@ -2024,9 +2024,9 @@ function Rechnungen({
     className: "mt-1 flex flex-wrap gap-1.5"
   }, liste.map((x, i) => /*#__PURE__*/React.createElement("span", {
     key: i,
-    className: "rounded-lg bg-emerald-950/60 px-2 py-1 text-sm font-bold text-emerald-100"
+    className: "rounded-lg bg-sky-100 px-2 py-1 text-sm font-bold text-sky-950"
   }, x)), mehr && /*#__PURE__*/React.createElement("span", {
-    className: "px-1 py-1 text-sm text-emerald-400"
+    className: "px-1 py-1 text-sm text-sky-600"
   }, "\u2026"));
 }
 
@@ -2041,7 +2041,7 @@ function TrickReihe({
     className: "mt-2 flex flex-wrap justify-center gap-1"
   }, alle.map((tr, k) => /*#__PURE__*/React.createElement("span", {
     key: k,
-    className: "rounded-full px-2 py-0.5 text-xs font-bold " + (k < kann.length ? "bg-amber-300 text-emerald-950" : "bg-emerald-200/60 text-emerald-500")
+    className: "rounded-full px-2 py-0.5 text-xs font-bold " + (k < kann.length ? "bg-sky-400 text-sky-950" : "bg-sky-100 text-sky-600")
   }, k < kann.length ? tr.bild + " " + aName(t, nr, k, tr) : "🔒 " + tr.name)));
 }
 function WesenKarte({
@@ -2053,17 +2053,17 @@ function WesenKarte({
   const s = seltenheit(nr);
   const typenListe = typen(nr);
   return /*#__PURE__*/React.createElement("div", {
-    className: "rounded-3xl border-4 p-4 text-center shadow-2xl " + (s.rang === "legendaer" ? "border-amber-400 bg-gradient-to-b from-amber-100 to-amber-50" : s.rang === "meister" ? "border-fuchsia-400 bg-gradient-to-b from-fuchsia-100 to-amber-50" : "border-emerald-300 bg-gradient-to-b from-emerald-50 to-white")
+    className: "rounded-3xl border-4 p-4 text-center shadow-sm ring-1 ring-sky-200 " + (s.rang === "legendaer" ? "border-sky-400 bg-gradient-to-b from-amber-100 to-amber-50" : s.rang === "meister" ? "border-fuchsia-400 bg-gradient-to-b from-fuchsia-100 to-amber-50" : "border-sky-200 bg-gradient-to-b from-white to-white")
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-black uppercase tracking-widest text-emerald-700"
+    className: "text-xs font-black uppercase tracking-widest text-sky-700"
   }, "Nr. ", nr), /*#__PURE__*/React.createElement("div", {
     className: gross ? "text-8xl" : "text-6xl"
   }, wBild(t, nr)), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-2xl font-black text-emerald-950"
+    className: "mt-1 text-2xl font-black text-sky-950"
   }, wName(t, nr)), eigenerName(t, nr) && /*#__PURE__*/React.createElement("p", {
-    className: "-mt-0.5 text-[11px] text-emerald-500"
+    className: "-mt-0.5 text-[11px] text-sky-600"
   }, "eigentlich ", w.name), /*#__PURE__*/React.createElement("p", {
-    className: "text-sm font-bold text-emerald-700"
+    className: "text-sm font-bold text-sky-700"
   }, s.text, " ", /*#__PURE__*/React.createElement(Sterne, {
     n: s.sterne
   }), istSpiegel(nr) && " · Spiegel-Wesen"), /*#__PURE__*/React.createElement("div", {
@@ -2072,7 +2072,7 @@ function WesenKarte({
     className: "rounded-full bg-lime-200 px-2 py-0.5 text-xs font-bold text-lime-900"
   }, "Typ Wiese"), typenListe.map(r => /*#__PURE__*/React.createElement("span", {
     key: r,
-    className: "rounded-full bg-emerald-200 px-2 py-0.5 text-xs font-bold text-emerald-900"
+    className: "rounded-full bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-950"
   }, r, "er"))), t && /*#__PURE__*/React.createElement(TrickReihe, {
     t: t,
     nr: nr
@@ -2092,9 +2092,9 @@ function Loesung({
   return /*#__PURE__*/React.createElement(React.Fragment, null, text, " =", " ", hatGetippt && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
     className: "text-rose-500 line-through decoration-rose-500 decoration-4"
   }, getippt), /*#__PURE__*/React.createElement("span", {
-    className: "mx-1 text-emerald-600"
+    className: "mx-1 text-sky-600"
   }, "\u2192")), /*#__PURE__*/React.createElement("span", {
-    className: "text-emerald-700"
+    className: "text-sky-700"
   }, richtig));
 }
 
@@ -2103,13 +2103,13 @@ function Ball({
   klasse
 }) {
   return /*#__PURE__*/React.createElement("div", {
-    className: "relative mx-auto h-24 w-24 overflow-hidden rounded-full border-4 border-emerald-950 bg-white shadow-xl " + (klasse || "")
+    className: "relative mx-auto h-24 w-24 overflow-hidden rounded-full border-4 border-sky-950 bg-white shadow-xl " + (klasse || "")
   }, /*#__PURE__*/React.createElement("div", {
     className: "absolute inset-x-0 top-0 h-1/2 bg-rose-500"
   }), /*#__PURE__*/React.createElement("div", {
-    className: "absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 bg-emerald-950"
+    className: "absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 bg-sky-950"
   }), /*#__PURE__*/React.createElement("div", {
-    className: "absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-emerald-950 bg-white"
+    className: "absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-sky-950 bg-white"
   }));
 }
 
@@ -2187,23 +2187,23 @@ function Taufe({
   const [name, setName] = useState(eigen.name || "");
   const [bild, setBild] = useState(eigen.bild || "");
   return /*#__PURE__*/React.createElement("div", {
-    className: "rounded-2xl border-2 border-amber-400/60 bg-emerald-900/70 p-3 text-left"
+    className: "rounded-2xl border-2 border-sky-300 bg-white ring-1 ring-sky-200 p-3 text-left"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold uppercase tracking-widest text-amber-300"
+    className: "text-xs font-bold uppercase tracking-widest text-sky-600"
   }, "Wie soll es hei\xDFen?"), /*#__PURE__*/React.createElement("div", {
     className: "mt-2 flex gap-2"
   }, /*#__PURE__*/React.createElement("input", {
     value: bild,
     onChange: e => setBild(e.target.value.slice(0, 8)),
     placeholder: WESEN[nr] ? WESEN[nr].bild : "✨",
-    className: "w-16 rounded-xl border-2 border-emerald-600 bg-emerald-950 px-2 py-2 text-center text-2xl outline-none focus:border-amber-400"
+    className: "w-16 rounded-xl border-2 border-sky-300 bg-sky-100 px-2 py-2 text-center text-2xl outline-none focus:border-sky-400"
   }), /*#__PURE__*/React.createElement("input", {
     value: name,
     onChange: e => setName(e.target.value.slice(0, 16)),
     placeholder: WESEN[nr] ? WESEN[nr].name : "Name",
-    className: "min-w-0 flex-1 rounded-xl border-2 border-emerald-600 bg-emerald-950 px-3 py-2 font-black text-emerald-50 outline-none focus:border-amber-400"
+    className: "min-w-0 flex-1 rounded-xl border-2 border-sky-300 bg-sky-100 px-3 py-2 font-black text-sky-950 outline-none focus:border-sky-400"
   })), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-[11px] text-emerald-400"
+    className: "mt-1 text-[11px] text-sky-600"
   }, "Leer lassen = ", WESEN[nr] ? WESEN[nr].bild + " " + WESEN[nr].name : "Vorgabe"), /*#__PURE__*/React.createElement("div", {
     className: "mt-3 grid grid-cols-2 gap-2"
   }, /*#__PURE__*/React.createElement(Knopf, {
@@ -2232,16 +2232,16 @@ function AngriffTaufe({
 }) {
   const [name, setName] = useState(aName(t, nr, i, null) || "");
   return /*#__PURE__*/React.createElement("div", {
-    className: "rounded-2xl border-2 border-amber-400/60 bg-emerald-900/70 p-3 text-left"
+    className: "rounded-2xl border-2 border-sky-300 bg-white ring-1 ring-sky-200 p-3 text-left"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold uppercase tracking-widest text-amber-300"
+    className: "text-xs font-bold uppercase tracking-widest text-sky-600"
   }, "Wie soll der Angriff hei\xDFen?"), /*#__PURE__*/React.createElement("input", {
     value: name,
     onChange: e => setName(e.target.value.slice(0, 20)),
     placeholder: trick ? trick.name : "Angriff",
-    className: "mt-2 w-full rounded-xl border-2 border-emerald-600 bg-emerald-950 px-3 py-2 font-black text-emerald-50 outline-none focus:border-amber-400"
+    className: "mt-2 w-full rounded-xl border-2 border-sky-300 bg-sky-100 px-3 py-2 font-black text-sky-950 outline-none focus:border-sky-400"
   }), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-[11px] text-emerald-400"
+    className: "mt-1 text-[11px] text-sky-600"
   }, "Leer lassen = ", trick ? trick.bild + " " + trick.name : "Vorgabe"), /*#__PURE__*/React.createElement("div", {
     className: "mt-3 grid grid-cols-2 gap-2"
   }, /*#__PURE__*/React.createElement(Knopf, {
@@ -2508,35 +2508,35 @@ function Streifzug({
     return /*#__PURE__*/React.createElement("div", {
       className: "mx-auto max-w-md p-5"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "a-auftauchen rounded-3xl bg-emerald-900/70 p-5 text-center"
+      className: "a-auftauchen rounded-3xl bg-white ring-1 ring-sky-200 p-5 text-center"
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-5xl"
     }, "\uD83C\uDF92"), /*#__PURE__*/React.createElement("h2", {
-      className: "mt-2 text-2xl font-black text-amber-300"
+      className: "mt-2 text-2xl font-black text-sky-600"
     }, "Runde geschafft!"), /*#__PURE__*/React.createElement("div", {
       className: "mt-4 grid grid-cols-3 gap-2 text-center"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "rounded-2xl bg-emerald-800/70 p-3"
+      className: "rounded-2xl bg-sky-100 p-3"
     }, /*#__PURE__*/React.createElement("p", {
-      className: "text-2xl font-black text-emerald-100"
+      className: "text-2xl font-black text-sky-950"
     }, bilanz.richtig), /*#__PURE__*/React.createElement("p", {
-      className: "text-xs text-emerald-300"
+      className: "text-xs text-sky-700"
     }, "richtig")), /*#__PURE__*/React.createElement("div", {
-      className: "rounded-2xl bg-emerald-800/70 p-3"
+      className: "rounded-2xl bg-sky-100 p-3"
     }, /*#__PURE__*/React.createElement("p", {
-      className: "text-2xl font-black text-emerald-100"
+      className: "text-2xl font-black text-sky-950"
     }, bilanz.blitze), /*#__PURE__*/React.createElement("p", {
-      className: "text-xs text-emerald-300"
+      className: "text-xs text-sky-700"
     }, "blitzschnell \u26A1")), /*#__PURE__*/React.createElement("div", {
-      className: "rounded-2xl bg-emerald-800/70 p-3"
+      className: "rounded-2xl bg-sky-100 p-3"
     }, /*#__PURE__*/React.createElement("p", {
-      className: "text-2xl font-black text-emerald-100"
+      className: "text-2xl font-black text-sky-950"
     }, bilanz.gefangen.length + bilanz.seiten.length), /*#__PURE__*/React.createElement("p", {
-      className: "text-xs text-emerald-300"
+      className: "text-xs text-sky-700"
     }, "gefangen"))), bilanz.seiten.length > 0 && /*#__PURE__*/React.createElement("div", {
-      className: "mt-4 rounded-2xl border-2 border-emerald-400/40 p-3"
+      className: "mt-4 rounded-2xl border-2 border-sky-200 p-3"
     }, /*#__PURE__*/React.createElement("p", {
-      className: "text-xs font-bold uppercase tracking-widest text-emerald-300"
+      className: "text-xs font-bold uppercase tracking-widest text-sky-700"
     }, "Neue Seite entdeckt"), /*#__PURE__*/React.createElement("div", {
       className: "mt-2 flex flex-wrap justify-center gap-3"
     }, bilanz.seiten.map(x => /*#__PURE__*/React.createElement("div", {
@@ -2545,11 +2545,11 @@ function Streifzug({
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-4xl"
     }, wBild(t, x)), /*#__PURE__*/React.createElement("p", {
-      className: "text-xs font-bold text-emerald-100"
+      className: "text-xs font-bold text-sky-950"
     }, wName(t, x)))))), bilanz.gefangen.length > 0 && /*#__PURE__*/React.createElement("div", {
-      className: "mt-4 rounded-2xl border-2 border-amber-400/50 p-3"
+      className: "mt-4 rounded-2xl border-2 border-sky-300 p-3"
     }, /*#__PURE__*/React.createElement("p", {
-      className: "text-xs font-bold uppercase tracking-widest text-amber-300"
+      className: "text-xs font-bold uppercase tracking-widest text-sky-600"
     }, "Neu im Zahlodex"), /*#__PURE__*/React.createElement("div", {
       className: "mt-2 flex flex-wrap justify-center gap-3"
     }, bilanz.gefangen.map(x => /*#__PURE__*/React.createElement("div", {
@@ -2558,17 +2558,17 @@ function Streifzug({
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-4xl"
     }, wBild(t, x)), /*#__PURE__*/React.createElement("p", {
-      className: "text-xs font-bold text-emerald-100"
+      className: "text-xs font-bold text-sky-950"
     }, wName(t, x)))))), neuErforscht.length > 0 && /*#__PURE__*/React.createElement("div", {
-      className: "mt-4 rounded-2xl border-2 border-emerald-400/40 p-3"
+      className: "mt-4 rounded-2xl border-2 border-sky-200 p-3"
     }, /*#__PURE__*/React.createElement("p", {
-      className: "text-xs font-bold uppercase tracking-widest text-emerald-300"
+      className: "text-xs font-bold uppercase tracking-widest text-sky-700"
     }, "Vollst\xE4ndig erforscht \u2728"), /*#__PURE__*/React.createElement("p", {
-      className: "mt-1 text-sm text-emerald-100"
+      className: "mt-1 text-sm text-sky-950"
     }, neuErforscht.map(x => wName(t, x)).join(", "), " \u2014 jede Rechnung hat gesessen.")), jetztReif.length > 0 && /*#__PURE__*/React.createElement("div", {
-      className: "mt-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3"
+      className: "mt-3 rounded-2xl border-2 border-sky-300 bg-sky-50 p-3"
     }, /*#__PURE__*/React.createElement("p", {
-      className: "text-xs font-bold uppercase tracking-widest text-amber-300"
+      className: "text-xs font-bold uppercase tracking-widest text-sky-600"
     }, "Reif f\xFCr einen neuen Trick"), /*#__PURE__*/React.createElement("div", {
       className: "mt-2 flex flex-wrap justify-center gap-3"
     }, jetztReif.map(x => /*#__PURE__*/React.createElement("div", {
@@ -2577,15 +2577,15 @@ function Streifzug({
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-3xl"
     }, wBild(t, x)), /*#__PURE__*/React.createElement("p", {
-      className: "text-xs font-bold text-emerald-100"
+      className: "text-xs font-bold text-sky-950"
     }, wName(t, x))))), /*#__PURE__*/React.createElement("p", {
-      className: "mt-2 text-xs text-amber-200"
+      className: "mt-2 text-xs text-sky-700"
     }, "Nimm sie mit in die Arena \u2014 wer dort blitzschnell ist, darf lernen.")), bilanz.falsch > 0 && /*#__PURE__*/React.createElement("p", {
-      className: "mt-4 text-sm text-emerald-200"
+      className: "mt-4 text-sm text-sky-900"
     }, bilanz.falsch === 1 ? "Eine Rechnung" : bilanz.falsch + " Rechnungen", " ist dir entwischt. Macht nichts \u2014 sie kommt wieder."), /*#__PURE__*/React.createElement("p", {
-      className: "mt-3 text-sm text-emerald-300"
+      className: "mt-3 text-sm text-sky-700"
     }, morgen.length > 0 ? (morgen.length === 1 ? "Ein Wesen will" : besuchZahl(morgen.length) + " Wesen wollen") + " dich morgen wiedersehen." : "Im Moment wartet niemand auf dich. Fang neue Wesen!"), /*#__PURE__*/React.createElement("p", {
-      className: "mt-3 rounded-2xl bg-amber-400/15 p-2 text-sm font-black text-amber-200"
+      className: "mt-3 rounded-2xl bg-sky-100 p-2 text-sm font-black text-sky-700"
     }, "\u2705 Heute geschafft! \xB7 \uD83D\uDDD3\uFE0F ", spieltage(t), " ", spieltage(t) === 1 ? "Spieltag" : "Spieltage"), /*#__PURE__*/React.createElement("div", {
       className: "mt-5 space-y-2"
     }, /*#__PURE__*/React.createElement(Knopf, {
@@ -2600,7 +2600,7 @@ function Streifzug({
     }, wackel < 4 ? /*#__PURE__*/React.createElement("div", {
       className: "pt-10"
     }, /*#__PURE__*/React.createElement("p", {
-      className: "text-sm font-bold uppercase tracking-widest text-amber-300"
+      className: "text-sm font-bold uppercase tracking-widest text-sky-600"
     }, "Ball geworfen!"), /*#__PURE__*/React.createElement("div", {
       className: "mt-10"
     }, /*#__PURE__*/React.createElement(Ball, {
@@ -2609,13 +2609,13 @@ function Streifzug({
       className: "mt-8 flex justify-center gap-2"
     }, [1, 2, 3].map(i => /*#__PURE__*/React.createElement("div", {
       key: i,
-      className: "h-3 w-3 rounded-full " + (wackel >= i ? "bg-amber-300" : "bg-emerald-800")
+      className: "h-3 w-3 rounded-full " + (wackel >= i ? "bg-sky-400" : "bg-sky-100")
     })))) : /*#__PURE__*/React.createElement("div", {
       className: "a-auftauchen"
     }, /*#__PURE__*/React.createElement("p", {
-      className: "text-sm font-black uppercase tracking-widest text-amber-300"
+      className: "text-sm font-black uppercase tracking-widest text-sky-600"
     }, fangArt === "seite" ? "Neue Seite!" : "Gefangen!"), fangArt === "seite" && /*#__PURE__*/React.createElement("p", {
-      className: "mt-1 text-emerald-200"
+      className: "mt-1 text-sky-900"
     }, wName(t, neuGefangen), " kennt sich auch", " ", welt === "malfeld" ? "im Malfeld" : "auf dem Wiesenweg", " aus."), /*#__PURE__*/React.createElement("div", {
       className: "mt-3"
     }, /*#__PURE__*/React.createElement(WesenKarte, {
@@ -2623,9 +2623,9 @@ function Streifzug({
       gross: true,
       t: t
     })), /*#__PURE__*/React.createElement("div", {
-      className: "mt-4 rounded-2xl bg-emerald-900/70 p-3 text-left"
+      className: "mt-4 rounded-2xl bg-white ring-1 ring-sky-200 p-3 text-left"
     }, /*#__PURE__*/React.createElement("p", {
-      className: "text-xs font-bold uppercase tracking-widest text-emerald-300"
+      className: "text-xs font-bold uppercase tracking-widest text-sky-700"
     }, "Rechnungen, die ", wName(t, neuGefangen), " rufen"), /*#__PURE__*/React.createElement(Rechnungen, {
       liste: fakten(welt, neuGefangen).slice(0, 6).map(x => x.text),
       mehr: fakten(welt, neuGefangen).length > 6
@@ -2639,7 +2639,7 @@ function Streifzug({
       onFertig: () => setTaufeOffen(false)
     })) : /*#__PURE__*/React.createElement("button", {
       onClick: () => setTaufeOffen(true),
-      className: "kein-blau mt-4 w-full rounded-2xl border-2 border-amber-400/60 py-2 text-sm font-bold text-amber-200"
+      className: "kein-blau mt-4 w-full rounded-2xl border-2 border-sky-300 py-2 text-sm font-bold text-sky-700"
     }, "\u270F\uFE0F Willst du ihm einen Namen geben?"), /*#__PURE__*/React.createElement("div", {
       className: "mt-3"
     }, /*#__PURE__*/React.createElement(Knopf, {
@@ -2658,18 +2658,18 @@ function Streifzug({
     className: "mb-3 flex items-center gap-2"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: onEnde,
-    className: "kein-blau rounded-xl border-2 border-emerald-500/50 px-3 py-1 text-emerald-100"
+    className: "kein-blau rounded-xl border-2 border-sky-300 px-3 py-1 text-sky-950"
   }, "\u2039"), /*#__PURE__*/React.createElement("div", {
-    className: "h-2 flex-1 overflow-hidden rounded-full bg-emerald-900"
+    className: "h-2 flex-1 overflow-hidden rounded-full bg-white ring-1 ring-sky-200"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "h-full rounded-full bg-amber-400 transition-all",
+    className: "h-full rounded-full bg-sky-400 transition-all",
     style: {
       width: (pos / liste.length * 100).toFixed(0) + "%"
     }
   })), /*#__PURE__*/React.createElement("span", {
-    className: "text-xs font-bold text-emerald-300"
+    className: "text-xs font-bold text-sky-700"
   }, pos + 1, "/", liste.length)), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-3 rounded-2xl bg-emerald-900/60 p-3"
+    className: "flex items-center gap-3 rounded-2xl bg-white ring-1 ring-sky-200 p-3"
   }, phase === "frage" ? /*#__PURE__*/React.createElement(Schatten, {
     t: t,
     nr: nr
@@ -2678,41 +2678,39 @@ function Streifzug({
   }, wBild(t, nr)), /*#__PURE__*/React.createElement("div", {
     className: "min-w-0 flex-1"
   }, wild && !schonBekannt ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
-    className: "text-sm font-black text-amber-300"
+    className: "text-sm font-black text-sky-600"
   }, "Ein wildes Wesen!"), /*#__PURE__*/React.createElement("p", {
-    className: "text-xs text-emerald-300"
+    className: "text-xs text-sky-700"
   }, "Fang es mit ", FANG_TREFFER, " richtigen Rechnungen.")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
-    className: "text-sm font-black text-amber-300"
+    className: "text-sm font-black text-sky-600"
   }, phase === "frage" ? "Wer kommt da?" : wName(t, nr) + "!"), /*#__PURE__*/React.createElement("p", {
-    className: "text-xs text-emerald-300"
+    className: "text-xs text-sky-700"
   }, schonBekannt ? "Du kennst es schon — von " + (welt === "malfeld" ? "dem Wiesenweg" : "dem Malfeld") : neueRechnung ? "bringt eine neue Rechnung mit ✨" : "❤️".repeat(f.s) + " will dich wiedersehen"))), wild && /*#__PURE__*/React.createElement("div", {
     className: "flex gap-1"
   }, [1, 2, 3].map(i => /*#__PURE__*/React.createElement("div", {
     key: i,
-    className: "h-3 w-3 rounded-full border-2 border-emerald-700 " + ((f.h || 0) >= i ? "bg-amber-300" : "bg-emerald-950")
+    className: "h-3 w-3 rounded-full border-2 border-sky-200 " + ((f.h || 0) >= i ? "bg-sky-400" : "bg-sky-100")
   })))), /*#__PURE__*/React.createElement("div", {
-    className: "mt-3 rounded-3xl bg-gradient-to-b from-emerald-50 to-white p-5 text-center shadow-2xl"
+    className: "mt-3 rounded-3xl bg-gradient-to-b from-white to-white p-5 text-center shadow-sm ring-1 ring-sky-200"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-4xl font-black text-emerald-950 sm:text-5xl " + (phase === "falsch" ? "a-zittern" : "")
+    className: "text-4xl font-black text-sky-950 sm:text-5xl " + (phase === "falsch" ? "a-zittern" : "")
   }, tippt ? /*#__PURE__*/React.createElement(Verdeckt, {
     wert: eingabe
   }) : fakt.umkehr ? /*#__PURE__*/React.createElement(React.Fragment, null, fakt.a, " ", fakt.op, " ", phase === "falsch" ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
     className: "text-rose-500 line-through decoration-rose-500 decoration-4"
   }, eingabe), /*#__PURE__*/React.createElement("span", {
-    className: "mx-1 text-emerald-600"
+    className: "mx-1 text-sky-600"
   }, "\u2192"), /*#__PURE__*/React.createElement("span", {
-    className: "rounded-xl bg-amber-200 px-2 text-emerald-700"
+    className: "rounded-xl bg-sky-100 px-2 text-sky-700"
   }, fakt.antwort)) : /*#__PURE__*/React.createElement("span", {
-    className: "rounded-xl bg-amber-200 px-2"
+    className: "rounded-xl bg-sky-100 px-2"
   }, anzeige), " ", "= ", fakt.ergebnis) : phase === "falsch" ? /*#__PURE__*/React.createElement(Loesung, {
     text: fakt.text,
     getippt: eingabe,
     richtig: fakt.antwort
-  }) : /*#__PURE__*/React.createElement(React.Fragment, null, fakt.text, " = ", anzeige)), fakt.umkehr && phase === "frage" && !tippt && /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-xs font-bold uppercase tracking-widest text-emerald-600"
-  }, "R\xFCckw\xE4rts gefragt \u2014 welche Zahl fehlt?"), tippt && /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-xs font-bold uppercase tracking-widest text-emerald-600"
-  }, "Tipp deine Zahl \u2014 ganz in Ruhe"), phase === "falsch" && /*#__PURE__*/React.createElement("div", {
+  }) : /*#__PURE__*/React.createElement(React.Fragment, null, fakt.text, " = ", anzeige)), phase === "frage" && /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 min-h-4 text-xs font-bold uppercase tracking-widest text-sky-600"
+  }, tippt ? "Tipp deine Zahl — ganz in Ruhe" : fakt.umkehr ? "Rückwärts gefragt — welche Zahl fehlt?" : ""), phase === "falsch" && /*#__PURE__*/React.createElement("div", {
     className: "a-rutschen mt-4"
   }, /*#__PURE__*/React.createElement("p", {
     className: "font-bold text-rose-700"
@@ -2721,19 +2719,19 @@ function Streifzug({
   }, /*#__PURE__*/React.createElement(Rechenbild, {
     fakt: fakt
   })), /*#__PURE__*/React.createElement("p", {
-    className: "mt-3 text-sm text-emerald-800"
+    className: "mt-3 text-sm text-sky-800"
   }, tipps[tipps.length - 1].text)), phase === "frage" && !tippt && hilfe >= 0 && /*#__PURE__*/React.createElement("div", {
     className: "a-rutschen mt-4 rounded-2xl bg-amber-100 p-3 text-left"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-sm font-black text-emerald-900"
+    className: "text-sm font-black text-sky-950"
   }, tipps[hilfe].bild, " ", tipps[hilfe].name), /*#__PURE__*/React.createElement("p", {
-    className: "text-sm text-emerald-800"
+    className: "text-sm text-sky-800"
   }, tipps[hilfe].text), tipps[hilfe].bild2 && /*#__PURE__*/React.createElement("div", {
     className: "mt-2 flex justify-center"
   }, /*#__PURE__*/React.createElement(Rechenbild, {
     fakt: fakt
   }))), phase === "richtig" && /*#__PURE__*/React.createElement("p", {
-    className: "a-rutschen mt-2 font-black text-emerald-700"
+    className: "a-rutschen mt-2 font-black text-sky-700"
   }, warBlitz ? "Blitzschnell! ⚡" : "Richtig!")), phase === "falsch" ? /*#__PURE__*/React.createElement("div", {
     className: "mt-4"
   }, /*#__PURE__*/React.createElement(Knopf, {
@@ -2760,7 +2758,7 @@ function Streifzug({
       setHilfe(i);
       Ton.tippen();
     },
-    className: "kein-blau flex-1 rounded-2xl border-2 py-2 text-xs font-bold transition " + (hilfe === i ? "border-amber-400 bg-amber-400/20 text-amber-200" : "border-emerald-600/60 text-emerald-200")
+    className: "kein-blau flex-1 rounded-2xl border-2 py-2 text-xs font-bold transition " + (hilfe === i ? "border-sky-400 bg-sky-100 text-sky-700" : "border-sky-300 text-sky-900")
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-lg"
   }, b.bild), /*#__PURE__*/React.createElement("br", null), b.name)))));
@@ -2807,11 +2805,11 @@ function Trickbuch({
     unter: habe + " von " + moeglich + " Tricks · " + punkte + " ⚡",
     onZurueck: onZurueck
   }), /*#__PURE__*/React.createElement("p", {
-    className: "mb-3 rounded-2xl bg-emerald-900/60 p-3 text-sm text-emerald-200"
+    className: "mb-3 rounded-2xl bg-white ring-1 ring-sky-200 p-3 text-sm text-sky-900"
   }, "Jeder Trick macht dein Wesen st\xE4rker: ", /*#__PURE__*/React.createElement("b", null, "+", PUNKTE_TRICK, " Punkte"), " bei jedem Angriff. Die \u26A1 daf\xFCr holst du dir im Kampf \u2014 stark genug zum Lernen werden deine Wesen aber nur, wenn du sie auf dem Streifzug besuchst."), gelernt && /*#__PURE__*/React.createElement("div", {
-    className: "a-auftauchen mb-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3"
+    className: "a-auftauchen mb-3 rounded-2xl border-2 border-sky-300 bg-sky-50 p-3"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-center font-black text-amber-200"
+    className: "text-center font-black text-sky-700"
   }, wBild(t, gelernt.nr), " ", wName(t, gelernt.nr), " kann jetzt", " ", gelernt.trick.bild, " ", aName(t, gelernt.nr, gelernt.i, gelernt.trick), "!"), angriffTaufe ? /*#__PURE__*/React.createElement("div", {
     className: "a-rutschen mt-2"
   }, /*#__PURE__*/React.createElement(AngriffTaufe, {
@@ -2823,11 +2821,11 @@ function Trickbuch({
     onFertig: () => setAngriffTaufe(false)
   })) : /*#__PURE__*/React.createElement("button", {
     onClick: () => setAngriffTaufe(true),
-    className: "kein-blau mt-2 w-full rounded-xl border-2 border-amber-400/50 py-1.5 text-xs font-bold text-amber-200"
+    className: "kein-blau mt-2 w-full rounded-xl border-2 border-sky-300 py-1.5 text-xs font-bold text-sky-700"
   }, "\u270F\uFE0F Angriff umbenennen")), bereit.length > 0 && /*#__PURE__*/React.createElement("div", {
-    className: "mb-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3"
+    className: "mb-3 rounded-2xl border-2 border-sky-300 bg-sky-50 p-3"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-center text-xs font-bold uppercase tracking-widest text-amber-300"
+    className: "text-center text-xs font-bold uppercase tracking-widest text-sky-600"
   }, bereit.length === 1 ? "Ein Wesen wartet auf einen Trick" : bereit.length + " Wesen warten auf einen Trick"), /*#__PURE__*/React.createElement("div", {
     className: "mt-2 grid grid-cols-3 gap-2"
   }, bereit.map(({
@@ -2839,55 +2837,55 @@ function Trickbuch({
       key: nr,
       onClick: () => lehren(nr),
       disabled: !reicht,
-      className: "kein-blau rounded-2xl p-2 text-center transition " + (reicht ? "bg-emerald-800/70 hover:bg-emerald-700 active:translate-y-px" : "bg-emerald-900/50 opacity-50")
+      className: "kein-blau rounded-2xl p-2 text-center transition " + (reicht ? "bg-sky-100 hover:bg-sky-200 active:translate-y-px" : "bg-white ring-1 ring-sky-200 opacity-50")
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-3xl"
     }, wBild(t, nr)), /*#__PURE__*/React.createElement("p", {
-      className: "truncate text-xs font-bold text-emerald-50"
+      className: "truncate text-xs font-bold text-sky-950"
     }, wName(t, nr)), /*#__PURE__*/React.createElement("p", {
-      className: "mt-1 text-[10px] leading-tight text-amber-300"
+      className: "mt-1 text-[10px] leading-tight text-sky-600"
     }, "lernt ", naechster.bild, /*#__PURE__*/React.createElement("br", null), naechster.name));
   })), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-center text-xs text-amber-200"
+    className: "mt-2 text-center text-xs text-sky-700"
   }, punkte >= TRICK_KOSTEN ? "Ein Trick kostet " + TRICK_KOSTEN + " ⚡ — du hast " + punkte + "." : "Noch " + (TRICK_KOSTEN - punkte) + " ⚡, dann kannst du.")), bereit.length === 0 && /*#__PURE__*/React.createElement("div", {
-    className: "mb-3 rounded-2xl border-2 border-emerald-700 p-3"
+    className: "mb-3 rounded-2xl border-2 border-sky-200 p-3"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-center font-black text-amber-300"
+    className: "text-center font-black text-sky-600"
   }, punkte, " \u26A1 warten auf dich"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-center text-xs text-emerald-300"
+    className: "mt-1 text-center text-xs text-sky-700"
   }, "Gerade kann sie niemand annehmen. \u26A1 verfallen aber nicht \u2014 sie bleiben liegen, bis jemand so weit ist."), /*#__PURE__*/React.createElement("p", {
-    className: "mt-3 text-xs font-bold uppercase tracking-widest text-emerald-300"
+    className: "mt-3 text-xs font-bold uppercase tracking-widest text-sky-700"
   }, "So bekommt ein Wesen den n\xE4chsten Trick"), /*#__PURE__*/React.createElement("div", {
-    className: "mt-2 space-y-1.5 text-sm text-emerald-100"
+    className: "mt-2 space-y-1.5 text-sm text-sky-950"
   }, /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", {
-    className: "text-amber-300"
+    className: "text-sky-600"
   }, "1."), " In der Arena k\xE4mpfen und bei diesem Wesen ", /*#__PURE__*/React.createElement("b", null, "blitzschnell"), " antworten. Dann l\xE4dt es dich ein."), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", {
-    className: "text-amber-300"
+    className: "text-sky-600"
   }, "2."), " Das Wesen muss stark genug sein \u2014 das wird es nur auf dem Streifzug.", spaeter.length > 0 && " Wem noch was fehlt, steht gleich hier drunter."), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", {
-    className: "text-amber-300"
+    className: "text-sky-600"
   }, "3."), " Dann hierher kommen und", " ", TRICK_KOSTEN, " \u26A1 ausgeben. Der Rest bleibt dir."))), spaeter.length > 0 && /*#__PURE__*/React.createElement("div", {
-    className: "mb-3 rounded-2xl bg-emerald-900/60 p-3"
+    className: "mb-3 rounded-2xl bg-white ring-1 ring-sky-200 p-3"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold uppercase tracking-widest text-emerald-300"
+    className: "text-xs font-bold uppercase tracking-widest text-sky-700"
   }, "Die brauchen noch etwas"), spaeter.map(({
     nr,
     bed
   }) => /*#__PURE__*/React.createElement("p", {
     key: nr,
-    className: "mt-1 text-sm text-emerald-200"
+    className: "mt-1 text-sm text-sky-900"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-lg"
   }, wBild(t, nr)), " ", /*#__PURE__*/React.createElement("b", null, wName(t, nr)), " \u2014 ", bed.was)), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-xs text-emerald-400"
+    className: "mt-2 text-xs text-sky-600"
   }, "Nimm sie mit auf den Streifzug. Ein Trick will verdient sein!")), koennen.length === 0 ? /*#__PURE__*/React.createElement("p", {
-    className: "rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200"
+    className: "rounded-2xl bg-white ring-1 ring-sky-200 p-4 text-center text-sky-900"
   }, "Noch kann keines deiner Wesen einen Trick. Hol dir \u26A1 in der Arena \u2014 und bring sie dann einem Wesen bei, das dort blitzschnell war.") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
-    className: "mb-2 text-center text-xs text-emerald-400"
+    className: "mb-2 text-center text-xs text-sky-600"
   }, "Tipp auf einen Angriff, wenn er anders hei\xDFen soll \u270F\uFE0F"), /*#__PURE__*/React.createElement("div", {
     className: "space-y-2"
   }, koennen.map(nr => /*#__PURE__*/React.createElement("div", {
     key: nr,
-    className: "rounded-2xl bg-emerald-900/60 p-3"
+    className: "rounded-2xl bg-white ring-1 ring-sky-200 p-3"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-3"
   }, /*#__PURE__*/React.createElement("span", {
@@ -2895,7 +2893,7 @@ function Trickbuch({
   }, wBild(t, nr)), /*#__PURE__*/React.createElement("div", {
     className: "min-w-0 flex-1"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "font-black text-emerald-50"
+    className: "font-black text-sky-950"
   }, wName(t, nr)), /*#__PURE__*/React.createElement("div", {
     className: "mt-1 flex flex-wrap gap-1"
   }, trickListe(nr).map((tr, k) => {
@@ -2904,7 +2902,7 @@ function Trickbuch({
        umbenennen — nicht nur im Moment des Lernens. */
     if (!kann) return /*#__PURE__*/React.createElement("span", {
       key: k,
-      className: "rounded-full bg-emerald-800 px-2 py-0.5 text-[11px] font-bold text-emerald-500"
+      className: "rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-bold text-sky-600"
     }, "\uD83D\uDD12 ", tr.name);
     return /*#__PURE__*/React.createElement("button", {
       key: k,
@@ -2913,10 +2911,10 @@ function Trickbuch({
         k,
         trick: tr
       }),
-      className: "kein-blau rounded-full px-2 py-0.5 text-[11px] font-bold transition " + (bearbeiten && bearbeiten.nr === nr && bearbeiten.k === k ? "bg-amber-200 text-emerald-950 ring-2 ring-amber-400" : "bg-amber-300 text-emerald-950")
+      className: "kein-blau rounded-full px-2 py-0.5 text-[11px] font-bold transition " + (bearbeiten && bearbeiten.nr === nr && bearbeiten.k === k ? "bg-sky-100 text-sky-950 ring-2 ring-sky-400" : "bg-sky-400 text-sky-950")
     }, tr.bild, " ", aName(t, nr, k, tr), " \u270F\uFE0F");
   }))), /*#__PURE__*/React.createElement("span", {
-    className: "text-lg font-black text-amber-300"
+    className: "text-lg font-black text-sky-600"
   }, "+", trickZahl(t, nr) * PUNKTE_TRICK)), bearbeiten && bearbeiten.nr === nr && /*#__PURE__*/React.createElement("div", {
     className: "a-rutschen mt-2"
   }, /*#__PURE__*/React.createElement(AngriffTaufe, {
@@ -2955,7 +2953,7 @@ function Zahlodex({
     if (!w) {
       zellen.push(/*#__PURE__*/React.createElement("div", {
         key: n,
-        className: "aspect-square rounded-lg bg-emerald-950/60"
+        className: "aspect-square rounded-lg bg-sky-50"
       }));
       continue;
     }
@@ -2963,11 +2961,11 @@ function Zahlodex({
     zellen.push(/*#__PURE__*/React.createElement("button", {
       key: n,
       onClick: () => setGewaehlt(n),
-      className: "kein-blau relative aspect-square rounded-lg text-lg leading-none transition sm:text-xl " + (hab ? "bg-emerald-700/70 hover:bg-emerald-600" : "bg-emerald-900/80")
+      className: "kein-blau relative aspect-square rounded-lg text-lg leading-none transition sm:text-xl " + (hab ? "bg-sky-200 hover:bg-sky-300" : "bg-white ring-1 ring-sky-200")
     }, hab ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", null, wBild(t, n)), trickZahl(t, n) > 0 && /*#__PURE__*/React.createElement("span", {
       className: "absolute right-0 top-0 text-[8px]"
     }, "\u2728")) : /*#__PURE__*/React.createElement("span", {
-      className: "text-[10px] font-bold text-emerald-600"
+      className: "text-[10px] font-bold text-sky-600"
     }, n)));
   }
   return /*#__PURE__*/React.createElement("div", {
@@ -2977,7 +2975,7 @@ function Zahlodex({
     unter: gefangen + " von " + ALLE_NR.length + " Wesen gefunden",
     onZurueck: onZurueck
   }), /*#__PURE__*/React.createElement("div", {
-    className: "rounded-3xl bg-emerald-900/50 p-3"
+    className: "rounded-3xl bg-white ring-1 ring-sky-200 p-3"
   }, /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-10 gap-1"
   }, zellen)), /*#__PURE__*/React.createElement("div", {
@@ -2987,21 +2985,21 @@ function Zahlodex({
     klein: true,
     onClick: () => setBuch(true)
   }, "\u2728 Trickbuch \u2014 ", tricksGesamt(t), " Tricks", wartend > 0 ? " · " + wartend + (wartend === 1 ? " wartet!" : " warten!") : "")), /*#__PURE__*/React.createElement("p", {
-    className: "mt-3 text-center text-xs text-emerald-400"
-  }, "Jedes Feld ist eine Zahl. Auf den dunklen wohnt niemand \u2014 die kommen im Einmaleins gar nicht vor."), /*#__PURE__*/React.createElement("div", {
-    className: "mt-4 rounded-2xl bg-emerald-900/50 p-3 text-sm text-emerald-200"
+    className: "mt-3 text-center text-xs text-sky-600"
+  }, "Jedes Feld ist eine Zahl. Auf den leeren wohnt niemand \u2014 die kommen im Einmaleins gar nicht vor."), /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 rounded-2xl bg-white ring-1 ring-sky-200 p-3 text-sm text-sky-900"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "font-black text-amber-300"
+    className: "font-black text-sky-600"
   }, "Wie selten ist ein Wesen?"), /*#__PURE__*/React.createElement("p", {
     className: "mt-1"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "text-emerald-200"
+    className: "text-sky-900"
   }, "H\xE4ufig"), " \u2014 zu dieser Zahl f\xFChren viele Wege. Zu 24 kommst du \xFCber 3\xB78 und \xFCber 4\xB76."), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("span", {
-    className: "text-sky-300"
+    className: "text-sky-700"
   }, "Selten \u2726\u2726"), " \u2014 es gibt nur einen einzigen Weg. Zu 35 nur \xFCber 5\xB77."), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("span", {
-    className: "text-lime-200"
+    className: "text-lime-700"
   }, "Einzelg\xE4nger \u2726"), " \u2014 da hilft nur die 1er-Reihe. 7 = 1\xB77, mehr geht nicht."), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("span", {
-    className: "text-amber-300"
+    className: "text-sky-600"
   }, "Legend\xE4r \u2726\u2726\u2726"), " \u2014 nur mit zwei gro\xDFen Zahlen zu erreichen. Die neun schwersten Brocken im ganzen Malfeld. Wer die hat, kann was.")));
 }
 
@@ -3013,12 +3011,12 @@ function TrickZiel({
 }) {
   const habe = trickZahl(t, nr);
   if (habe >= trickListe(nr).length) return /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-xs font-bold text-amber-300"
+    className: "mt-1 text-xs font-bold text-sky-600"
   }, "kann alle Tricks \u2728");
   const bed = trickBedingung(t, welt, nr);
   const naechster = trickListe(nr)[habe];
   return /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-xs " + (bed.ok ? "font-bold text-amber-300" : "text-emerald-400")
+    className: "mt-1 text-xs " + (bed.ok ? "font-bold text-sky-600" : "text-sky-600")
   }, bed.ok ? "reif für " + naechster.bild + " " + naechster.name + " — ab in die Arena!" : "bis " + naechster.bild + " " + naechster.name + ": " + bed.was);
 }
 function WesenDetail({
@@ -3035,18 +3033,18 @@ function WesenDetail({
   const hab = istGefangen(t, nr);
   function stand(f, welt) {
     if (!f) return /*#__PURE__*/React.createElement("span", {
-      className: "text-emerald-500"
+      className: "text-sky-600"
     }, "noch nie getroffen");
     if (f.s === 0) return /*#__PURE__*/React.createElement("span", {
-      className: "text-amber-300"
+      className: "text-sky-600"
     }, "angeschlagen \u2014 ", f.h || 0, "/", FANG_TREFFER, " Treffer");
     const ab = abdeckung(t, welt, nr);
     const min = Math.max(0, Math.round((f.f - Date.now()) / 60000));
     const wann = min <= 0 ? "wartet jetzt auf dich" : min < 90 ? "in " + min + " Min wieder" : "in " + Math.round(min / 1440) + " Tagen wieder";
     return /*#__PURE__*/React.createElement("span", {
-      className: "text-emerald-200"
+      className: "text-sky-900"
     }, "Freundschaft ", "❤️".repeat(f.s), " \xB7 ", wann, /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
-      className: ab.hab >= ab.ziel ? "text-amber-300" : "text-emerald-400"
+      className: ab.hab >= ab.ziel ? "text-sky-600" : "text-sky-600"
     }, ab.hab >= ab.ziel ? "vollständig erforscht ✨ — jede Rechnung saß schon" : ab.hab + " von " + ab.ziel + " Rechnungen saßen schon"));
   }
   return /*#__PURE__*/React.createElement("div", {
@@ -3068,13 +3066,13 @@ function WesenDetail({
     onFertig: () => setTaufe(false)
   })) : /*#__PURE__*/React.createElement("button", {
     onClick: () => setTaufe(true),
-    className: "kein-blau mt-2 w-full rounded-2xl border-2 border-emerald-600 py-2 text-sm font-bold text-emerald-200"
+    className: "kein-blau mt-2 w-full rounded-2xl border-2 border-sky-300 py-2 text-sm font-bold text-sky-900"
   }, "\u270F\uFE0F Umbenennen", eigenerName(t, nr) && /*#__PURE__*/React.createElement("span", {
-    className: "text-emerald-400"
+    className: "text-sky-600"
   }, " \xB7 hei\xDFt eigentlich ", WESEN[nr].name)), trickZahl(t, nr) > 0 && /*#__PURE__*/React.createElement("div", {
-    className: "mt-2 rounded-2xl bg-emerald-900/60 p-3"
+    className: "mt-2 rounded-2xl bg-white ring-1 ring-sky-200 p-3"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold uppercase tracking-widest text-amber-300"
+    className: "text-xs font-bold uppercase tracking-widest text-sky-600"
   }, "Angriffe umbenennen"), /*#__PURE__*/React.createElement("div", {
     className: "mt-2 flex flex-wrap gap-1"
   }, trickListe(nr).slice(0, trickZahl(t, nr)).map((tr, k) => /*#__PURE__*/React.createElement("button", {
@@ -3083,7 +3081,7 @@ function WesenDetail({
       k,
       trick: tr
     }),
-    className: "kein-blau rounded-full px-2 py-1 text-xs font-bold transition " + (angriff && angriff.k === k ? "bg-amber-200 text-emerald-950 ring-2 ring-amber-400" : "bg-amber-300 text-emerald-950")
+    className: "kein-blau rounded-full px-2 py-1 text-xs font-bold transition " + (angriff && angriff.k === k ? "bg-sky-100 text-sky-950 ring-2 ring-sky-400" : "bg-sky-400 text-sky-950")
   }, tr.bild, " ", aName(t, nr, k, tr), " \u270F\uFE0F"))), angriff && /*#__PURE__*/React.createElement("div", {
     className: "a-rutschen mt-2"
   }, /*#__PURE__*/React.createElement(AngriffTaufe, {
@@ -3094,41 +3092,41 @@ function WesenDetail({
     speichern: speichern,
     onFertig: () => setAngriff(null)
   })))) : /*#__PURE__*/React.createElement("div", {
-    className: "rounded-3xl border-4 border-emerald-700 bg-emerald-900/60 p-8 text-center"
+    className: "rounded-3xl border-4 border-sky-200 bg-white ring-1 ring-sky-200 p-8 text-center"
   }, /*#__PURE__*/React.createElement(Schatten, {
     t: t,
     nr: nr,
     gross: true
   }), /*#__PURE__*/React.createElement("p", {
-    className: "mt-3 font-black text-emerald-300"
+    className: "mt-3 font-black text-sky-700"
   }, "Noch nicht gefangen"), /*#__PURE__*/React.createElement("p", {
-    className: "text-sm text-emerald-400"
+    className: "text-sm text-sky-600"
   }, "Rechne dich hin \u2014 dann zeigt es sich.")), /*#__PURE__*/React.createElement("div", {
     className: "mt-4 space-y-3"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "rounded-2xl bg-emerald-900/60 p-3"
+    className: "rounded-2xl bg-white ring-1 ring-sky-200 p-3"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold uppercase tracking-widest text-amber-300"
+    className: "text-xs font-bold uppercase tracking-widest text-sky-600"
   }, "Entwicklung \u2014 Verdoppeln"), /*#__PURE__*/React.createElement("div", {
     className: "mt-2 flex flex-wrap items-center gap-2"
   }, l.map((x, i) => /*#__PURE__*/React.createElement(React.Fragment, {
     key: x
   }, i > 0 && /*#__PURE__*/React.createElement("span", {
-    className: "text-emerald-500"
+    className: "text-sky-600"
   }, "\u2192"), /*#__PURE__*/React.createElement("div", {
-    className: "rounded-xl px-2 py-1 text-center " + (x === nr ? "bg-amber-400/20 ring-2 ring-amber-400" : "bg-emerald-800/60")
+    className: "rounded-xl px-2 py-1 text-center " + (x === nr ? "bg-sky-100 ring-2 ring-sky-400" : "bg-sky-100")
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-2xl"
   }, istGefangen(t, x) ? wBild(t, x) : /*#__PURE__*/React.createElement("span", {
     className: "opacity-30 grayscale brightness-0"
   }, wBild(t, x))), /*#__PURE__*/React.createElement("p", {
-    className: "text-[10px] font-bold text-emerald-200"
+    className: "text-[10px] font-bold text-sky-900"
   }, x))))), l.length === 1 && /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-xs text-emerald-400"
+    className: "mt-1 text-xs text-sky-600"
   }, "Dieses Wesen entwickelt sich nicht.")), paare(nr).length > 0 && /*#__PURE__*/React.createElement("div", {
-    className: "rounded-2xl bg-emerald-900/60 p-3"
+    className: "rounded-2xl bg-white ring-1 ring-sky-200 p-3"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold uppercase tracking-widest text-amber-300"
+    className: "text-xs font-bold uppercase tracking-widest text-sky-600"
   }, "Im Malfeld \u2716\uFE0F"), /*#__PURE__*/React.createElement(Rechnungen, {
     liste: paareUngeordnet(nr).map(([a, b]) => a + " · " + b)
   }), /*#__PURE__*/React.createElement("p", {
@@ -3138,9 +3136,9 @@ function WesenDetail({
     welt: "malfeld",
     nr: nr
   })), nr <= 20 && /*#__PURE__*/React.createElement("div", {
-    className: "rounded-2xl bg-emerald-900/60 p-3"
+    className: "rounded-2xl bg-white ring-1 ring-sky-200 p-3"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold uppercase tracking-widest text-amber-300"
+    className: "text-xs font-bold uppercase tracking-widest text-sky-600"
   }, "Auf dem Wiesenweg \uD83C\uDF3F"), /*#__PURE__*/React.createElement(Rechnungen, {
     liste: faktenWiese(nr).slice(0, 6).map(x => x.text),
     mehr: faktenWiese(nr).length > 6
@@ -3645,25 +3643,25 @@ function KampfErklaerung({
   return /*#__PURE__*/React.createElement("div", {
     className: "mx-auto max-w-md p-4"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "a-auftauchen rounded-3xl border-2 border-amber-400/60 bg-emerald-900/80 p-5 text-emerald-100"
+    className: "a-auftauchen rounded-3xl border-2 border-sky-300 bg-white p-5 text-sky-950"
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-center text-5xl"
   }, "\u2694\uFE0F"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-center text-2xl font-black text-amber-300"
+    className: "mt-2 text-center text-2xl font-black text-sky-600"
   }, "Bereit f\xFCr einen Kampf?"), /*#__PURE__*/React.createElement("p", {
     className: "mt-1"
   }, "Zw\xF6lf Rechnungen, und die Uhr l\xE4uft \u2014 aber nur, solange du nachdenkst. Hast du die Zahl im Kopf, dr\xFCck", " ", /*#__PURE__*/React.createElement("b", {
-    className: "text-amber-200"
+    className: "text-sky-700"
   }, "Ich wei\xDF es!"), " Dann steht die Uhr und du tippst in Ruhe. F\xFCr jede richtige Antwort st\xFCrmt ein Wesen los \u2014 und zwar genau das, das die Antwort ", /*#__PURE__*/React.createElement("i", null, "ist"), ". Steht da 8 \xB7 7 = 56, dann kommt Rexi. Wesen mit Tricks hauen fester zu."), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 font-bold text-amber-200"
+    className: "mt-2 font-bold text-sky-700"
   }, "Daf\xFCr gibt es Sterne:"), /*#__PURE__*/React.createElement("p", null, "\u2605 h\xF6chstens ", ORDEN_FEHLER === 1 ? "ein Fehler" : ORDEN_FEHLER + " Fehler", " \u2014 der Orden geh\xF6rt dir"), /*#__PURE__*/React.createElement("p", null, "\u2605\u2605 kein Fehler, dazu genug Punkte \u2014 Meister"), /*#__PURE__*/React.createElement("p", null, "\u2605\u2605\u2605 kein Fehler und alles blitzschnell"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-emerald-300"
+    className: "mt-2 text-sky-700"
   }, "Wer es in der ersten H\xE4lfte der Zeit wei\xDF, bekommt eine \u26A1 dazu. Damit bringst du deinen Wesen neue Tricks bei."), /*#__PURE__*/React.createElement("p", {
-    className: "mt-3 font-bold text-amber-200"
+    className: "mt-3 font-bold text-sky-700"
   }, "Und dann gibt es den Pokal:"), /*#__PURE__*/React.createElement("p", null, "Wer alle drei Sterne hat, darf um den Pokal k\xE4mpfen \u2014 \uD83E\uDD49, dann \uD83E\uDD48, dann \uD83E\uDD47. Dazwischen liegt aber immer eine Pause: ", POKAL_PAUSE[0], ",", " ", POKAL_PAUSE[1], " und ", POKAL_PAUSE[2], " Tage. Denn der Pokal fragt nicht, ob du es heute kannst \u2014 sondern ob du es in drei Wochen noch kannst. Und ein Titel z\xE4hlt nur, wenn du", " ", /*#__PURE__*/React.createElement("b", {
-    className: "text-amber-200"
+    className: "text-sky-700"
   }, "jede Rechnung richtig und jede blitzschnell"), " hast \u2014 genau wie beim dritten Stern. Wer nach drei Wochen erst \xFCberlegen muss, wei\xDF es eben nicht mehr aus dem Stand. Daneben? Macht nichts \u2014 du darfst sofort wieder antreten. K\xE4mpfen darfst du sowieso jederzeit."), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-emerald-300"
+    className: "mt-2 text-sky-700"
   }, "Und wenn du irgendwo feststeckst: Du hast ", BEERE_KAMPF === 1 ? "eine" : BEERE_KAMPF, " ", "\uD83E\uDED0 Beere dabei. Sie h\xE4lt die Uhr an und zeigt dir den Weg. Die Rechnung z\xE4hlt dann ", PUNKTE_BEERE, " statt ", PUNKTE_GRUND, " Punkte \u2014 raten bringt gar nichts."), /*#__PURE__*/React.createElement("div", {
     className: "mt-5"
   }, /*#__PURE__*/React.createElement(Knopf, {
@@ -3688,7 +3686,7 @@ function ArenaListe({
     onZurueck: onZurueck,
     rechts: /*#__PURE__*/React.createElement("button", {
       onClick: () => setErklaert(true),
-      className: "kein-blau rounded-xl border-2 border-emerald-500/50 px-3 py-2 text-emerald-100"
+      className: "kein-blau rounded-xl border-2 border-sky-300 px-3 py-2 text-sky-950"
     }, "?")
   }), /*#__PURE__*/React.createElement("div", {
     className: "space-y-2"
@@ -3708,17 +3706,17 @@ function ArenaListe({
     }, /*#__PURE__*/React.createElement("button", {
       disabled: !offen,
       onClick: () => onKampf(a),
-      className: "kein-blau flex w-full items-center gap-3 rounded-2xl p-3 text-left transition " + (a.art === "liga" || a.art === "super" ? offen ? "bg-gradient-to-r from-amber-500/30 to-fuchsia-500/20 ring-2 ring-amber-300" : "bg-emerald-900/50 opacity-60" : hat ? "bg-amber-400/20 ring-2 ring-amber-400" : offen ? "bg-emerald-800/70 hover:bg-emerald-700" : "bg-emerald-900/50 opacity-60")
+      className: "kein-blau flex w-full items-center gap-3 rounded-2xl p-3 text-left transition " + (a.art === "liga" || a.art === "super" ? offen ? "bg-gradient-to-r from-amber-500/30 to-fuchsia-500/20 ring-2 ring-sky-400" : "bg-white ring-1 ring-sky-200 opacity-60" : hat ? "bg-sky-100 ring-2 ring-sky-400" : offen ? "bg-sky-100 hover:bg-sky-200" : "bg-white ring-1 ring-sky-200 opacity-60")
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-4xl"
     }, offen ? a.art === "liga" ? "🏆" : a.art === "super" ? "🌈" : wBild(t, leiter) : "🔒"), /*#__PURE__*/React.createElement("div", {
       className: "min-w-0 flex-1"
     }, /*#__PURE__*/React.createElement("p", {
-      className: "font-black text-emerald-50"
+      className: "font-black text-sky-950"
     }, a.name), /*#__PURE__*/React.createElement("p", {
-      className: "text-xs text-emerald-300"
+      className: "text-xs text-sky-700"
     }, a.art === "super" ? offen ? "Alles auf einmal: mal, geteilt, plus, minus. Zwanzig Rechnungen." : "Erst die Liga gewinnen" : a.art === "liga" ? offen ? "Die sechzehn schwersten Rechnungen. 6·6 bis 9·9. Sonst nichts." : "Erst alle " + reif.noetig + " Orden holen (" + reif.hab + "/" + reif.noetig + ")" : offen ? "Arenaleiter: " + wName(t, leiter) + (a.art === "reihe" ? " (" + a.reihe + " · " + a.reihe + ")" : "") : "Erst " + reif.noetig + " Wesen aus dieser Reihe fangen (" + reif.hab + "/" + reif.noetig + ")"), offen && /*#__PURE__*/React.createElement("p", {
-      className: "text-xs text-amber-300"
+      className: "text-xs text-sky-600"
     }, rekord > 0 ? "Rekord " + rekord + " · " : "", teamTricks(t, a) > 0 ? teamTricks(t, a) + (teamTricks(t, a) === 1 ? " Trick" : " Tricks") + " im Team" : "noch keine Tricks im Team")), offen && /*#__PURE__*/React.createElement("div", {
       className: "text-right text-sm leading-tight"
     }, /*#__PURE__*/React.createElement(Sterne3, {
@@ -3733,13 +3731,13 @@ function ArenaListe({
         ...a,
         titel: true
       }),
-      className: "a-funkeln kein-blau mt-1 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-300 px-3 py-2 text-sm font-black text-emerald-950 shadow-lg active:translate-y-px"
+      className: "a-funkeln kein-blau mt-1 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-300 px-3 py-2 text-sm font-black text-sky-950 shadow-lg active:translate-y-px"
     }, "\uD83C\uDFC6 Titelkampf um ", POKAL[pk.stufe], /*#__PURE__*/React.createElement("span", {
       className: "block text-[11px] font-bold opacity-80"
     }, "alles richtig, alles blitzschnell")) : /*#__PURE__*/React.createElement("p", {
-      className: "mt-1 text-center text-[11px] text-emerald-500"
+      className: "mt-1 text-center text-[11px] text-sky-600"
     }, POKAL[pk.stufe], " Titelkampf in ", tageBis(pk.freiAb), " ", tageBis(pk.freiAb) === 1 ? "Tag" : "Tagen")), offen && pk.fertig && /*#__PURE__*/React.createElement("p", {
-      className: "mt-1 text-center text-[11px] font-bold text-amber-300"
+      className: "mt-1 text-center text-[11px] font-bold text-sky-600"
     }, "\uD83E\uDD47 Gold \u2014 diese Arena geh\xF6rt dir."));
   })));
 }
@@ -3818,9 +3816,9 @@ function Sterne3({
   return /*#__PURE__*/React.createElement("span", {
     className: "tracking-tight"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "text-amber-300"
+    className: "text-amber-400"
   }, "★".repeat(n)), /*#__PURE__*/React.createElement("span", {
-    className: "text-emerald-700"
+    className: "text-sky-700"
   }, "☆".repeat(3 - n)));
 }
 function arenaWelt(a) {
@@ -3842,7 +3840,7 @@ function ArenaBank({
     const tr = trickZahl(t, nr);
     return /*#__PURE__*/React.createElement("div", {
       key: nr,
-      className: "relative rounded-lg px-1 py-0.5 transition " + (aktiv === nr ? "scale-125 bg-amber-400/30 ring-2 ring-amber-400" : "")
+      className: "relative rounded-lg px-1 py-0.5 transition " + (aktiv === nr ? "scale-125 bg-sky-100 ring-2 ring-sky-400" : "")
     }, /*#__PURE__*/React.createElement("span", {
       className: "text-lg " + (hab ? "" : "opacity-25 grayscale brightness-0")
     }, wBild(t, nr)), tr > 0 && /*#__PURE__*/React.createElement("span", {
@@ -4198,14 +4196,14 @@ function ArenaKampf({
       unter: habePunkte + " ⚡ übrig · ein Trick kostet " + TRICK_KOSTEN,
       onZurueck: onEnde
     }), gelehrt.length > 0 && /*#__PURE__*/React.createElement("div", {
-      className: "a-auftauchen mb-3 rounded-2xl border-2 border-amber-400/60 bg-amber-400/10 p-3"
+      className: "a-auftauchen mb-3 rounded-2xl border-2 border-sky-300 bg-sky-50 p-3"
     }, gelehrt.map((g, k) => /*#__PURE__*/React.createElement("p", {
       key: k,
-      className: "text-center font-black text-amber-200"
+      className: "text-center font-black text-sky-700"
     }, wBild(t, g.nr), " ", wName(t, g.nr), " kann jetzt ", g.trick.bild, " ", aName(t, g.nr, g.i, g.trick), "!"))), /*#__PURE__*/React.createElement("p", {
-      className: "mb-2 text-sm text-emerald-200"
+      className: "mb-2 text-sm text-sky-900"
     }, "Ein Trick macht dein Wesen st\xE4rker: ", /*#__PURE__*/React.createElement("b", null, "+", PUNKTE_TRICK, " Punkte"), " bei jedem Angriff. Such dir aus, wer ihn lernen soll!"), bereit.length === 0 && nochNicht.length === 0 ? /*#__PURE__*/React.createElement("p", {
-      className: "rounded-2xl bg-emerald-900/60 p-4 text-center text-emerald-200"
+      className: "rounded-2xl bg-white ring-1 ring-sky-200 p-4 text-center text-sky-900"
     }, "Lernen d\xFCrfen nur Wesen, die im Kampf blitzschnell waren. Diesmal war keines dabei \u2014 deine \u26A1 bleiben dir aber erhalten.") : /*#__PURE__*/React.createElement(React.Fragment, null, bereit.length > 0 && /*#__PURE__*/React.createElement("div", {
       className: "grid grid-cols-3 gap-2"
     }, bereit.map(({
@@ -4217,30 +4215,30 @@ function ArenaKampf({
         key: nr,
         onClick: () => lehren(nr),
         disabled: !reicht,
-        className: "kein-blau rounded-2xl p-2 text-center transition " + (reicht ? "bg-emerald-800/70 hover:bg-emerald-700 active:translate-y-px" : "bg-emerald-900/50 opacity-50")
+        className: "kein-blau rounded-2xl p-2 text-center transition " + (reicht ? "bg-sky-100 hover:bg-sky-200 active:translate-y-px" : "bg-white ring-1 ring-sky-200 opacity-50")
       }, /*#__PURE__*/React.createElement("div", {
         className: "text-3xl"
       }, wBild(t, nr)), /*#__PURE__*/React.createElement("p", {
-        className: "truncate text-xs font-bold text-emerald-50"
+        className: "truncate text-xs font-bold text-sky-950"
       }, wName(t, nr)), /*#__PURE__*/React.createElement("p", {
-        className: "mt-1 text-[10px] leading-tight text-amber-300"
+        className: "mt-1 text-[10px] leading-tight text-sky-600"
       }, "lernt ", naechster.bild, /*#__PURE__*/React.createElement("br", null), naechster.name));
     })), nochNicht.length > 0 && /*#__PURE__*/React.createElement("div", {
-      className: "mt-4 rounded-2xl bg-emerald-900/60 p-3"
+      className: "mt-4 rounded-2xl bg-white ring-1 ring-sky-200 p-3"
     }, /*#__PURE__*/React.createElement("p", {
-      className: "text-xs font-bold uppercase tracking-widest text-emerald-300"
+      className: "text-xs font-bold uppercase tracking-widest text-sky-700"
     }, "Die brauchen noch etwas"), nochNicht.map(({
       nr,
       bed
     }) => /*#__PURE__*/React.createElement("p", {
       key: nr,
-      className: "mt-1 text-sm text-emerald-200"
+      className: "mt-1 text-sm text-sky-900"
     }, /*#__PURE__*/React.createElement("span", {
       className: "text-lg"
     }, wBild(t, nr)), " ", /*#__PURE__*/React.createElement("b", null, wName(t, nr)), " \u2014 ", bed.was)), /*#__PURE__*/React.createElement("p", {
-      className: "mt-2 text-xs text-emerald-400"
+      className: "mt-2 text-xs text-sky-600"
     }, "Nimm sie mit auf den Streifzug. Ein Trick will verdient sein!"))), /*#__PURE__*/React.createElement("p", {
-      className: "mt-4 text-center text-xs text-emerald-400"
+      className: "mt-4 text-center text-xs text-sky-600"
     }, "Du musst dich nicht jetzt entscheiden: Wer hier blitzschnell war, wartet im Trickbuch auf dich, bis du genug \u26A1 hast."), /*#__PURE__*/React.createElement("div", {
       className: "mt-3"
     }, /*#__PURE__*/React.createElement(Knopf, {
@@ -4263,41 +4261,41 @@ function ArenaKampf({
     return /*#__PURE__*/React.createElement("div", {
       className: "mx-auto max-w-md p-4 text-center"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "a-auftauchen rounded-3xl bg-emerald-900/70 p-5"
+      className: "a-auftauchen rounded-3xl bg-white ring-1 ring-sky-200 p-5"
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-6xl"
     }, titelGewonnen ? POKAL[vorherPokal] : gewonnen ? "🏅" : arena.art === "super" ? "🌈" : wBild(t, leiterNr)), /*#__PURE__*/React.createElement("p", {
-      className: "mt-2 text-5xl font-black text-amber-300"
+      className: "mt-2 text-5xl font-black text-sky-600"
     }, punkte), /*#__PURE__*/React.createElement("p", {
-      className: "text-xs uppercase tracking-widest text-emerald-300"
+      className: "text-xs uppercase tracking-widest text-sky-700"
     }, "Punkte"), /*#__PURE__*/React.createElement("p", {
-      className: "mt-3 text-sm font-black uppercase tracking-widest text-amber-200"
+      className: "mt-3 text-sm font-black uppercase tracking-widest text-sky-700"
     }, arena.name), /*#__PURE__*/React.createElement("div", {
       className: "text-3xl"
     }, /*#__PURE__*/React.createElement(Sterne3, {
       n: Math.max(vorherSterne, jetztSterne)
     })), titel && /*#__PURE__*/React.createElement("p", {
-      className: "mt-1 text-sm font-black " + (titelGewonnen ? "text-amber-200" : "text-emerald-400")
+      className: "mt-1 text-sm font-black " + (titelGewonnen ? "text-sky-700" : "text-sky-600")
     }, titelGewonnen ? "🏆 Titel geholt — " + POKAL[vorherPokal] + " gehört dir!" : fehlerZahl > 0 ? (fehlerZahl === 1 ? "Eine Rechnung daneben" : fehlerZahl + " Rechnungen daneben") + " — der Titel braucht alle richtig und alle blitzschnell. Du darfst sofort wieder ran." : "Alles richtig! Aber " + (fragen.length - schnellZahl) + (fragen.length - schnellZahl === 1 ? " Rechnung war" : " Rechnungen waren") + " nicht blitzschnell — und der Titel will beides. Du darfst sofort wieder ran."), titelGewonnen && vorherPokal + 1 < POKAL.length && /*#__PURE__*/React.createElement("p", {
-      className: "text-[11px] text-emerald-400"
+      className: "text-[11px] text-sky-600"
     }, POKAL[vorherPokal + 1], " ist in ", POKAL_PAUSE[vorherPokal + 1], " Tagen dran."), titelGewonnen && vorherPokal + 1 >= POKAL.length && /*#__PURE__*/React.createElement("p", {
-      className: "a-funkeln text-[11px] font-bold text-amber-300"
+      className: "a-funkeln text-[11px] font-bold text-sky-600"
     }, "Gold! Diese Arena geh\xF6rt dir f\xFCr immer."), /*#__PURE__*/React.createElement("h2", {
-      className: "mt-1 text-xl font-black text-emerald-50"
+      className: "mt-1 text-xl font-black text-sky-950"
     }, jetztSterne > vorherSterne ? jetztSterne === 3 ? "Perfekt! Dritter Stern!" : jetztSterne === 2 ? "Meister! Zweiter Stern!" : "Orden gewonnen!" : gewonnen ? "Orden verteidigt!" : vorherSterne >= 1 ? "Diesmal nicht" : "Knapp daneben"), !gewonnen && vorherSterne >= 1 && /*#__PURE__*/React.createElement("p", {
-      className: "text-xs text-emerald-400"
+      className: "text-xs text-sky-600"
     }, "Dein Orden bleibt dir \u2014 aber verteidigt ist er heute nicht."), /*#__PURE__*/React.createElement("p", {
-      className: "mt-1 text-sm text-emerald-300"
+      className: "mt-1 text-sm text-sky-700"
     }, treffer, " von ", fragen.length, " richtig \xB7 ", schnellZahl, " blitzschnell"), Math.max(vorherSterne, jetztSterne) < 3 && /*#__PURE__*/React.createElement("p", {
-      className: "mt-1 text-xs text-amber-200"
+      className: "mt-1 text-xs text-sky-700"
     }, Math.max(vorherSterne, jetztSterne) === 0 ? fehlerZahl > ORDEN_FEHLER ? "★ mit höchstens " + ORDEN_FEHLER + " Fehler — du hattest " + fehlerZahl : "★ ab " + ordenPunkte(arena) + " Punkten — dir fehlten " + (ordenPunkte(arena) - punkte) : Math.max(vorherSterne, jetztSterne) === 1 ? fehlerZahl > 0 ? "★★ nur ganz ohne Fehler — du hattest " + fehlerZahl : "★★ ab " + meisterPunkte(arena) + " Punkten" + (punkte < meisterPunkte(arena) ? " — dir fehlten " + (meisterPunkte(arena) - punkte) : "") : "★★★ für alle " + fragen.length + " richtig und alle blitzschnell"), neuerRekord && /*#__PURE__*/React.createElement("p", {
-      className: "a-funkeln mt-2 font-black text-amber-200"
+      className: "a-funkeln mt-2 font-black text-sky-700"
     }, "\u2728 Neuer Rekord!", vorherRekord > 0 ? " Vorher " + vorherRekord : ""), !neuerRekord && vorherRekord > 0 && /*#__PURE__*/React.createElement("p", {
-      className: "mt-2 text-sm text-emerald-400"
+      className: "mt-2 text-sm text-sky-600"
     }, "Dein Rekord hier: ", vorherRekord), liste.length > 0 && /*#__PURE__*/React.createElement("div", {
-      className: "mt-4 rounded-2xl bg-emerald-950/50 p-3 text-left"
+      className: "mt-4 rounded-2xl bg-sky-100 p-3 text-left"
     }, /*#__PURE__*/React.createElement("p", {
-      className: "text-center text-xs font-bold uppercase tracking-widest text-emerald-300"
+      className: "text-center text-xs font-bold uppercase tracking-widest text-sky-700"
     }, "Wer wie viel geholt hat"), /*#__PURE__*/React.createElement("div", {
       className: "mt-2 space-y-1"
     }, liste.map(([nr, p2]) => /*#__PURE__*/React.createElement("div", {
@@ -4306,17 +4304,17 @@ function ArenaKampf({
     }, /*#__PURE__*/React.createElement("span", {
       className: "text-xl"
     }, WESEN[nr] ? wBild(t, nr) : "✨"), /*#__PURE__*/React.createElement("span", {
-      className: "flex-1 truncate text-emerald-100"
+      className: "flex-1 truncate text-sky-950"
     }, WESEN[nr] ? wName(t, nr) : "Nr. " + nr, trickZahl(t, Number(nr)) > 0 && /*#__PURE__*/React.createElement("span", {
-      className: "text-amber-300"
+      className: "text-sky-600"
     }, " ", "✨".repeat(trickZahl(t, Number(nr))))), /*#__PURE__*/React.createElement("span", {
-      className: "font-black text-amber-300"
+      className: "font-black text-sky-600"
     }, p2))))), /*#__PURE__*/React.createElement("div", {
-      className: "mt-3 rounded-2xl bg-emerald-950/50 p-3"
+      className: "mt-3 rounded-2xl bg-sky-100 p-3"
     }, /*#__PURE__*/React.createElement("p", {
-      className: "text-2xl font-black text-amber-300"
+      className: "text-2xl font-black text-sky-600"
     }, "+", verdient, " \u26A1"), /*#__PURE__*/React.createElement("p", {
-      className: "text-xs text-emerald-300"
+      className: "text-xs text-sky-700"
     }, "je blitzschnelle Antwort eine \xB7 macht ", trickPunkte(t), " \u26A1")), /*#__PURE__*/React.createElement("div", {
       className: "mt-4 space-y-2"
     }, kannLehren && /*#__PURE__*/React.createElement(Knopf, {
@@ -4335,25 +4333,25 @@ function ArenaKampf({
     className: "flex items-center gap-2"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: onEnde,
-    className: "kein-blau rounded-xl border-2 border-emerald-500/50 px-3 py-1 text-emerald-100"
+    className: "kein-blau rounded-xl border-2 border-sky-300 px-3 py-1 text-sky-950"
   }, "\u2039"), /*#__PURE__*/React.createElement("div", {
     className: "flex-1 text-center"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-sm font-black text-amber-300"
+    className: "text-sm font-black text-sky-600"
   }, titel ? "🏆 Titelkampf · " : "", arena.name), /*#__PURE__*/React.createElement("p", {
-    className: "text-[11px] text-emerald-300"
+    className: "text-[11px] text-sky-700"
   }, titel ? titelWeg ? "Titel futsch — spiel ruhig zu Ende, du darfst sofort wieder ran" : POKAL[vorherPokal] + " — alles richtig, alles blitzschnell" : arena.art === "super" ? "Mal · Geteilt · Plus · Minus — " + fragen.length + " Rechnungen" : "gegen " + wName(t, leiterNr) + " · Orden ab " + ordenPunkte(arena))), /*#__PURE__*/React.createElement("span", {
-    className: "text-xs font-bold text-emerald-300"
+    className: "text-xs font-bold text-sky-700"
   }, i + 1, "/", fragen.length)), /*#__PURE__*/React.createElement("div", {
     className: "mt-2 flex items-end justify-center gap-3"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-3xl font-black text-amber-300"
+    className: "text-3xl font-black text-sky-600"
   }, punkte), kombo >= KOMBO_LAENGE - 1 && phase === "kampf" && /*#__PURE__*/React.createElement("p", {
-    className: "pb-1 text-xs font-bold text-emerald-300"
+    className: "pb-1 text-xs font-bold text-sky-700"
   }, kombo % KOMBO_LAENGE === KOMBO_LAENGE - 1 ? "nächste gibt Kombo!" : "Kombo " + kombo)), /*#__PURE__*/React.createElement("div", {
-    className: "mt-1 h-2 overflow-hidden rounded-full bg-emerald-900"
+    className: "mt-1 h-2 overflow-hidden rounded-full bg-white ring-1 ring-sky-200"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "h-full bg-amber-400 transition-all",
+    className: "h-full bg-sky-400 transition-all",
     style: {
       width: Math.min(100, punkte / ordenPunkte(arena) * 100) + "%"
     }
@@ -4365,28 +4363,28 @@ function ArenaKampf({
     team: rundenTeam,
     aktiv: phase === "kurz" && angriff ? angriff.nr : null
   })), /*#__PURE__*/React.createElement("div", {
-    className: "mt-2 h-3 overflow-hidden rounded-full bg-emerald-900"
+    className: "mt-2 h-3 overflow-hidden rounded-full bg-white ring-1 ring-sky-200"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "h-full transition-all " + (pause ? "bg-sky-300" : zeit > dauer / 2 ? "bg-amber-400" : "bg-rose-400"),
+    className: "h-full transition-all " + (pause || tippt ? "bg-sky-300" : zeit > dauer / 2 ? "bg-amber-400" : "bg-rose-400"),
     style: {
       width: zeit / dauer * 100 + "%"
     }
   })), /*#__PURE__*/React.createElement("div", {
-    className: "mt-3 rounded-3xl bg-gradient-to-b from-emerald-50 to-white p-6 text-center shadow-2xl"
+    className: "mt-3 rounded-3xl bg-gradient-to-b from-white to-white p-6 text-center shadow-sm ring-1 ring-sky-200"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-4xl font-black text-emerald-950 sm:text-5xl"
+    className: "text-4xl font-black text-sky-950 sm:text-5xl"
   }, offen ? /*#__PURE__*/React.createElement(Loesung, {
     text: frage.text,
     getippt: eingabe,
     richtig: frage.antwort
   }) : tippt ? /*#__PURE__*/React.createElement(Verdeckt, {
     wert: eingabe
-  }) : /*#__PURE__*/React.createElement(React.Fragment, null, frage.text, " = ", eingabe === "" ? "?" : eingabe)), tippt && /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-xs font-bold uppercase tracking-widest text-emerald-600"
-  }, "Uhr steht \u2014 tipp deine Zahl"), pause && phase === "kampf" && /*#__PURE__*/React.createElement("p", {
+  }) : /*#__PURE__*/React.createElement(React.Fragment, null, frage.text, " = ", eingabe === "" ? "?" : eingabe)), phase === "kampf" && /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 min-h-4 text-xs font-bold uppercase tracking-widest text-sky-600"
+  }, tippt ? "Uhr steht — tipp deine Zahl" : ""), pause && phase === "kampf" && /*#__PURE__*/React.createElement("p", {
     className: "a-rutschen mt-2 text-sm font-black text-sky-700"
   }, "Uhr angehalten \u2014 lass dir Zeit."), geholfen && phase === "kampf" && !tippt && /*#__PURE__*/React.createElement("div", {
-    className: "a-rutschen mt-3 rounded-2xl bg-emerald-100 p-3 text-left"
+    className: "a-rutschen mt-3 rounded-2xl bg-sky-50 p-3 text-left"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-wrap gap-1"
   }, tipps.map((b2, k) => /*#__PURE__*/React.createElement("button", {
@@ -4395,9 +4393,9 @@ function ArenaKampf({
       setTipp(k);
       Ton.tippen();
     },
-    className: "kein-blau rounded-xl border-2 px-2 py-1 text-[11px] font-bold transition " + (tipp === k ? "border-amber-500 bg-amber-300/50 text-emerald-900" : "border-emerald-300 text-emerald-700")
+    className: "kein-blau rounded-xl border-2 px-2 py-1 text-[11px] font-bold transition " + (tipp === k ? "border-sky-500 bg-sky-200 text-sky-950" : "border-sky-200 text-sky-700")
   }, b2.bild, " ", b2.name))), tipps[tipp] && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-sm font-bold leading-snug text-emerald-900"
+    className: "mt-2 text-sm font-bold leading-snug text-sky-950"
   }, tipps[tipp].text), tipps[tipp].bild2 && /*#__PURE__*/React.createElement("div", {
     className: "mt-2 flex justify-center"
   }, /*#__PURE__*/React.createElement(Rechenbild, {
@@ -4405,17 +4403,17 @@ function ArenaKampf({
   })))), phase === "kurz" && /*#__PURE__*/React.createElement("div", {
     className: "a-rutschen mt-3"
   }, angriff ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
-    className: "font-black text-emerald-700"
+    className: "font-black text-sky-700"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-2xl"
   }, WESEN[angriff.nr] ? wBild(t, angriff.nr) : "✨"), " ", WESEN[angriff.nr] ? wName(t, angriff.nr) : "Treffer", angriff.mitBeere ? " greift an — mit Beere!" : angriff.trick ? " setzt " + angriff.trick.bild + " " + angriff.trick.name + " ein!" : " greift an!"), /*#__PURE__*/React.createElement("p", {
     className: "mt-1 text-lg font-black text-amber-600"
   }, "+", angriff.punkte, angriff.kombo > 0 && /*#__PURE__*/React.createElement("span", {
-    className: "text-sm text-emerald-700"
+    className: "text-sm text-sky-700"
   }, " \xB7 Kombo ", angriff.kombo, "!"))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
     className: "font-black text-rose-700"
   }, letzte === "langsam" ? "Zu langsam!" : "Daneben!"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-sm text-emerald-700"
+    className: "mt-1 text-sm text-sky-700"
   }, "Schau sie dir in Ruhe an \u2014 die Uhr steht."), /*#__PURE__*/React.createElement("div", {
     className: "mt-3"
   }, /*#__PURE__*/React.createElement(Knopf, {
@@ -4439,11 +4437,11 @@ function ArenaKampf({
   }, /*#__PURE__*/React.createElement("button", {
     onClick: beereNehmen,
     disabled: beerenRest <= 0 || geholfen || tippt || phase !== "kampf",
-    className: "kein-blau rounded-2xl border-2 py-3 text-sm font-black transition " + (beerenRest > 0 && !geholfen && !tippt && phase === "kampf" ? "border-amber-400/60 text-amber-200 active:translate-y-px" : "border-emerald-800 text-emerald-700")
+    className: "kein-blau rounded-2xl border-2 py-3 text-sm font-black transition " + (beerenRest > 0 && !geholfen && !tippt && phase === "kampf" ? "border-sky-300 text-sky-700 active:translate-y-px" : "border-sky-200 text-sky-700")
   }, "\uD83E\uDED0 Beere ", "●".repeat(beerenRest), "○".repeat(BEERE_KAMPF - beerenRest)), /*#__PURE__*/React.createElement("button", {
     onClick: luftHolen,
     disabled: luft <= 0 || pause || tippt || phase !== "kampf",
-    className: "kein-blau rounded-2xl border-2 py-3 text-sm font-black transition " + (luft > 0 && !pause && !tippt && phase === "kampf" ? "border-sky-400/60 text-sky-200 active:translate-y-px" : "border-emerald-800 text-emerald-700")
+    className: "kein-blau rounded-2xl border-2 py-3 text-sm font-black transition " + (luft > 0 && !pause && !tippt && phase === "kampf" ? "border-sky-300 text-sky-700 active:translate-y-px" : "border-sky-200 text-sky-700")
   }, "\uD83D\uDE2E\u200D\uD83D\uDCA8 Luft holen ", "●".repeat(luft), "○".repeat(LUFT_HOLEN - luft))));
 }
 
@@ -4469,18 +4467,18 @@ function Duell({
       unter: "Zwei Trainer, ein Ger\xE4t",
       onZurueck: onZurueck
     }), namen.length < 2 ? /*#__PURE__*/React.createElement("p", {
-      className: "rounded-2xl bg-emerald-900/60 p-4 text-emerald-200"
+      className: "rounded-2xl bg-white ring-1 ring-sky-200 p-4 text-sky-900"
     }, "Zum Duell geh\xF6ren zwei! Leg auf der Startseite noch eine Trainerkarte an \u2014 f\xFCr eine Freundin oder einen Freund.") : /*#__PURE__*/React.createElement(React.Fragment, null, [["Trainer 1", a, setA], ["Trainer 2", b, setB]].map(([titel, wert, setzen]) => /*#__PURE__*/React.createElement("div", {
       key: titel,
-      className: "mb-3 rounded-2xl bg-emerald-900/60 p-3"
+      className: "mb-3 rounded-2xl bg-white ring-1 ring-sky-200 p-3"
     }, /*#__PURE__*/React.createElement("p", {
-      className: "text-xs font-bold uppercase tracking-widest text-amber-300"
+      className: "text-xs font-bold uppercase tracking-widest text-sky-600"
     }, titel), /*#__PURE__*/React.createElement("div", {
       className: "mt-2 flex flex-wrap gap-2"
     }, namen.map(n => /*#__PURE__*/React.createElement("button", {
       key: n,
       onClick: () => setzen(n),
-      className: "kein-blau rounded-xl px-3 py-2 text-sm font-bold " + (wert === n ? "bg-amber-400 text-emerald-950" : "bg-emerald-800 text-emerald-100")
+      className: "kein-blau rounded-xl px-3 py-2 text-sm font-bold " + (wert === n ? "bg-sky-400 text-sky-950" : "bg-sky-100 text-sky-950")
     }, stand.trainer[n].bild, " ", n))))), /*#__PURE__*/React.createElement(Knopf, {
       onClick: () => {
         if (a === b) return;
@@ -4563,24 +4561,24 @@ function DuellLauf({
     return /*#__PURE__*/React.createElement("div", {
       className: "mx-auto max-w-md p-5 text-center"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "a-auftauchen rounded-3xl bg-emerald-900/70 p-6"
+      className: "a-auftauchen rounded-3xl bg-white ring-1 ring-sky-200 p-6"
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-6xl"
     }, gewinner === null ? "🤝" : "🏆"), /*#__PURE__*/React.createElement("h2", {
-      className: "mt-2 text-2xl font-black text-amber-300"
+      className: "mt-2 text-2xl font-black text-sky-600"
     }, gewinner === null ? "Unentschieden!" : lauf.spieler[gewinner].name + " gewinnt!"), /*#__PURE__*/React.createElement("div", {
       className: "mt-4 grid grid-cols-2 gap-3"
     }, lauf.spieler.map((s, i) => /*#__PURE__*/React.createElement("div", {
       key: i,
-      className: "rounded-2xl bg-emerald-800/70 p-3"
+      className: "rounded-2xl bg-sky-100 p-3"
     }, /*#__PURE__*/React.createElement("p", {
       className: "text-3xl"
     }, s.t.bild), /*#__PURE__*/React.createElement("p", {
-      className: "font-bold text-emerald-100"
+      className: "font-bold text-sky-950"
     }, s.name), /*#__PURE__*/React.createElement("p", {
-      className: "text-2xl font-black text-amber-300"
+      className: "text-2xl font-black text-sky-600"
     }, punkte[i])))), /*#__PURE__*/React.createElement("p", {
-      className: "mt-3 text-xs text-emerald-400"
+      className: "mt-3 text-xs text-sky-600"
     }, "Jeder hat seine eigenen Aufgaben bekommen. Deshalb kann auch gewinnen, wer noch nicht so weit ist."), /*#__PURE__*/React.createElement("div", {
       className: "mt-5"
     }, /*#__PURE__*/React.createElement(Knopf, {
@@ -4615,19 +4613,19 @@ function DuellLauf({
     className: "grid grid-cols-2 gap-2"
   }, lauf.spieler.map((s, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
-    className: "rounded-2xl p-2 text-center " + (i === dran ? "bg-amber-400/20 ring-2 ring-amber-400" : "bg-emerald-900/60")
+    className: "rounded-2xl p-2 text-center " + (i === dran ? "bg-sky-100 ring-2 ring-sky-400" : "bg-white ring-1 ring-sky-200")
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-2xl"
   }, s.t.bild), /*#__PURE__*/React.createElement("p", {
-    className: "truncate text-xs font-bold text-emerald-100"
+    className: "truncate text-xs font-bold text-sky-950"
   }, s.name), /*#__PURE__*/React.createElement("p", {
-    className: "text-xl font-black text-amber-300"
+    className: "text-xl font-black text-sky-600"
   }, punkte[i])))), /*#__PURE__*/React.createElement("p", {
-    className: "mt-3 text-center text-sm font-black text-amber-300"
+    className: "mt-3 text-center text-sm font-black text-sky-600"
   }, spieler.name, " ist dran \xB7 Frage ", runde + 1, " von 6"), /*#__PURE__*/React.createElement("div", {
-    className: "mt-2 rounded-3xl bg-gradient-to-b from-emerald-50 to-white p-6 text-center shadow-2xl"
+    className: "mt-2 rounded-3xl bg-gradient-to-b from-white to-white p-6 text-center shadow-sm ring-1 ring-sky-200"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-4xl font-black text-emerald-950 sm:text-5xl"
+    className: "text-4xl font-black text-sky-950 sm:text-5xl"
   }, phase === "kurz" && letzte === 0 ? /*#__PURE__*/React.createElement(Loesung, {
     text: fakt.text,
     getippt: eingabe,
@@ -4635,7 +4633,7 @@ function DuellLauf({
   }) : tippt ? /*#__PURE__*/React.createElement(Verdeckt, {
     wert: eingabe
   }) : /*#__PURE__*/React.createElement(React.Fragment, null, fakt.text, " = ", eingabe === "" ? "?" : eingabe)), phase === "kurz" && /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 font-black " + (letzte ? "text-emerald-700" : "text-rose-700")
+    className: "mt-2 font-black " + (letzte ? "text-sky-700" : "text-rose-700")
   }, letzte === 2 ? "Blitzschnell! +2" : letzte === 1 ? "Richtig! +1" : "Daneben"), phase === "kurz" && letzte === 0 && /*#__PURE__*/React.createElement("div", {
     className: "a-rutschen mt-3"
   }, /*#__PURE__*/React.createElement(Knopf, {
@@ -4654,10 +4652,10 @@ function DuellLauf({
     gesperrt: phase !== "frage",
     tasten: tasten
   })), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-center text-xs text-emerald-400"
+    className: "mt-2 text-center text-xs text-sky-600"
   }, "Wer es blitzschnell wei\xDF, bekommt doppelt: zwei Punkte!"), /*#__PURE__*/React.createElement("button", {
     onClick: onEnde,
-    className: "mt-2 w-full text-center text-xs text-emerald-500"
+    className: "mt-2 w-full text-center text-xs text-sky-600"
   }, "Duell abbrechen"));
 }
 
@@ -4691,11 +4689,11 @@ function Kachel({
   hell
 }) {
   return /*#__PURE__*/React.createElement("div", {
-    className: "rounded-xl bg-emerald-950/50 p-2"
+    className: "rounded-xl bg-sky-100 p-2"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-sm font-black " + (hell ? "text-amber-300" : "text-emerald-100")
+    className: "text-sm font-black " + (hell ? "text-sky-600" : "text-sky-950")
   }, oben), /*#__PURE__*/React.createElement("p", {
-    className: "text-[10px] text-emerald-400"
+    className: "text-[10px] text-sky-600"
   }, unten));
 }
 function Trainerkarte({
@@ -4706,7 +4704,7 @@ function Trainerkarte({
   const gefangen = anzahlGefangen(t);
   const f = fortschritt(t);
   return /*#__PURE__*/React.createElement("div", {
-    className: "rounded-3xl border-2 border-amber-400/60 bg-gradient-to-br from-emerald-800 to-emerald-900 p-4"
+    className: "rounded-3xl border-2 border-sky-300 bg-gradient-to-br from-white to-sky-50 p-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-3"
   }, /*#__PURE__*/React.createElement("button", {
@@ -4716,35 +4714,35 @@ function Trainerkarte({
   }, t.bild), /*#__PURE__*/React.createElement("div", {
     className: "min-w-0 flex-1"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold uppercase tracking-widest text-amber-300"
+    className: "text-xs font-bold uppercase tracking-widest text-sky-600"
   }, "Trainerkarte"), /*#__PURE__*/React.createElement("p", {
-    className: "truncate text-2xl font-black text-emerald-50"
+    className: "truncate text-2xl font-black text-sky-950"
   }, name)), /*#__PURE__*/React.createElement("div", {
     className: "text-right"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-2xl font-black text-amber-300"
+    className: "text-2xl font-black text-sky-600"
   }, gefangen), /*#__PURE__*/React.createElement("p", {
-    className: "text-[10px] text-emerald-300"
+    className: "text-[10px] text-sky-700"
   }, "von ", ALLE_NR.length))), /*#__PURE__*/React.createElement("div", {
     className: "mt-3 grid grid-cols-5 gap-1 text-center"
   }, /*#__PURE__*/React.createElement(Kachel, {
     oben: f.sterne[0] + "/" + f.sterne[1],
-    unten: "Sterne \u2605"
+    unten: "Sterne"
   }), /*#__PURE__*/React.createElement(Kachel, {
     oben: f.pokale[0] + "/" + f.pokale[1],
-    unten: "Pokale \uD83C\uDFC6"
+    unten: "Pokale"
   }), /*#__PURE__*/React.createElement(Kachel, {
     oben: f.rechnungen[0] + "/" + f.rechnungen[1],
-    unten: "Rechnungen"
+    unten: "Aufgaben"
   }), /*#__PURE__*/React.createElement(Kachel, {
     oben: f.tricks[0] + "/" + f.tricks[1],
-    unten: "Tricks \u2728"
+    unten: "Tricks"
   }), /*#__PURE__*/React.createElement(Kachel, {
     oben: trickPunkte(t),
     unten: "\u26A1 \xFCbrig",
     hell: true
   })), meisterkrone(t) && /*#__PURE__*/React.createElement("p", {
-    className: "a-funkeln mt-2 text-center text-sm font-black text-amber-300"
+    className: "a-funkeln mt-2 text-center text-sm font-black text-sky-600"
   }, "\uD83D\uDC51 Meisterkrone \u2014 alle zw\xF6lf Arenen in Gold."));
 }
 
@@ -4877,13 +4875,13 @@ function Weg({
 }) {
   return /*#__PURE__*/React.createElement("button", {
     onClick: onClick,
-    className: "kein-blau w-full rounded-2xl px-4 text-left shadow-lg transition active:translate-y-px " + (haupt ? "bg-amber-400 py-3 hover:bg-amber-300" : "border-2 border-emerald-500/50 py-2.5 hover:bg-emerald-800/50")
+    className: "kein-blau w-full rounded-2xl px-4 text-left shadow-lg transition active:translate-y-px " + (haupt ? "bg-sky-400 py-3 hover:bg-sky-400" : "border-2 border-sky-300 py-2.5 hover:bg-sky-100")
   }, /*#__PURE__*/React.createElement("p", {
-    className: "font-black " + (haupt ? "text-lg text-emerald-950" : "text-sm text-emerald-100")
+    className: "font-black " + (haupt ? "text-lg text-sky-950" : "text-sm text-sky-950")
   }, titel), /*#__PURE__*/React.createElement("p", {
-    className: "text-[11px] leading-snug " + (haupt ? "text-emerald-900/75" : "text-emerald-400")
+    className: "text-[11px] leading-snug " + (haupt ? "text-sky-950/75" : "text-sky-600")
   }, unter), zahl && /*#__PURE__*/React.createElement("p", {
-    className: "text-[11px] font-bold " + (haupt ? "text-emerald-900/60" : "text-amber-300")
+    className: "text-[11px] font-bold " + (haupt ? "text-sky-950/60" : "text-sky-600")
   }, zahl));
 }
 
@@ -4898,11 +4896,11 @@ function TastenErklaerung({
   return /*#__PURE__*/React.createElement("div", {
     className: "mx-auto max-w-md p-4"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "a-auftauchen rounded-3xl border-2 border-amber-400/60 bg-emerald-900/80 p-5 text-emerald-100"
+    className: "a-auftauchen rounded-3xl border-2 border-sky-300 bg-white p-5 text-sky-950"
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-center text-5xl"
   }, "\uD83D\uDD00"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-center text-2xl font-black text-amber-300"
+    className: "mt-2 text-center text-2xl font-black text-sky-600"
   }, "Die Tasten sind verzaubert!"), /*#__PURE__*/React.createElement("p", {
     className: "mt-3"
   }, "Ab jetzt wandern die Zahlen auf den Tasten. Jede Runde liegen sie woanders \u2014 so zum Beispiel:"), /*#__PURE__*/React.createElement("div", {
@@ -4916,9 +4914,9 @@ function TastenErklaerung({
   })), /*#__PURE__*/React.createElement("p", {
     className: "mt-3"
   }, "Wer sich nur merkt, ", /*#__PURE__*/React.createElement("b", null, "wo"), " er hintippt, kommt jetzt ins Stolpern. Wer die Zahl im Kopf hat, findet sie \xFCberall."), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 font-bold text-amber-200"
+    className: "mt-2 font-bold text-sky-700"
   }, "Also: erst denken \u2014 7 \xB7 8 ist sechsundf\xFCnfzig. Dann die 5 suchen, dann die 6."), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-emerald-300"
+    className: "mt-2 text-sky-700"
   }, "Keine Sorge: F\xFCrs Suchen hast du alle Zeit. Und wenn es am Anfang holpert, ist das ganz normal \u2014 deine Wesen kommen dann einfach \xF6fter vorbei, bis es sitzt."), /*#__PURE__*/React.createElement("div", {
     className: "mt-5"
   }, /*#__PURE__*/React.createElement(Knopf, {
@@ -4934,23 +4932,23 @@ function DenkErklaerung({
   return /*#__PURE__*/React.createElement("div", {
     className: "mx-auto max-w-md p-4"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "a-auftauchen rounded-3xl border-2 border-amber-400/60 bg-emerald-900/80 p-5 text-emerald-100"
+    className: "a-auftauchen rounded-3xl border-2 border-sky-300 bg-white p-5 text-sky-950"
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-center text-5xl"
   }, "\uD83D\uDCA1"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-center text-2xl font-black text-amber-300"
+    className: "mt-2 text-center text-2xl font-black text-sky-600"
   }, "Neu: Erst denken, dann tippen"), /*#__PURE__*/React.createElement("p", {
     className: "mt-3"
   }, "Du hattest zu wenig Zeit zum Tippen? Das ist vorbei."), /*#__PURE__*/React.createElement("p", {
     className: "mt-2"
   }, "Ab jetzt siehst du zuerst nur die Rechnung. Hast du die Zahl im Kopf, dr\xFCckst du ", /*#__PURE__*/React.createElement("b", {
-    className: "text-amber-200"
+    className: "text-sky-700"
   }, "Ich wei\xDF es!")), /*#__PURE__*/React.createElement("p", {
     className: "mt-2"
   }, "Dann kommen die Tasten \u2014 und die Uhr steht. Such die Ziffern ganz in Ruhe."), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 font-bold text-amber-200"
+    className: "mt-2 font-bold text-sky-700"
   }, "Blitzschnell bist du, wenn du es schnell ", /*#__PURE__*/React.createElement("i", null, "wei\xDFt"), ". Nicht, wenn du schnell tippst."), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-emerald-300"
+    className: "mt-2 text-sky-700"
   }, "Und noch etwas: Deine Wesen verstecken sich jetzt, bis du geantwortet hast. Rechne \u2014 dann siehst du, wer es war!"), /*#__PURE__*/React.createElement("div", {
     className: "mt-5"
   }, /*#__PURE__*/React.createElement(Knopf, {
@@ -4964,27 +4962,27 @@ function SpielErklaerung({
   return /*#__PURE__*/React.createElement("div", {
     className: "mx-auto max-w-md p-4"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "a-auftauchen rounded-3xl border-2 border-amber-400/60 bg-emerald-900/80 p-5 text-emerald-100"
+    className: "a-auftauchen rounded-3xl border-2 border-sky-300 bg-white p-5 text-sky-950"
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-center text-5xl"
   }, "\uD83D\uDDFA\uFE0F"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-center text-2xl font-black text-amber-300"
+    className: "mt-2 text-center text-2xl font-black text-sky-600"
   }, "So l\xE4uft das hier"), /*#__PURE__*/React.createElement("p", {
     className: "mt-2"
   }, "Jedes Ergebnis ist ein Wesen. Steht da 7 \xB7 8 = 56, dann ist Rexi gemeint. Wer rechnet, f\xE4ngt es."), /*#__PURE__*/React.createElement("p", {
-    className: "mt-4 font-black text-amber-200"
+    className: "mt-4 font-black text-sky-700"
   }, "\uD83C\uDF3F Streifzug"), /*#__PURE__*/React.createElement("p", null, "Dein Trainingsplatz. Hier f\xE4ngst du neue Wesen \u2014 und hier werden sie stark. Jedes Wesen kennt mehrere Rechnungen und zeigt dir nach und nach alle. Wer eine Weile nicht dran war, kommt von selbst wieder vorbei. ", /*#__PURE__*/React.createElement("b", {
-    className: "text-amber-200"
+    className: "text-sky-700"
   }, "Gefangen hei\xDFt noch nicht gekonnt:"), " stark werden deine Wesen nur hier."), /*#__PURE__*/React.createElement("p", {
-    className: "mt-3 font-black text-amber-200"
+    className: "mt-3 font-black text-sky-700"
   }, "\uD83C\uDFC5 Arenen"), /*#__PURE__*/React.createElement("p", null, "Die B\xFChne. Zw\xF6lf Rechnungen gegen einen Arenaleiter \u2014 f\xFCr jede richtige st\xFCrmt eines deiner Wesen los. Es gibt Orden und bis zu drei Sterne pro Arena. Wer blitzschnell antwortet, sammelt \u26A1."), /*#__PURE__*/React.createElement("p", {
-    className: "mt-3 font-black text-amber-200"
+    className: "mt-3 font-black text-sky-700"
   }, "\uD83D\uDCD5 Zahlodex"), /*#__PURE__*/React.createElement("p", null, "Deine Sammlung. Hier siehst du jedes Wesen, seine Tricks und welche Rechnungen ihm noch fehlen. Und hier gibst du \u26A1 aus."), /*#__PURE__*/React.createElement("p", {
-    className: "mt-3 font-black text-amber-200"
+    className: "mt-3 font-black text-sky-700"
   }, "\u2694\uFE0F Duell"), /*#__PURE__*/React.createElement("p", null, "Zu zweit an einem Ger\xE4t. Wer wei\xDF es zuerst?"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-3 font-black text-amber-200"
+    className: "mt-3 font-black text-sky-700"
   }, "\uD83D\uDCA1 Erst denken, dann tippen"), /*#__PURE__*/React.createElement("p", null, "Zuerst siehst du nur die Rechnung. Hast du die Zahl im Kopf, dr\xFCck", " ", /*#__PURE__*/React.createElement("b", {
-    className: "text-amber-200"
+    className: "text-sky-700"
   }, "Ich wei\xDF es!"), " Erst dann kommen die Tasten \u2014 und die wandern: jede Runde liegen die Zahlen woanders. F\xFCrs Suchen hast du alle Zeit."), /*#__PURE__*/React.createElement("div", {
     className: "mt-5"
   }, /*#__PURE__*/React.createElement(Knopf, {
@@ -5222,13 +5220,13 @@ function Abfrage({
       unter: "Zu zweit, ganz ohne Tasten",
       onZurueck: onZurueck
     }), /*#__PURE__*/React.createElement("div", {
-      className: "rounded-2xl bg-emerald-900/60 p-4 text-sm leading-relaxed text-emerald-100"
+      className: "rounded-2xl bg-white ring-1 ring-sky-200 p-4 text-sm leading-relaxed text-sky-950"
     }, /*#__PURE__*/React.createElement("p", {
-      className: "font-black text-amber-300"
+      className: "font-black text-sky-600"
     }, "So geht's"), /*#__PURE__*/React.createElement("p", {
       className: "mt-1"
     }, "Lies die Rechnung vor oder zeig sie her. ", name, " sagt die Antwort laut \u2014 ohne Tasten, ohne Hilfe. Dann tippst du auf \u201EL\xF6sung zeigen\" und sagst, wie es war."), /*#__PURE__*/React.createElement("p", {
-      className: "mt-2 text-emerald-300"
+      className: "mt-2 text-sky-700"
     }, "\u26A1 ", /*#__PURE__*/React.createElement("b", null, "Sofort gewusst"), " z\xE4hlt wie blitzschnell im Spiel, \u2705", " ", /*#__PURE__*/React.createElement("b", null, "Gewusst"), " wie eine normale richtige Antwort. Was nicht gewusst wurde, kommt in den n\xE4chsten Tagen \xF6fter dran.")), /*#__PURE__*/React.createElement("div", {
       className: "mt-4 space-y-2"
     }, ["malfeld", "wiese"].map(w => {
@@ -5237,11 +5235,11 @@ function Abfrage({
         key: w,
         disabled: zahl === 0,
         onClick: () => starte(w),
-        className: "kein-blau w-full rounded-2xl p-4 text-left transition " + (zahl > 0 ? "bg-emerald-800/70 hover:bg-emerald-700" : "bg-emerald-900/50 opacity-50")
+        className: "kein-blau w-full rounded-2xl p-4 text-left transition " + (zahl > 0 ? "bg-sky-100 hover:bg-sky-200" : "bg-white ring-1 ring-sky-200 opacity-50")
       }, /*#__PURE__*/React.createElement("p", {
-        className: "font-black text-emerald-50"
+        className: "font-black text-sky-950"
       }, w === "malfeld" ? "✖️ Malfeld" : "🌿 Wiesenweg"), /*#__PURE__*/React.createElement("p", {
-        className: "text-xs text-emerald-300"
+        className: "text-xs text-sky-700"
       }, zahl > 0 ? zahl + " gefangene Wesen · " + Math.min(zahl, ABFRAGE_LAENGE) + " Fragen" : "Noch keine Wesen gefangen"));
     })));
   }
@@ -5254,30 +5252,30 @@ function Abfrage({
     return /*#__PURE__*/React.createElement("div", {
       className: "mx-auto max-w-md p-4 text-center"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "a-auftauchen rounded-3xl bg-emerald-900/70 p-5"
+      className: "a-auftauchen rounded-3xl bg-white ring-1 ring-sky-200 p-5"
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-6xl"
     }, offenListe.length === 0 ? "🌟" : "🗣️"), /*#__PURE__*/React.createElement("p", {
-      className: "mt-2 text-5xl font-black text-amber-300"
+      className: "mt-2 text-5xl font-black text-sky-600"
     }, gewusst, "/", antworten.length), /*#__PURE__*/React.createElement("p", {
-      className: "text-xs uppercase tracking-widest text-emerald-300"
+      className: "text-xs uppercase tracking-widest text-sky-700"
     }, "gewusst"), /*#__PURE__*/React.createElement("p", {
-      className: "mt-2 text-sm text-emerald-200"
+      className: "mt-2 text-sm text-sky-900"
     }, "davon ", sofort, " sofort \u26A1"), offenListe.length > 0 ? /*#__PURE__*/React.createElement("div", {
-      className: "mt-4 rounded-2xl bg-emerald-950/50 p-3 text-left"
+      className: "mt-4 rounded-2xl bg-sky-100 p-3 text-left"
     }, /*#__PURE__*/React.createElement("p", {
-      className: "text-center text-xs font-bold uppercase tracking-widest text-emerald-300"
+      className: "text-center text-xs font-bold uppercase tracking-widest text-sky-700"
     }, "Die \xFCben wir noch"), /*#__PURE__*/React.createElement("div", {
       className: "mt-2 flex flex-wrap justify-center gap-2"
     }, offenListe.map(({
       fakt
     }, k) => /*#__PURE__*/React.createElement("span", {
       key: k,
-      className: "rounded-xl bg-emerald-800/70 px-3 py-1 font-black text-emerald-50"
+      className: "rounded-xl bg-sky-100 px-3 py-1 font-black text-sky-950"
     }, loesungsText(fakt)))), /*#__PURE__*/React.createElement("p", {
-      className: "mt-2 text-center text-xs text-emerald-400"
+      className: "mt-2 text-center text-xs text-sky-600"
     }, "Die Wesen dazu kommen jetzt \xF6fter vorbei.")) : /*#__PURE__*/React.createElement("p", {
-      className: "mt-3 font-black text-amber-200"
+      className: "mt-3 font-black text-sky-700"
     }, "Alles gewusst \u2014 ohne eine einzige Taste!"), /*#__PURE__*/React.createElement("div", {
       className: "mt-4 space-y-2"
     }, /*#__PURE__*/React.createElement(Knopf, {
@@ -5299,11 +5297,11 @@ function Abfrage({
     unter: (welt === "malfeld" ? "Malfeld" : "Wiesenweg") + " · " + (pos + 1) + " von " + runde.length,
     onZurueck: onZurueck
   }), /*#__PURE__*/React.createElement("div", {
-    className: "rounded-3xl bg-gradient-to-b from-emerald-50 to-white p-8 text-center shadow-2xl"
+    className: "rounded-3xl bg-gradient-to-b from-white to-white p-8 text-center shadow-sm ring-1 ring-sky-200"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-5xl font-black text-emerald-950"
+    className: "text-5xl font-black text-sky-950"
   }, offen ? loesungsText(fakt) : frageText(fakt)), !offen && /*#__PURE__*/React.createElement("p", {
-    className: "mt-4 text-sm font-bold text-emerald-700"
+    className: "mt-4 text-sm font-bold text-sky-700"
   }, "Sag die Antwort laut! \uD83D\uDDE3\uFE0F")), !offen ? /*#__PURE__*/React.createElement("div", {
     className: "mt-6"
   }, /*#__PURE__*/React.createElement(Knopf, {
@@ -5312,11 +5310,11 @@ function Abfrage({
       Ton.tippen();
     }
   }, "\uD83D\uDC40 L\xF6sung zeigen"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-center text-xs text-emerald-400"
+    className: "mt-2 text-center text-xs text-sky-600"
   }, "Erst wenn ", name, " geantwortet hat.")) : /*#__PURE__*/React.createElement("div", {
     className: "a-rutschen mt-6 space-y-2"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-center text-xs font-bold uppercase tracking-widest text-emerald-300"
+    className: "text-center text-xs font-bold uppercase tracking-widest text-sky-700"
   }, "Wie war's?"), /*#__PURE__*/React.createElement(Knopf, {
     onClick: () => bewerte("blitz")
   }, "\u26A1 Sofort gewusst"), /*#__PURE__*/React.createElement(Knopf, {
@@ -5324,7 +5322,7 @@ function Abfrage({
     onClick: () => bewerte("normal")
   }, "\u2705 Gewusst, mit \xDCberlegen"), /*#__PURE__*/React.createElement("button", {
     onClick: () => bewerte("falsch"),
-    className: "kein-blau w-full rounded-2xl border-2 border-rose-400/60 px-5 py-4 text-lg font-black text-rose-200 active:translate-y-px"
+    className: "kein-blau w-full rounded-2xl border-2 border-rose-400/60 px-5 py-4 text-lg font-black text-rose-700 active:translate-y-px"
   }, "\u274C Nicht gewusst")));
 }
 
@@ -5376,27 +5374,27 @@ function Einstellungen({
     onZurueck: onZurueck
   }), /*#__PURE__*/React.createElement("button", {
     onClick: onAbfrage,
-    className: "kein-blau mb-3 w-full rounded-2xl bg-amber-400 p-4 text-left shadow-lg active:translate-y-px"
+    className: "kein-blau mb-3 w-full rounded-2xl bg-sky-400 p-4 text-left shadow-lg active:translate-y-px"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-lg font-black text-emerald-950"
+    className: "text-lg font-black text-sky-950"
   }, "\uD83D\uDDE3\uFE0F Abfragen \u2014 ohne Tasten"), /*#__PURE__*/React.createElement("p", {
-    className: "text-xs text-emerald-900/80"
+    className: "text-xs text-sky-950/80"
   }, "Du fragst, dein Kind antwortet laut, du tippst, wie es war. Zeigt, ob die Zahl wirklich im Kopf ist \u2014 und z\xE4hlt im Karteikasten mit.")), /*#__PURE__*/React.createElement("div", {
-    className: "rounded-2xl bg-emerald-900/60 p-4"
+    className: "rounded-2xl bg-white ring-1 ring-sky-200 p-4"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-sm font-black text-amber-300"
+    className: "text-sm font-black text-sky-600"
   }, "Namen der Wesen"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-xs leading-relaxed text-emerald-300"
+    className: "mt-1 text-xs leading-relaxed text-sky-700"
   }, "Jedes Wesen hat einen Fantasienamen als Vorgabe. Wer will, gibt ihm im Zahlodex einen eigenen \u2014 Name und Bild, jederzeit \xE4nderbar. Die Vorgabe geht dabei nie verloren."), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-sm font-bold text-emerald-100"
+    className: "mt-2 text-sm font-bold text-sky-950"
   }, eigene === 0 ? "Zurzeit alle 46 mit Fantasienamen." : eigene + (eigene === 1 ? " Wesen hat" : " Wesen haben") + " einen eigenen Namen.", angriffe > 0 && " · " + angriffe + (angriffe === 1 ? " Angriff" : " Angriffe") + " umbenannt"), (eigene > 0 || angriffe > 0) && /*#__PURE__*/React.createElement("div", {
     className: "mt-3"
   }, sicherFrage ? /*#__PURE__*/React.createElement("div", {
-    className: "a-rutschen rounded-2xl border-2 border-rose-400/60 bg-rose-950/40 p-3"
+    className: "a-rutschen rounded-2xl border-2 border-rose-400/60 bg-rose-50 p-3"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-sm font-black text-rose-200"
+    className: "text-sm font-black text-rose-700"
   }, "Alle eigenen Namen l\xF6schen?"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-xs text-rose-200/80"
+    className: "mt-1 text-xs text-rose-700/80"
   }, "Danach hei\xDFen wieder alle wie in der Vorgabe. Sichere dir vorher die Liste, wenn du sie behalten willst."), /*#__PURE__*/React.createElement("div", {
     className: "mt-2 grid grid-cols-2 gap-2"
   }, /*#__PURE__*/React.createElement(Knopf, {
@@ -5418,11 +5416,11 @@ function Einstellungen({
     art: "ruhig",
     onClick: () => setSicherFrage(true)
   }, "Alle zur\xFCck auf Fantasienamen"))), /*#__PURE__*/React.createElement("div", {
-    className: "mt-3 rounded-2xl border-2 border-emerald-700 p-4"
+    className: "mt-3 rounded-2xl border-2 border-sky-200 p-4"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-sm font-black text-emerald-100"
+    className: "text-sm font-black text-sky-950"
   }, "Namensliste weitergeben"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-xs leading-relaxed text-emerald-400"
+    className: "mt-1 text-xs leading-relaxed text-sky-600"
   }, "Nur die Namen, ohne Spielstand. Praktisch, um am Rechner eine Liste zusammenzustellen und sie hier einzusetzen."), /*#__PURE__*/React.createElement("div", {
     className: "mt-2"
   }, /*#__PURE__*/React.createElement(Knopf, {
@@ -5433,7 +5431,7 @@ function Einstellungen({
     readOnly: true,
     value: code,
     onFocus: e => e.target.select(),
-    className: "mt-2 h-14 w-full rounded-xl bg-emerald-950/70 p-2 font-mono text-[10px] leading-tight text-emerald-400"
+    className: "mt-2 h-14 w-full rounded-xl bg-sky-100 p-2 font-mono text-[10px] leading-tight text-sky-600"
   }), /*#__PURE__*/React.createElement("textarea", {
     value: eingabe,
     placeholder: NAMEN_KOPF + "…",
@@ -5441,17 +5439,17 @@ function Einstellungen({
       setEingabe(e.target.value);
       if (e.target.value.trim()) pruefe(e.target.value);
     },
-    className: "mt-2 h-14 w-full rounded-xl bg-emerald-950/70 p-2 font-mono text-[10px] text-emerald-200 placeholder-emerald-700"
+    className: "mt-2 h-14 w-full rounded-xl bg-sky-100 p-2 font-mono text-[10px] text-sky-900 placeholder-sky-300"
   }), fehler && /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-xs font-bold text-rose-300"
+    className: "mt-2 text-xs font-bold text-rose-700"
   }, fehler), vorschau && /*#__PURE__*/React.createElement("div", {
-    className: "a-rutschen mt-2 rounded-2xl bg-emerald-950/60 p-3"
+    className: "a-rutschen mt-2 rounded-2xl bg-sky-100 p-3"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold uppercase tracking-widest text-amber-300"
+    className: "text-xs font-bold uppercase tracking-widest text-sky-600"
   }, "Das ist drin"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-sm text-emerald-100"
+    className: "mt-1 text-sm text-sky-950"
   }, Object.keys(vorschau.namen).length, " Namen", Object.keys(vorschau.angriffe || {}).length > 0 ? " · " + Object.keys(vorschau.angriffe).length + " Wesen mit eigenen Angriffen" : ""), /*#__PURE__*/React.createElement("div", {
-    className: "mt-1 max-h-24 overflow-y-auto text-[11px] text-emerald-400"
+    className: "mt-1 max-h-24 overflow-y-auto text-[11px] text-sky-600"
   }, Object.entries(vorschau.namen).slice(0, 30).map(([nr, e]) => /*#__PURE__*/React.createElement("span", {
     key: nr,
     className: "mr-2 inline-block"
@@ -5471,9 +5469,9 @@ function Einstellungen({
     }
   }, "Liste \xFCbernehmen")))), /*#__PURE__*/React.createElement("button", {
     onClick: onSicherung,
-    className: "kein-blau mt-3 w-full rounded-2xl border-2 border-emerald-700 p-3 text-center text-sm font-bold text-emerald-300"
+    className: "kein-blau mt-3 w-full rounded-2xl border-2 border-sky-200 p-3 text-center text-sm font-bold text-sky-700"
   }, "\uD83D\uDD10 Sicherung des ganzen Spielstands"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-3 text-center text-[11px] leading-relaxed text-emerald-500"
+    className: "mt-3 text-center text-[11px] leading-relaxed text-sky-600"
   }, "Namen sind reine Deko. Welche Rechnung zu welchem Wesen geh\xF6rt, h\xE4ngt allein an der Zahl \u2014 daran \xE4ndert kein Name etwas."));
 }
 function Sicherung({
@@ -5550,13 +5548,13 @@ function Sicherung({
     return /*#__PURE__*/React.createElement("div", {
       className: "mx-auto max-w-md p-4 text-center"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "a-auftauchen rounded-3xl bg-emerald-900/70 p-6"
+      className: "a-auftauchen rounded-3xl bg-white ring-1 ring-sky-200 p-6"
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-6xl"
     }, "\uD83C\uDF92"), /*#__PURE__*/React.createElement("h2", {
-      className: "mt-2 text-2xl font-black text-amber-300"
+      className: "mt-2 text-2xl font-black text-sky-600"
     }, "Alles wieder da!"), /*#__PURE__*/React.createElement("p", {
-      className: "mt-1 text-sm text-emerald-300"
+      className: "mt-1 text-sm text-sky-700"
     }, Object.keys(vorschau.trainer).join(", "), " \u2014 dein Stand ist zur\xFCck."), /*#__PURE__*/React.createElement("div", {
       className: "mt-4"
     }, /*#__PURE__*/React.createElement(Knopf, {
@@ -5570,11 +5568,11 @@ function Sicherung({
     unter: st.text,
     onZurueck: onZurueck
   }), /*#__PURE__*/React.createElement("div", {
-    className: "rounded-2xl bg-emerald-900/60 p-4"
+    className: "rounded-2xl bg-white ring-1 ring-sky-200 p-4"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-sm font-black text-amber-300"
+    className: "text-sm font-black text-sky-600"
   }, "Deinen Stand sichern"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-xs leading-relaxed text-emerald-300"
+    className: "mt-1 text-xs leading-relaxed text-sky-700"
   }, "Alles, was du gesammelt hast, liegt nur in diesem Browser. Leg dir eine Sicherung an \u2014 als Datei oder als Code in einer Notiz. Damit holst du deinen Zahlodex auf jedes Ger\xE4t zur\xFCck."), /*#__PURE__*/React.createElement("div", {
     className: "mt-3 space-y-2"
   }, /*#__PURE__*/React.createElement(Knopf, {
@@ -5586,18 +5584,18 @@ function Sicherung({
     readOnly: true,
     value: code,
     onFocus: e => e.target.select(),
-    className: "mt-2 h-20 w-full rounded-xl bg-emerald-950/70 p-2 font-mono text-[10px] leading-tight text-emerald-400"
+    className: "mt-2 h-20 w-full rounded-xl bg-sky-100 p-2 font-mono text-[10px] leading-tight text-sky-600"
   })), /*#__PURE__*/React.createElement("div", {
-    className: "mt-3 rounded-2xl border-2 border-emerald-700 p-4"
+    className: "mt-3 rounded-2xl border-2 border-sky-200 p-4"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-sm font-black text-emerald-100"
+    className: "text-sm font-black text-sky-950"
   }, "Sicherung zur\xFCckholen"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-xs leading-relaxed text-emerald-400"
+    className: "mt-1 text-xs leading-relaxed text-sky-600"
   }, "Datei ausw\xE4hlen oder den Code hier einsetzen. Du siehst vorher, was drin ist."), /*#__PURE__*/React.createElement("input", {
     type: "file",
     accept: ".txt,text/plain",
     onChange: ausDatei,
-    className: "mt-2 w-full text-xs text-emerald-300 file:mr-2 file:rounded-xl file:border-0 file:bg-emerald-700 file:px-3 file:py-2 file:text-xs file:font-bold file:text-emerald-50"
+    className: "mt-2 w-full text-xs text-sky-700 file:mr-2 file:rounded-xl file:border-0 file:bg-sky-200 file:px-3 file:py-2 file:text-xs file:font-bold file:text-sky-950"
   }), /*#__PURE__*/React.createElement("textarea", {
     value: eingabe,
     placeholder: CODE_KOPF + "…",
@@ -5605,29 +5603,29 @@ function Sicherung({
       setEingabe(e.target.value);
       if (e.target.value.trim()) pruefe(e.target.value);
     },
-    className: "mt-2 h-16 w-full rounded-xl bg-emerald-950/70 p-2 font-mono text-[10px] text-emerald-200 placeholder-emerald-700"
+    className: "mt-2 h-16 w-full rounded-xl bg-sky-100 p-2 font-mono text-[10px] text-sky-900 placeholder-sky-300"
   }), fehler && /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-xs font-bold text-rose-300"
+    className: "mt-2 text-xs font-bold text-rose-700"
   }, fehler), vorschau && /*#__PURE__*/React.createElement("div", {
-    className: "a-rutschen mt-3 rounded-2xl bg-emerald-950/60 p-3"
+    className: "a-rutschen mt-3 rounded-2xl bg-sky-100 p-3"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold uppercase tracking-widest text-amber-300"
+    className: "text-xs font-bold uppercase tracking-widest text-sky-600"
   }, "Das ist drin"), Object.entries(vorschau.trainer).map(([n, t2]) => /*#__PURE__*/React.createElement("p", {
     key: n,
-    className: "mt-1 text-sm text-emerald-100"
+    className: "mt-1 text-sm text-sky-950"
   }, t2.bild, " ", /*#__PURE__*/React.createElement("b", null, n), " ", /*#__PURE__*/React.createElement("span", {
-    className: "text-emerald-400"
+    className: "text-sky-600"
   }, "\u2014 ", anzahlGefangen(t2), " Wesen \xB7 ", sterneGesamt(t2), " Sterne \xB7", " ", tricksGesamt(t2), " Tricks"))), vorschau.gesichert && /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-[11px] text-emerald-500"
+    className: "mt-1 text-[11px] text-sky-600"
   }, "gesichert am ", datumKurz(vorschau.gesichert)), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-xs font-bold text-amber-200"
+    className: "mt-2 text-xs font-bold text-sky-700"
   }, "Achtung: Dein jetziger Stand wird dadurch ersetzt."), /*#__PURE__*/React.createElement("div", {
     className: "mt-2"
   }, /*#__PURE__*/React.createElement(Knopf, {
     art: "gruen",
     onClick: spieleEin
   }, "Jetzt einspielen")))), /*#__PURE__*/React.createElement("p", {
-    className: "mt-3 text-center text-[11px] leading-relaxed text-emerald-500"
+    className: "mt-3 text-center text-[11px] leading-relaxed text-sky-600"
   }, "Nichts davon verl\xE4sst dein Ger\xE4t. Die Sicherung liegt genau dort, wo du sie hinlegst."));
 }
 function TrainerWahl({
@@ -5658,22 +5656,22 @@ function TrainerWahl({
     className: "flex items-center gap-2"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => waehle(n),
-    className: "kein-blau flex flex-1 items-center gap-3 rounded-2xl bg-emerald-800/70 p-3 text-left hover:bg-emerald-700"
+    className: "kein-blau flex flex-1 items-center gap-3 rounded-2xl bg-sky-100 p-3 text-left hover:bg-sky-200"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-3xl"
   }, stand.trainer[n].bild), /*#__PURE__*/React.createElement("span", {
-    className: "flex-1 font-black text-emerald-50"
+    className: "flex-1 font-black text-sky-950"
   }, n), /*#__PURE__*/React.createElement("span", {
-    className: "text-sm text-emerald-300"
+    className: "text-sm text-sky-700"
   }, anzahlGefangen(stand.trainer[n]), " Wesen")), /*#__PURE__*/React.createElement("button", {
     onClick: () => setWeg(weg === n ? null : n),
-    className: "kein-blau rounded-xl border-2 border-rose-500/40 px-3 py-3 text-xs text-rose-300"
+    className: "kein-blau rounded-xl border-2 border-rose-500/40 px-3 py-3 text-xs text-rose-700"
   }, "\u2715")))), weg && /*#__PURE__*/React.createElement("div", {
-    className: "a-rutschen mt-3 rounded-2xl border-2 border-rose-400/60 bg-rose-950/40 p-4"
+    className: "a-rutschen mt-3 rounded-2xl border-2 border-rose-400/60 bg-rose-50 p-4"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-sm font-black text-rose-200"
+    className: "text-sm font-black text-rose-700"
   }, weg, " wirklich l\xF6schen?"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-xs leading-relaxed text-rose-200/80"
+    className: "mt-1 text-xs leading-relaxed text-rose-700/80"
   }, anzahlGefangen(stand.trainer[weg]), " Wesen,", " ", sterneGesamt(stand.trainer[weg]), " Sterne und", " ", tricksGesamt(stand.trainer[weg]), " Tricks sind dann weg. Das l\xE4sst sich nicht r\xFCckg\xE4ngig machen \u2014 es sei denn, du hast eine Sicherung."), /*#__PURE__*/React.createElement("div", {
     className: "mt-3 grid grid-cols-2 gap-2"
   }, /*#__PURE__*/React.createElement(Knopf, {
@@ -5688,22 +5686,22 @@ function TrainerWahl({
     className: "kein-blau w-full rounded-2xl bg-rose-500 px-4 py-2 text-sm font-black text-rose-950 shadow-lg active:translate-y-px"
   }, "Ja, l\xF6schen"))), /*#__PURE__*/React.createElement("button", {
     onClick: onSicherung,
-    className: "kein-blau mt-3 w-full rounded-2xl border-2 border-emerald-700 p-3 text-center text-sm font-bold text-emerald-300"
+    className: "kein-blau mt-3 w-full rounded-2xl border-2 border-sky-200 p-3 text-center text-sm font-bold text-sky-700"
   }, "\uD83D\uDD10 Sicherung anlegen oder zur\xFCckholen"), /*#__PURE__*/React.createElement("div", {
-    className: "mt-5 rounded-2xl bg-emerald-900/60 p-3"
+    className: "mt-5 rounded-2xl bg-white ring-1 ring-sky-200 p-3"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold uppercase tracking-widest text-amber-300"
+    className: "text-xs font-bold uppercase tracking-widest text-sky-600"
   }, "Neue Trainerkarte"), /*#__PURE__*/React.createElement("input", {
     value: neu,
     onChange: e => setNeu(e.target.value.slice(0, 14)),
     placeholder: "Name",
-    className: "mt-2 w-full rounded-xl border-2 border-emerald-600 bg-emerald-950 px-3 py-2 text-emerald-50 outline-none focus:border-amber-400"
+    className: "mt-2 w-full rounded-xl border-2 border-sky-300 bg-sky-100 px-3 py-2 text-sky-950 outline-none focus:border-sky-400"
   }), /*#__PURE__*/React.createElement("div", {
     className: "mt-2 flex flex-wrap gap-2"
   }, TRAINER_BILDER.map(b => /*#__PURE__*/React.createElement("button", {
     key: b,
     onClick: () => setBild(b),
-    className: "kein-blau rounded-xl px-2 py-1 text-2xl " + (bild === b ? "bg-amber-400/30 ring-2 ring-amber-400" : "bg-emerald-800")
+    className: "kein-blau rounded-xl px-2 py-1 text-2xl " + (bild === b ? "bg-sky-100 ring-2 ring-sky-400" : "bg-sky-100")
   }, b))), /*#__PURE__*/React.createElement("div", {
     className: "mt-3"
   }, /*#__PURE__*/React.createElement(Knopf, {
@@ -5742,7 +5740,7 @@ function Weltwahl({
     return /*#__PURE__*/React.createElement("button", {
       key: w,
       onClick: () => waehle(w),
-      className: "kein-blau w-full rounded-3xl bg-gradient-to-br from-emerald-700 to-emerald-900 p-4 text-left transition hover:from-emerald-600"
+      className: "kein-blau w-full rounded-3xl bg-gradient-to-br from-white to-sky-50 p-4 text-left transition hover:from-sky-50"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center gap-3"
     }, /*#__PURE__*/React.createElement("span", {
@@ -5750,22 +5748,22 @@ function Weltwahl({
     }, welt.bild), /*#__PURE__*/React.createElement("div", {
       className: "flex-1"
     }, /*#__PURE__*/React.createElement("p", {
-      className: "text-xl font-black text-amber-300"
+      className: "text-xl font-black text-sky-600"
     }, welt.name), /*#__PURE__*/React.createElement("p", {
-      className: "text-sm text-emerald-200"
+      className: "text-sm text-sky-900"
     }, welt.was))), /*#__PURE__*/React.createElement("div", {
-      className: "mt-3 h-2 overflow-hidden rounded-full bg-emerald-950"
+      className: "mt-3 h-2 overflow-hidden rounded-full bg-sky-100"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "h-full bg-amber-400",
+      className: "h-full bg-sky-400",
       style: {
         width: hab / welt.nrs.length * 100 + "%"
       }
     })), /*#__PURE__*/React.createElement("p", {
-      className: "mt-1 text-xs text-emerald-300"
+      className: "mt-1 text-xs text-sky-700"
     }, hab, " von ", welt.nrs.length, " Wesen \xB7", " ", dran > 0 ? (dran === 1 ? "eines freut sich" : besuchZahl(dran) + " freuen sich") + " auf dich" : "niemand wartet"), /*#__PURE__*/React.createElement("p", {
-      className: "mt-0.5 text-xs text-emerald-400"
+      className: "mt-0.5 text-xs text-sky-600"
     }, erf, " von ", hab, " erforscht", offen > 0 ? " · " + offen + " zeigen dir noch was" : hab === welt.nrs.length ? " · alles erkundet ✨" : ""), bereit > 0 && /*#__PURE__*/React.createElement("p", {
-      className: "mt-0.5 text-xs font-bold text-amber-300"
+      className: "mt-0.5 text-xs font-bold text-sky-600"
     }, "\u2728 ", bereit, " ", bereit === 1 ? "Wesen ist" : "Wesen sind", " reif f\xFCr einen neuen Trick"));
   })));
 }
@@ -5839,7 +5837,7 @@ function App() {
   }, [tonAn]);
   if (!stand) {
     return /*#__PURE__*/React.createElement("div", {
-      className: "flex min-h-screen items-center justify-center text-4xl text-emerald-300"
+      className: "flex min-h-screen items-center justify-center text-4xl text-sky-700"
     }, "\u2026");
   }
   const t = stand.trainer[stand.aktiv];
@@ -6037,22 +6035,22 @@ function App() {
   }, /*#__PURE__*/React.createElement("div", {
     className: "mb-3 flex items-center justify-between"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold uppercase tracking-[0.3em] text-amber-400"
+    className: "text-xs font-bold uppercase tracking-[0.3em] text-sky-500"
   }, "Zahlodex"), /*#__PURE__*/React.createElement("div", {
     className: "flex gap-2"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setErklaerung(true),
-    className: "kein-blau rounded-xl border-2 border-emerald-600 px-3 py-1 text-sm text-emerald-200"
+    className: "kein-blau rounded-xl border-2 border-sky-300 px-3 py-1 text-sm text-sky-900"
   }, "?"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setAnsicht("einstellungen"),
-    className: "kein-blau rounded-xl border-2 border-emerald-600 px-3 py-1 text-sm text-emerald-200"
+    className: "kein-blau rounded-xl border-2 border-sky-300 px-3 py-1 text-sm text-sky-900"
   }, "\u2699\uFE0F"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setTonAn(!tonAn),
-    className: "kein-blau rounded-xl border-2 border-emerald-600 px-3 py-1 text-sm text-emerald-200"
+    className: "kein-blau rounded-xl border-2 border-sky-300 px-3 py-1 text-sm text-sky-900"
   }, tonAn ? "🔊" : "🔇"))), /*#__PURE__*/React.createElement("h1", {
-    className: "text-3xl font-black leading-tight text-amber-300"
+    className: "text-3xl font-black leading-tight text-sky-600"
   }, "Die Rechen-Arena"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-sm text-emerald-300"
+    className: "mt-1 text-sm text-sky-700"
   }, "Jedes Ergebnis ist ein Wesen. Wer rechnet, f\xE4ngt es."), /*#__PURE__*/React.createElement("div", {
     className: "mt-4"
   }, /*#__PURE__*/React.createElement(Trainerkarte, {
@@ -6060,9 +6058,9 @@ function App() {
     t: t,
     onBild: () => setBildWaehlen(!bildWaehlen)
   })), bildWaehlen && /*#__PURE__*/React.createElement("div", {
-    className: "a-rutschen mt-2 rounded-2xl bg-emerald-900/60 p-3"
+    className: "a-rutschen mt-2 rounded-2xl bg-white ring-1 ring-sky-200 p-3"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold uppercase tracking-widest text-amber-300"
+    className: "text-xs font-bold uppercase tracking-widest text-sky-600"
   }, "Bild f\xFCr ", stand.aktiv), /*#__PURE__*/React.createElement("div", {
     className: "mt-2 flex flex-wrap gap-2"
   }, TRAINER_BILDER.map(b => /*#__PURE__*/React.createElement("button", {
@@ -6074,29 +6072,29 @@ function App() {
       });
       setBildWaehlen(false);
     },
-    className: "kein-blau rounded-xl px-2 py-1 text-3xl " + (t.bild === b ? "bg-amber-400/30 ring-2 ring-amber-400" : "bg-emerald-800")
+    className: "kein-blau rounded-xl px-2 py-1 text-3xl " + (t.bild === b ? "bg-sky-100 ring-2 ring-sky-400" : "bg-sky-100")
   }, b)))), /*#__PURE__*/React.createElement("div", {
-    className: "a-rutschen mt-3 flex items-center gap-3 rounded-2xl bg-amber-400/15 p-3"
+    className: "a-rutschen mt-3 flex items-center gap-3 rounded-2xl bg-sky-100 p-3"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-3xl"
   }, schritt.bild), /*#__PURE__*/React.createElement("div", {
     className: "min-w-0 flex-1"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-[10px] font-bold uppercase tracking-widest text-amber-400"
+    className: "text-[10px] font-bold uppercase tracking-widest text-sky-500"
   }, "Heute"), /*#__PURE__*/React.createElement("p", {
-    className: "text-sm font-bold leading-snug text-amber-100"
+    className: "text-sm font-bold leading-snug text-sky-950"
   }, schritt.text)), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setDexBuch(schritt.ziel === "trickbuch");
       setAnsicht(schritt.ziel === "trickbuch" ? "dex" : schritt.ziel);
     },
-    className: "kein-blau shrink-0 rounded-xl bg-amber-400 px-3 py-2 text-xs font-black text-emerald-950"
+    className: "kein-blau shrink-0 rounded-xl bg-sky-400 px-3 py-2 text-xs font-black text-sky-950"
   }, "Los")), /*#__PURE__*/React.createElement("div", {
-    className: "mt-2 flex items-center justify-between rounded-2xl bg-emerald-900/60 px-3 py-2"
+    className: "mt-2 flex items-center justify-between rounded-2xl bg-white ring-1 ring-sky-200 px-3 py-2"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-sm font-black text-emerald-100"
+    className: "text-sm font-black text-sky-950"
   }, rundenHeute(t) > 0 ? "✅ Heute geschafft!" + (rundenHeute(t) > 1 ? " Schon " + rundenHeute(t) + " Runden." : "") : "⬜ Heute: eine Runde"), /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold text-emerald-300"
+    className: "text-xs font-bold text-sky-700"
   }, "\uD83D\uDDD3\uFE0F ", spieltage(t), " ", spieltage(t) === 1 ? "Spieltag" : "Spieltage")), /*#__PURE__*/React.createElement("div", {
     className: "mt-4 space-y-2"
   }, /*#__PURE__*/React.createElement(Weg, {
@@ -6132,16 +6130,16 @@ function App() {
     onClick: () => setAnsicht("trainer")
   }))), /*#__PURE__*/React.createElement("button", {
     onClick: () => setAnsicht(sicherung.dringend ? "sicherung" : "einstellungen"),
-    className: "kein-blau mt-3 w-full rounded-2xl border-2 p-2 text-center text-xs font-bold transition " + (sicherung.dringend ? "a-funkeln border-amber-400/60 bg-amber-400/15 text-amber-200" : "border-emerald-800 text-emerald-500")
+    className: "kein-blau mt-3 w-full rounded-2xl border-2 p-2 text-center text-xs font-bold transition " + (sicherung.dringend ? "a-funkeln border-sky-300 bg-sky-100 text-sky-700" : "border-sky-200 text-sky-600")
   }, sicherung.dringend ? "🔐 " + sicherung.text + " — jetzt sichern" : "⚙️ Einstellungen · " + sicherung.text), /*#__PURE__*/React.createElement("a", {
     href: "./index.html",
-    className: "mt-3 block rounded-2xl border-2 border-emerald-700 p-3 text-center text-sm text-emerald-300"
+    className: "mt-3 block rounded-2xl border-2 border-sky-200 p-3 text-center text-sm text-sky-700"
   }, "\uD83E\uDD89 Zur\xFCck zu Florentinas R\xE4tselschule"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-4 text-center text-xs leading-relaxed text-emerald-400"
+    className: "mt-4 text-center text-xs leading-relaxed text-sky-600"
   }, /*#__PURE__*/React.createElement("b", {
-    className: "text-amber-300"
+    className: "text-sky-600"
   }, "Gefangen hei\xDFt noch nicht gekonnt."), " ", "Auf dem Streifzug \xFCben deine Wesen \u2014 in der Arena zeigen sie es."), /*#__PURE__*/React.createElement("p", {
-    className: "mt-3 text-center text-[11px] text-emerald-500"
+    className: "mt-3 text-center text-[11px] text-sky-600"
   }, "Zahlodex \xB7 Fassung ", FASSUNG)));
 }
 ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));
